@@ -43,6 +43,16 @@ class CMAP_Selector:
             self._i = 0
         return cmap
 
+    def __getitem__(self, i: int):
+        i = i % self._N
+        return self._grp[i]
+    
+    def get_cmap_handles(self, N_color: int, N_stripes: int=8):
+        _cmap_list = [self[i] for i in range(N_color)]
+        cmap_handles =  [Rectangle((0, 0), 1, 1) for _ in _cmap_list]
+        handler_map = dict(zip(cmap_handles, [HandlerColormap(mpl.cm.get_cmap(cm), num_stripes=N_stripes) for cm in _cmap_list]))
+        return cmap_handles, handler_map
+
 class HandlerColormap(HandlerBase):
     def __init__(self, cmap, num_stripes=8, **kw):
         HandlerBase.__init__(self, **kw)
