@@ -34,19 +34,73 @@ from src.uwarl_common import PARSER_CALLBACKS
 # %% [markdown]
 # # 1. Pre-Config 
 
+# %% -------------------------------- Files Automation -------------------------------- %% #
+def decode_replayed_vins_bag_file_name(_bag_path:str):
+    prefix = _bag_path.split("_recording_")[0]
+    ic(prefix)
+    unique_id, t_window, run_id, _, demo_id = prefix.split("_")
+    tag, session_id, run_id = unique_id.split("-")
+    description = {
+        "cam-session-run": unique_id,
+        "tag": tag,
+        "session_id": session_id,
+        "dt": t_window,
+        "demo": demo_id,
+        "run_id": run_id,
+    }
+    return description
+
+def auto_generate_labels_from_bag_file_name(list_of_bag_path:List[str]):
+    # auto generate labels based on demo id
+    id_list = ["NULL"]
+    for konfig_base in ["FIX", "SPI", "FWD", "RVR", "CIR", "88"]:
+        for kongig_arm in ["Home", "Pt-F", "Pt-U", "Pt-D", "Pt-LR", "Pt-UD"]:
+            id_list.append(f"{konfig_base}-{kongig_arm}")
+        
+    _bag_dict = dict()
+    for path in list_of_bag_path:
+        description = decode_replayed_vins_bag_file_name(path)
+        demo = id_list[int(description["demo"])]
+        tag = description["tag"]
+        session_id = description["session_id"]
+        run_id = description["run_id"]
+        bag_label = f"{tag}-{demo}-s{session_id}-i{run_id}"
+        _bag_dict[bag_label] = path
+    return _bag_dict
+
+BAG_FILES = [
+    # ls ~/.ros/bag_replay_recorder_files , and copy output to here ~
+    "EE-1-0_S5-E30_0_DEMO_2_recording_2023-04-06-16-11-35_2023-04-13-17-32-23.bag",
+    "EE-1-1_S5-E30_1_DEMO_14_recording_2023-04-06-16-12-19_2023-04-13-17-32-58.bag",
+    "EE-1-2_S5-E30_2_DEMO_20_recording_2023-04-06-16-12-58_2023-04-13-17-33-33.bag",
+    "EE-1-3_S5-E30_3_DEMO_15_recording_2023-04-06-16-13-39_2023-04-13-17-34-08.bag",
+    "EE-1-4_S5-E30_4_DEMO_21_recording_2023-04-06-16-14-22_2023-04-13-17-34-44.bag",
+    "EE-1-5_S5-E30_5_DEMO_16_recording_2023-04-06-16-16-27_2023-04-13-17-35-19.bag",
+    "EE-1-6_S5-E30_6_DEMO_22_recording_2023-04-06-16-17-09_2023-04-13-17-35-54.bag",
+    "EE-1-7_S5-E30_7_DEMO_17_recording_2023-04-06-16-17-57_2023-04-13-17-36-29.bag",
+    "EE-1-8_S5-E30_8_DEMO_23_recording_2023-04-06-16-18-37_2023-04-13-17-37-04.bag",
+    "EE-1-9_S5-E30_9_DEMO_18_recording_2023-04-06-16-19-17_2023-04-13-17-37-39.bag",
+    "EE-1-10_S5-E30_10_DEMO_24_recording_2023-04-06-16-20-02_2023-04-13-17-38-15.bag",
+]
+
+AUTO_BAG_DICT = auto_generate_labels_from_bag_file_name(BAG_FILES)
+
+ic(AUTO_BAG_DICT);
+        
 # %% -------------------------------- Manager & Configs -------------------------------- %% #
 DIRECTORY = "/home/jx/.ros/bag_replay_recorder_files"
-BAG_DICT = {
-    "EE1-RVR-Pt-L/R": "EE-1-8_S5-E30_8_DEMO_23_recording_2023-04-06-16-18-37_2023-04-11-11-25-29.bag",
-    "EE1-FWD-Pt-U/D": "EE-1-9_S5-E30_9_DEMO_18_recording_2023-04-06-16-19-17_2023-04-11-11-26-32.bag",
-    # "EE1-RVR-Pt-U/D": "EE-1-10_S5-E30_10_DEMO_24_recording_2023-04-06-16-20-02_2023-04-11-11-27-38.bag",
-    # "EE3-CIR-Pt-D  ": "EE-3-2_S5-E30_2_DEMO_28_recording_2023-04-06-16-24-47_2023-04-11-14-41-28.bag",
-    # "EE3-CIR-Pt-L/R": "EE-3-3_S5-E30_3_DEMO_29_recording_2023-04-06-16-25-30_2023-04-11-11-31-56.bag",
-    # "EE3-CIR-Pt-U/D": "EE-3-4_S5-E30_4_DEMO_30_recording_2023-04-06-16-26-09_2023-04-11-11-32-44.bag",
-    # "EE3-88-Pt-FWD ": "EE-3-5_S5-E30_5_DEMO_32_recording_2023-04-06-16-26-52_2023-04-11-11-33-31.bag",
-}
-
 FIG_OUT_DIR = "/home/jx/UWARL_catkin_ws/src/vins-research-pkg/research-project/output/vins_analysis"
+BAG_DICT = AUTO_BAG_DICT
+# BAG_DICT = {
+#     # Copy the `AUTO_BAG_DICT` here:
+#     'EE-88-Pt-F-s3-i5': 'EE-3-5_S5-E30_5_DEMO_32_recording_2023-04-06-16-26-52_2023-04-11-11-33-31.bag',
+#     'EE-CIR-Pt-D-s3-i2': 'EE-3-2_S5-E30_2_DEMO_28_recording_2023-04-06-16-24-47_2023-04-11-14-41-28.bag',
+#     'EE-CIR-Pt-LR-s3-i3': 'EE-3-3_S5-E30_3_DEMO_29_recording_2023-04-06-16-25-30_2023-04-11-11-31-56.bag',
+#     'EE-CIR-Pt-UD-s3-i4': 'EE-3-4_S5-E30_4_DEMO_30_recording_2023-04-06-16-26-09_2023-04-11-11-32-44.bag',
+#     'EE-FWD-Pt-UD-s1-i9': 'EE-1-9_S5-E30_9_DEMO_18_recording_2023-04-06-16-19-17_2023-04-11-11-26-32.bag',
+#     'EE-RVR-Pt-LR-s1-i8': 'EE-1-8_S5-E30_8_DEMO_23_recording_2023-04-06-16-18-37_2023-04-11-11-25-29.bag',
+#     'EE-RVR-Pt-UD-s1-i10': 'EE-1-10_S5-E30_10_DEMO_24_recording_2023-04-06-16-20-02_2023-04-11-11-27-38.bag'
+# }
 
 class AnalysisManager:
     """ Analysis Manager 
@@ -124,16 +178,7 @@ class ProcessedData:
         self.T0=datetime.fromtimestamp(self.bag_info["start"])
         self.T1=datetime.fromtimestamp(self.bag_info["end"])
         self.dT = (self.T1 - self.T0).total_seconds()
-        
-        prefix = self._bag_path.split("_recording_")[0]
-        ic(prefix)
-        unique_id, t_window, run_id, _, demo_id = prefix.split("_")
-        
-        self.description = {
-            "cam-session-run": unique_id,
-            "dt": t_window,
-            "demo": demo_id,
-        }
+        self.description = decode_replayed_vins_bag_file_name(self._bag_path)
         ic(self.description)
 
 # 1. Process and Aggregate data from multiple bags:
@@ -233,36 +278,45 @@ class Bags_Data_Plot:
         _payload['t'] = []
         for i in range(self.N_bags):
             _len = []
-            topic_msg = self.list_of_bags[i].bag_data[bag_topic]
             
-            for var_type, symbol in dict_var_type.items():
-                if symbol not in _payload:
-                    _payload[symbol] = [] # initialize
-                    
-                if var_type in topic_msg:
-                    _data = pre_process_func(self.list_of_bags[i].bag_data[bag_topic][var_type])
-                ## exception handles:
-                else:
-                    raise ValueError(f"Unknown variable type: {var_type}")
+            if bag_topic in self.list_of_bags[i].bag_data:
+                topic_msg = self.list_of_bags[i].bag_data[bag_topic]
+            
+                for var_type, symbol in dict_var_type.items():
+                    if symbol not in _payload:
+                        _payload[symbol] = [] # initialize
+                        
+                    if var_type in topic_msg:
+                        _data = pre_process_func(topic_msg[var_type])
+                    ## exception handles:
+                    else:
+                        raise ValueError(f"Unknown variable type: {var_type}")
 
-                if zeroing:
-                    _data = np.subtract(_data, _data[0]) # reset to zero origin
+                    if zeroing:
+                        _data = np.subtract(_data, _data[0]) # reset to zero origin
+                    
+                    _len.append(len(_data))
+                    _payload[symbol].append(_data)
                 
-                _len.append(len(_data))
-                _payload[symbol].append(_data)
+                assert np.min(_len) == np.max(_len), f"Data variable lengths are expected to be same size in topic {_len}"
+                # append time stamps:
+                if(TYPES_VAR.TIME_STAMP_SEC in topic_msg):
+                    # grab time stamps from the bag file:
+                    _time = topic_msg[TYPES_VAR.TIME_STAMP_SEC] 
+                    _time = np.subtract(_time, _time[0]) # reset to zero start time
+                else:
+                    # generate time stamps uniformly, if there is no timestamp in the bag file:
+                    dT_s = self.list_of_dT_s[i]
+                    _time = np.arange(0, dT_s, dT_s/len(_data))[0:len(_data)]
+                _payload['t'].append(_time)
             
-            assert np.min(_len) == np.max(_len), f"Data variable lengths are expected to be same size in topic {_len}"
-            # append time stamps:
-            if(TYPES_VAR.TIME_STAMP_SEC in self.list_of_bags[i].bag_data[bag_topic]):
-                # grab time stamps from the bag file:
-                _time = topic_msg[TYPES_VAR.TIME_STAMP_SEC] 
-                _time = np.subtract(_time, _time[0]) # reset to zero start time
-            else:
-                # generate time stamps uniformly, if there is no timestamp in the bag file:
-                dT_s = self.list_of_dT_s[i]
-                _time = np.arange(0, dT_s, dT_s/len(_data))[0:len(_data)]
-            _payload['t'].append(_time)
-            
+            else: # if does not exist in the bag file:
+                for var_type, symbol in dict_var_type.items():
+                    if symbol not in _payload:
+                        _payload[symbol] = [] # initialize
+                    _payload[symbol].append([])
+                _payload['t'].append([])
+
         return _payload
     
 # 2. Load into data plotter:
@@ -313,7 +367,7 @@ def plot_time_series(bag_plot, data_sets_y, title=None, if_label_bags=True, figs
             plt.axvline(x=t_end, color = 'r', ls='--', alpha=0.5)
             plt.text(t_end, y_range[1], f" [{label}]", color='r', verticalalignment='top', horizontalalignment='right')
     
-    AM.save_fig(fig, f"{title}_time_series.png")
+    AM.save_fig(fig, f"{title}_time_series")
 
 def plot_time_parallel(bag_plot, data_sets_y, title=None, figsize=Bags_Data_Plot.DEFAULT_FIGSIZE):
     """
@@ -335,7 +389,7 @@ def plot_time_parallel(bag_plot, data_sets_y, title=None, figsize=Bags_Data_Plot
         
     fig, ax = plot_data_sets_subplots(data_sets_xys, xlabel="Time (s)", figsize=figsize)
     ax[0].set_title(f"{title} ({bag_plot.N_bags} bags)")
-    AM.save_fig(fig, f"{title}_time_parallel.png")
+    AM.save_fig(fig, f"{title}_time_parallel")
 
 
 
@@ -390,7 +444,7 @@ def plot_spatial(bag_plot,
         data_sets_3d, title=None, 
         figsize=Bags_Data_Plot.DEFAULT_FIGSIZE, projection='3d', proj_type='ortho',
         N_sample=1, show_grid=True, view_angles=[(30,10),(70,45),(10,10)],
-        show_orientations=True, N_orientations_sample=10
+        show_orientations=False, N_orientations_sample=10
 ):
     """ Plot is 3D Spatial Coordinates per data bag
         - muxing data from multiple topics
@@ -411,19 +465,27 @@ def plot_spatial(bag_plot,
             t_ = np.array(data['t'][j][::N_sample].copy())
             x_ = np.array(data['y'][j][::N_sample].copy())
             
-            # orientation correction:
-            xu_ = x_[::N_orientations_sample]
-            u_ = np.array(data['r'][j][::N_sample].copy())
-            uu_ = np.array(data['r'][j][::N_orientations_sample].copy())
-            if show_orientations:
-                uu_[0] = uu_[1] # u_ may be 0 quaternion
-                ic(np.shape(uu_), np.shape(xu_), uu_[0])
-                r_ = R.from_quat(uu_)
-        
-            # p_ = np.column_stack((np.zeros((len(x_),1)),x_))
-            # p2_ = uu_[1] * p_ * uu_[1].conjugate()
-            # x_ = p2_[:,1:4]
-            # ic(np.shape(p2_), np.shape(x_), uu_[1])
+            is_data_valid = len(data['t'][j]) > 1
+            if is_data_valid:
+                # orientation correction:
+                xu_ = x_[::N_orientations_sample]
+                u_ = np.array(data['r'][j][::N_sample].copy())
+                uu_ = np.array(data['r'][j][::N_orientations_sample].copy())
+                if show_orientations:
+                    uu_[0] = uu_[1] # u_ may be 0 quaternion
+                    ic(np.shape(uu_), np.shape(xu_), uu_[0])
+                    r_ = R.from_quat(uu_)
+
+            if label == "VINS est" and is_data_valid:
+                # ic(label, j, u_[1:5])
+                # rr_ = R.from_quat(u_[1:5])
+                # ic(rr_.as_euler('zyx', degrees=True))
+                # r2_ = R.from_quat(np.mean(uu_,axis=0)) # pick means orientation
+                r2_ = R.from_quat(np.mean(u_[5:20],axis=0)) # pick means orientation
+                r2_deg = r2_.as_euler('zyx', degrees=True)
+                r2_ = R.from_euler('z', r2_deg[0], degrees=True)
+                ic(r2_deg)
+                x_=r2_.apply(x_)
             
             for k in range(N_views):
                 view_idx = j+k*N_bags
@@ -434,21 +496,23 @@ def plot_spatial(bag_plot,
                 axs[view_idx].set_ylabel("y")
                 axs[view_idx].set_zlabel("z")
                 # plot points:
-                axs[view_idx].scatter3D(x_[:,0], x_[:,1], x_[:,2], c=t_, cmap=CMAP[i])
-                if show_orientations:
-                    ex_ = r_.apply([1,0,0])
-                    ey_ = r_.apply([0,1,0])
-                    ez_ = r_.apply([0,0,1])
-                    axs[view_idx].quiver(xu_[:,0], xu_[:,1], xu_[:,2], ex_[:,0], ex_[:,1], ex_[:,2], length=0.1, normalize=True, color="red")
-                    axs[view_idx].quiver(xu_[:,0], xu_[:,1], xu_[:,2], ey_[:,0], ey_[:,1], ey_[:,2], length=0.1, normalize=True, color="green")
-                    axs[view_idx].quiver(xu_[:,0], xu_[:,1], xu_[:,2], ez_[:,0], ez_[:,1], ez_[:,2], length=0.1, normalize=True, color="blue")
-                # a_ = np.max(np.abs([np.max(x_, axis=1), np.min(x_, axis=0)]))
-                # axs[j+k*N_bags].set_xlim3d(a_, -a_)
-                # axs[j+k*N_bags].set_ylim3d(a_, -a_)
-                # axs[j+k*N_bags].set_zlim3d(0, a_*2)
+                if is_data_valid:
+                    axs[view_idx].scatter3D(x_[:,0], x_[:,1], x_[:,2], c=t_, cmap=CMAP[i])
+                    if show_orientations:
+                        ex_ = r_.apply([1,0,0])
+                        ey_ = r_.apply([0,1,0])
+                        ez_ = r_.apply([0,0,1])
+                        axs[view_idx].quiver(xu_[:,0], xu_[:,1], xu_[:,2], ex_[:,0], ex_[:,1], ex_[:,2], length=0.1, normalize=True, color="red")
+                        axs[view_idx].quiver(xu_[:,0], xu_[:,1], xu_[:,2], ey_[:,0], ey_[:,1], ey_[:,2], length=0.1, normalize=True, color="green")
+                        axs[view_idx].quiver(xu_[:,0], xu_[:,1], xu_[:,2], ez_[:,0], ez_[:,1], ez_[:,2], length=0.1, normalize=True, color="blue")
+                    
+                    a_ = np.max(np.abs([np.max(x_, axis=0), np.min(x_, axis=0)]))
+                    axs[view_idx].set_xlim3d(a_, -a_)
+                    axs[view_idx].set_ylim3d(a_, -a_)
+                    axs[view_idx].set_zlim3d(0, a_)
                 
         axs[j].set_title(f"{bag_plot.list_of_bag_labels[j]}")
-        for k in range(N_views):
+        for k in range(N_views): # FIXME: all legens will show even there is no data plot, need sth else?? (no need for now)
             axs[j+k*N_bags].legend(
                 handles=cmap_handles, labels=data_sets_3d.keys(), handler_map=handler_map, 
                 bbox_to_anchor=(0.3, 0.9), fontsize=10)
@@ -456,16 +520,18 @@ def plot_spatial(bag_plot,
     # save file:
     if title is None:
         title = " and ".join(data_sets_3d.keys())
-    AM.save_fig(fig, f"{title}_spatial.png")
+    AM.save_fig(fig, f"{title}_spatial")
         
     return fig, axs
 
 # # 4. Plot:
 ### pip install ipympl
-fig, axs = plot_spatial(BagPlot, data_sets_3d, figsize=(10,8), view_angles=[(45,45)], show_orientations=False)
-# fig, axs = plot_spatial(BagPlot, data_sets_3d, figsize=(10,8)) # default 3 views
+# fig, axs = plot_spatial(BagPlot, data_sets_3d, figsize=(10,8), view_angles=[(30,45)], show_orientations=False)
+fig, axs = plot_spatial(BagPlot, data_sets_3d, figsize=(10,8)) # default 3 views
 plt.show()
 
 # fig.canvas.toolbar_visible = True
 # fig.canvas.header_visible = True
 # fig.canvas.resizable = True
+
+# %%
