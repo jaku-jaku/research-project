@@ -1,4 +1,4 @@
-# %%
+# %% -------------------------------- Import Lib -------------------------------- %% #
 # built-in
 import os
 from datetime import datetime
@@ -22,7 +22,7 @@ import rosbag
 # 3rd party util
 from icecream import ic
 
-# %%
+# %% -------------------------------- Import Our Lib -------------------------------- %% #
 # ours:
 from uwarl_helper.uwarl_util import create_all_folders
 from uwarl_bag_utils.bag_parser import BagParser, TYPES_VAR
@@ -30,13 +30,11 @@ from uwarl_bag_utils.bag_parser import BagParser, TYPES_VAR
 from src.uwarl_plot import Color_Wheel, COLOR_TABLE_1, CMAP_Selector, HandlerColormap, get_color_table
 from src.uwarl_common import PARSER_CALLBACKS
 
-# %%
-BP = BagParser(PARSER_CALLBACKS)
 
 # %% [markdown]
 # # 1. Pre-Config 
 
-# %%
+# %% -------------------------------- Manager & Configs -------------------------------- %% #
 DIRECTORY = "/home/jx/.ros/bag_replay_recorder_files"
 BAG_DICT = {
     # "EE1-RVR-Pt-L/R": "EE-1-8_S5-E30_8_DEMO_23_recording_2023-04-06-16-18-37_2023-04-11-11-25-29.bag",
@@ -84,12 +82,13 @@ class AnalysisManager:
             with open(f"{self._output_dir}/{file_name}.yaml", "w") as f:
                 yaml.dump(data, f)
 
+BP = BagParser(PARSER_CALLBACKS)
 AM = AnalysisManager(run_name="run_{}".format(datetime.now().strftime("%Y-%m-%d")))
 
 # %% [markdown]
 # # 2. Data Pre-Processing
 
-# %%
+# %% -------------------------------- Processing -------------------------------- %% #
 # Processed Data Object Placeholder
 class ProcessedData:
     """ Placeholder for processed data
@@ -143,7 +142,7 @@ for label, path in AM._bag_dict.items():
     pData[label] = ProcessedData(DIRECTORY, path)
         
 
-# %%
+# %% -------------------------------- DEBUG -------------------------------- %% #
 # DEBUG: save a sample here:
 # pD = pData["EE1-RVR-Pt-U/D"]
 # AM.save_dict(pD.bag_samples, "bag_samples")
@@ -151,7 +150,7 @@ for label, path in AM._bag_dict.items():
 # %% [markdown]
 # # 3. Plotting Multiple datasets from multiple bagfiles
 
-# %%
+# %% -------------------------------- 2D Plot Functions -------------------------------- %% #
 ## Generic Handy Multi-Segments Multi-Topical Plotting Functions:
 CWheel = Color_Wheel(get_color_table("tab10", 10))
 
@@ -196,7 +195,7 @@ def plot_data_sets_subplots(data_sets_xys, xlabel="", figsize=(5, 5)):
     return fig, axs
 
 
-# %%
+# %% -------------------------------- Multi-Bag Plotter -------------------------------- %% #
 class Bags_Data_Plot:
     DEFAULT_FIGSIZE = (5, 5)
     # list of data placeholder:
@@ -372,7 +371,7 @@ class Bags_Data_Plot:
 BagPlot = Bags_Data_Plot(pData)
 
 
-# %%
+# %% -------------------------------- Plot: Voltage & Joint Efforts -------------------------------- %% #
 from scipy.ndimage import gaussian_filter1d
 # 3. assemble data sets:
 data_sets_y = {
@@ -389,7 +388,7 @@ data_sets_y = {
 BagPlot.plot_time_series(data_sets_y)
 BagPlot.plot_time_parallel(data_sets_y, figsize=(15,4))
 
-# %%
+# %% -------------------------------- Plot: 3D trajectories -------------------------------- %% #
 # 3. assemble data sets:
 data_sets_3d = {
     "WAM EE"       : BagPlot.extract_data(
