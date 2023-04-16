@@ -22,19 +22,32 @@ import rosbag
 # 3rd party util
 from icecream import ic
 
-# %% -------------------------------- Import Our Lib -------------------------------- %% #
+# %% 
+# -------------------------------- Import Our Lib -------------------------------- %% #
 # ours:
-from uwarl_helper.uwarl_util import create_all_folders
-from uwarl_bag_utils.bag_parser import BagParser, TYPES_VAR
+from utils.uwarl_util import create_all_folders
+from utils.uwarl_bag_parser import BagParser, TYPES_VAR
+from utils.uwarl_plot import Color_Wheel, COLOR_TABLE_1, CMAP_Selector, HandlerColormap, get_color_table
 
-from src.uwarl_plot import Color_Wheel, COLOR_TABLE_1, CMAP_Selector, HandlerColormap, get_color_table
-from src.uwarl_common import PARSER_CALLBACKS
-
+from configs.uwarl_common import PARSER_CALLBACKS
+from configs.uwarl_test_set import TEST_SET_STEREO_IMU, TEST_SET_TEMPLATE
 
 # %% [markdown]
-# # 1. Pre-Config 
+# # 1. Pre-Config
+FIG_OUT_DIR = "/home/jx/UWARL_catkin_ws/src/vins-research-pkg/research-project/output/vins_analysis"
 
-# %% -------------------------------- Files Automation -------------------------------- %% #
+BAG_TEST_SET = TEST_SET_STEREO_IMU
+BAG_FILES_SELECTED = BAG_TEST_SET.EE_i2
+BAG_DRECTORY = BAG_TEST_SET.DIRECTORY
+
+FEATURE_PLOT_VOLTAGE_JOINT_EFFORTS = False
+FEATURE_OUTPUT_BAG_META = True
+
+print(f"BAG_FILES_SELECTED: {BAG_FILES_SELECTED}")
+print(f"BAG_DRECTORY: {BAG_DRECTORY}")
+
+# %% 
+# -------------------------------- Files Automation -------------------------------- %% #
 def decode_replayed_vins_bag_file_name(_bag_path:str):
     prefix = _bag_path.split("_recording_")[0]
     ic(prefix)
@@ -68,38 +81,17 @@ def auto_generate_labels_from_bag_file_name(list_of_bag_path:List[str]):
         _bag_dict[bag_label] = path
     return _bag_dict
 
-BAG_FILES = [
-    # ls ~/.ros/bag_replay_recorder_files , and copy output to here ~
-    "EE-1-0_S5-E30_0_DEMO_2_recording_2023-04-06-16-11-35_2023-04-13-17-32-23.bag",
-    "EE-1-1_S5-E30_1_DEMO_14_recording_2023-04-06-16-12-19_2023-04-13-17-32-58.bag",
-    "EE-1-2_S5-E30_2_DEMO_20_recording_2023-04-06-16-12-58_2023-04-13-17-33-33.bag",
-    "EE-1-3_S5-E30_3_DEMO_15_recording_2023-04-06-16-13-39_2023-04-13-17-34-08.bag",
-    "EE-1-4_S5-E30_4_DEMO_21_recording_2023-04-06-16-14-22_2023-04-13-17-34-44.bag",
-    "EE-1-5_S5-E30_5_DEMO_16_recording_2023-04-06-16-16-27_2023-04-13-17-35-19.bag",
-    "EE-1-6_S5-E30_6_DEMO_22_recording_2023-04-06-16-17-09_2023-04-13-17-35-54.bag",
-    "EE-1-7_S5-E30_7_DEMO_17_recording_2023-04-06-16-17-57_2023-04-13-17-36-29.bag",
-    "EE-1-8_S5-E30_8_DEMO_23_recording_2023-04-06-16-18-37_2023-04-13-17-37-04.bag",
-    "EE-1-9_S5-E30_9_DEMO_18_recording_2023-04-06-16-19-17_2023-04-13-17-37-39.bag",
-    "EE-1-10_S5-E30_10_DEMO_24_recording_2023-04-06-16-20-02_2023-04-13-17-38-15.bag",
-]
-
-AUTO_BAG_DICT = auto_generate_labels_from_bag_file_name(BAG_FILES)
-
+AUTO_BAG_DICT = auto_generate_labels_from_bag_file_name(BAG_FILES_SELECTED.value)
 ic(AUTO_BAG_DICT);
         
-# %% -------------------------------- Manager & Configs -------------------------------- %% #
-DIRECTORY = "/home/jx/.ros/bag_replay_recorder_files"
-FIG_OUT_DIR = "/home/jx/UWARL_catkin_ws/src/vins-research-pkg/research-project/output/vins_analysis"
+# %% 
+# -------------------------------- Manager & Configs -------------------------------- %% #
 BAG_DICT = AUTO_BAG_DICT
+
+# NOTE: to override the auto-gen bag_dict:
 # BAG_DICT = {
-#     # Copy the `AUTO_BAG_DICT` here:
+#     # Copy the `AUTO_BAG_DICT` or `info.yaml` here to select the bag files manually:
 #     'EE-88-Pt-F-s3-i5': 'EE-3-5_S5-E30_5_DEMO_32_recording_2023-04-06-16-26-52_2023-04-11-11-33-31.bag',
-#     'EE-CIR-Pt-D-s3-i2': 'EE-3-2_S5-E30_2_DEMO_28_recording_2023-04-06-16-24-47_2023-04-11-14-41-28.bag',
-#     'EE-CIR-Pt-LR-s3-i3': 'EE-3-3_S5-E30_3_DEMO_29_recording_2023-04-06-16-25-30_2023-04-11-11-31-56.bag',
-#     'EE-CIR-Pt-UD-s3-i4': 'EE-3-4_S5-E30_4_DEMO_30_recording_2023-04-06-16-26-09_2023-04-11-11-32-44.bag',
-#     'EE-FWD-Pt-UD-s1-i9': 'EE-1-9_S5-E30_9_DEMO_18_recording_2023-04-06-16-19-17_2023-04-11-11-26-32.bag',
-#     'EE-RVR-Pt-LR-s1-i8': 'EE-1-8_S5-E30_8_DEMO_23_recording_2023-04-06-16-18-37_2023-04-11-11-25-29.bag',
-#     'EE-RVR-Pt-UD-s1-i10': 'EE-1-10_S5-E30_10_DEMO_24_recording_2023-04-06-16-20-02_2023-04-11-11-27-38.bag'
 # }
 
 class AnalysisManager:
@@ -107,27 +99,45 @@ class AnalysisManager:
         - handle global settings and keep consistency
         - manage output folder
     """
-    _auto_save :bool = True
-    _auto_close :bool = False # Turn on to close all figures after saving
-    _output_dir :str = FIG_OUT_DIR
-    _bag_dict :Dict[str, str] = BAG_DICT
+    _auto_save  :bool 
+    _auto_close :bool 
+    _output_dir :str 
+    _bag_dict   :Dict[str, str]
+    _prefix     :str 
+    _bag_directory:str
     
-    def __init__(self, output_dir: str=FIG_OUT_DIR, bag_dict: Dict[str, str]=BAG_DICT, run_name: str="vins_analysis"):
+    def __init__(self, 
+            bag_dict, 
+            output_dir: str="", 
+            run_name: str="vins_analysis", 
+            test_set_name: str="default",
+            prefix: str="",
+            auto_save: bool=True,
+            auto_close: bool=False,
+            bag_directory: str="",
+        ):
+        self._bag_directory = bag_directory
+        self._auto_close = auto_close
+        self._auto_save = auto_save
+        self._prefix = prefix
         # create output folder
-        self._create_dir(output_dir, run_name)
+        self._create_dir(output_dir, run_name, test_set_name)
         # save info
         self._save_info(bag_dict=bag_dict)
     
-    def _create_dir(self, output_dir: str, run_name: str):
-        self._output_dir = f"{output_dir}/{run_name}"
+    def _create_dir(self, output_dir: str, run_name: str, test_set_name):
+        self._output_dir = f"{output_dir}/{run_name}/{test_set_name}/{self._prefix}"
         create_all_folders(self._output_dir)
 
     def _save_info(self, bag_dict: Dict[str, str]):
+        self._bag_dict = bag_dict
         self.save_dict(bag_dict, "info")
             
     def save_fig(self, fig, tag):
         if self._auto_save:
-            fig.savefig(f"{self._output_dir}/plot_{tag.replace(' ', '_')}.png", bbox_inches = 'tight')
+            file_name=f"{self._output_dir}/plot_{tag.replace(' ', '_')}.png"
+            fig.savefig(file_name, bbox_inches = 'tight')
+            print(f"Saved figure to {file_name}")
         if self._auto_close:
             plt.close(fig)
     
@@ -137,12 +147,22 @@ class AnalysisManager:
                 yaml.dump(data, f)
 
 BP = BagParser(PARSER_CALLBACKS)
-AM = AnalysisManager(run_name="run_{}".format(datetime.now().strftime("%Y-%m-%d")))
+AM = AnalysisManager(
+    bag_dict=AUTO_BAG_DICT,
+    output_dir=FIG_OUT_DIR,
+    run_name="run_{}".format(datetime.now().strftime("%Y-%m-%d")), 
+    test_set_name=BAG_TEST_SET.__name__,
+    prefix=BAG_FILES_SELECTED.name,
+    auto_save=True,
+    auto_close=False,
+    bag_directory=BAG_DRECTORY.value,
+)
 
 # %% [markdown]
 # # 2. Data Pre-Processing
 
-# %% -------------------------------- Processing -------------------------------- %% #
+# %% 
+# -------------------------------- Processing -------------------------------- %% #
 # Processed Data Object Placeholder
 class ProcessedData:
     """ Placeholder for processed data
@@ -159,10 +179,10 @@ class ProcessedData:
     dT: float = 0.0
     description: Dict[str, Union[str, float]] = {}
 
-    def __init__(self, DIRECTORY, BAG_PATH):
-        self._bag_path = BAG_PATH
+    def __init__(self, directory, bag_path):
+        self._bag_path = bag_path
         # load bag file:
-        BP.bind_bagfile(bagfile=f"{DIRECTORY}/{BAG_PATH}")
+        BP.bind_bagfile(bagfile=f"{directory}/{bag_path}")
         BP.load_bag_topics()
         self.bag_info = BP.get_bag_info_safe()
         self.bag_topics = BP.get_bag_topics_lut_safe()
@@ -184,18 +204,24 @@ class ProcessedData:
 # 1. Process and Aggregate data from multiple bags:
 pData={}
 for label, path in AM._bag_dict.items():
-    pData[label] = ProcessedData(DIRECTORY, path)
+    pData[label] = ProcessedData(AM._bag_directory, path)
         
 
-# %% -------------------------------- DEBUG -------------------------------- %% #
+# %% 
+# -------------------------------- DEBUG -------------------------------- %% #
 # DEBUG: save a sample here:
-# pD = pData["EE1-RVR-Pt-U/D"]
-# AM.save_dict(pD.bag_samples, "bag_samples")
+if FEATURE_OUTPUT_BAG_META:
+    for label, data in pData.items():
+        AM.save_dict(data.bag_samples, "bag_samples")
+        AM.save_dict(data.bag_topics, "bag_topics")
+        AM.save_dict(data.bag_info, "bag_info")
+        break
 
 # %% [markdown]
 # # 3. Plotting Multiple datasets from multiple bagfiles
 
-# %% -------------------------------- 2D Plot Functions -------------------------------- %% #
+# %% 
+# -------------------------------- 2D Plot Functions -------------------------------- %% #
 ## Generic Handy Multi-Segments Multi-Topical Plotting Functions:
 CWheel = Color_Wheel(get_color_table("tab10", 10))
 
@@ -240,7 +266,8 @@ def plot_data_sets_subplots(data_sets_xys, xlabel="", figsize=(5, 5)):
     return fig, axs
 
 
-# %% -------------------------------- Multi-Bag Plotter -------------------------------- %% #
+# %% 
+# -------------------------------- Multi-Bag Plotter -------------------------------- %% #
 class Bags_Data_Plot:
     DEFAULT_FIGSIZE = (5, 5)
     # list of data placeholder:
@@ -276,12 +303,27 @@ class Bags_Data_Plot:
         """
         _payload = {}
         _payload['t'] = []
+        _payload['t0'] = []
         for i in range(self.N_bags):
             _len = []
             
             if bag_topic in self.list_of_bags[i].bag_data:
                 topic_msg = self.list_of_bags[i].bag_data[bag_topic]
             
+                # append time stamps:
+                if(TYPES_VAR.TIME_STAMP_SEC in topic_msg):
+                    # grab time stamps from the bag file:
+                    _time = topic_msg[TYPES_VAR.TIME_STAMP_SEC] 
+                    _payload['t0'].append(_time[0]) # record time zero
+                    _time = np.subtract(_time, _time[0]) # reset to zero start time
+                else:
+                    # generate time stamps uniformly, if there is no timestamp in the bag file:
+                    dT_s = self.list_of_dT_s[i]
+                    _time = np.arange(0, dT_s, dT_s/len(_data))[0:len(_data)]
+                    _payload['t0'].append(0)
+                _payload['t'].append(_time)
+                
+                # append variables:
                 for var_type, symbol in dict_var_type.items():
                     if symbol not in _payload:
                         _payload[symbol] = [] # initialize
@@ -299,16 +341,6 @@ class Bags_Data_Plot:
                     _payload[symbol].append(_data)
                 
                 assert np.min(_len) == np.max(_len), f"Data variable lengths are expected to be same size in topic {_len}"
-                # append time stamps:
-                if(TYPES_VAR.TIME_STAMP_SEC in topic_msg):
-                    # grab time stamps from the bag file:
-                    _time = topic_msg[TYPES_VAR.TIME_STAMP_SEC] 
-                    _time = np.subtract(_time, _time[0]) # reset to zero start time
-                else:
-                    # generate time stamps uniformly, if there is no timestamp in the bag file:
-                    dT_s = self.list_of_dT_s[i]
-                    _time = np.arange(0, dT_s, dT_s/len(_data))[0:len(_data)]
-                _payload['t'].append(_time)
             
             else: # if does not exist in the bag file:
                 for var_type, symbol in dict_var_type.items():
@@ -321,7 +353,8 @@ class Bags_Data_Plot:
     
 # 2. Load into data plotter:
 BagPlot = Bags_Data_Plot(pData)
-# %% -------------------------------- Plot Functions -------------------------------- %% #
+# %% 
+# -------------------------------- Plot Functions -------------------------------- %% #
 
 def plot_time_series(bag_plot, data_sets_y, title=None, if_label_bags=True, figsize=Bags_Data_Plot.DEFAULT_FIGSIZE):
     """
@@ -393,58 +426,68 @@ def plot_time_parallel(bag_plot, data_sets_y, title=None, figsize=Bags_Data_Plot
 
 
 
-# %% -------------------------------- Plot: Voltage & Joint Efforts -------------------------------- %% #
+# %% 
+# -------------------------------- Plot: Voltage & Joint Efforts -------------------------------- #
 from scipy.ndimage import gaussian_filter1d
-# 3. assemble data sets:
-data_sets_y = {
-    "Voltage (V)"       : BagPlot.extract_data(
-        bag_topic="/uwarl/robotnik_base_hw/voltage", 
-        dict_var_type={TYPES_VAR.VOLTAGE: 'y'},
-    ),
-    "Joint Effort (Filtered) (N.m)": BagPlot.extract_data(
-        bag_topic="/wam/joint_states", 
-        dict_var_type={TYPES_VAR.JOINT_EFFORT: 'y'},
-        pre_process_func=lambda x: gaussian_filter1d(np.linalg.norm(x, axis=1), 3),
-    ),
-}
+if FEATURE_PLOT_VOLTAGE_JOINT_EFFORTS:
+    # 3. assemble data sets:
+    data_sets_y = {
+        "Voltage (V)"       : BagPlot.extract_data(
+            bag_topic="/uwarl/robotnik_base_hw/voltage", 
+            dict_var_type={TYPES_VAR.VOLTAGE: 'y'},
+        ),
+        "Joint Effort (Filtered) (N.m)": BagPlot.extract_data(
+            bag_topic="/wam/joint_states", 
+            dict_var_type={TYPES_VAR.JOINT_EFFORT: 'y'},
+            pre_process_func=lambda x: gaussian_filter1d(np.linalg.norm(x, axis=1), 3),
+        ),
+    }
 
-# 4. Plot:
-plot_time_series(BagPlot, data_sets_y)
-plot_time_parallel(BagPlot, data_sets_y, figsize=(15,4))
+    # 4. Plot:
+    plot_time_series(BagPlot, data_sets_y)
+    plot_time_parallel(BagPlot, data_sets_y, figsize=(15,4))
 
-# %% -------------------------------- Plot: 3D trajectories -------------------------------- %% #
+# %%
+# -------------------------------- Plot Data Prep: 3D trajectories -------------------------------- %% #
 # 3. assemble data sets:
-VICON_VARS = {
+POSE_VARS = {
     TYPES_VAR.POSITION_XYZ: 'y',
     TYPES_VAR.ORIENTATION_XYZW: 'r',
 }
-data_sets_3d = {
-    "WAM EE"       : BagPlot.extract_data(
-        bag_topic="/vicon/wam_EE/wam_EE", zeroing=True, dict_var_type=VICON_VARS,
-    ),
-    # "WAM Base"       : BagPlot.extract_data(
-    #     bag_topic="/vicon/wam_base/wam_base", zeroing=True,
-    #     dict_var_type={TYPES_VAR.POSITION_XYZ: 'y'},
+data_sets_3d = dict()
+if AM._prefix in [TEST_SET_TEMPLATE.Base_i8.name, TEST_SET_TEMPLATE.Base_i9.name]:
+    data_sets_3d["Summit Base"] = BagPlot.extract_data(
+        bag_topic="/vicon/summit_base/summit_base", zeroing=True, dict_var_type=POSE_VARS,
+    )
+else:
+    data_sets_3d["WAM EE"]= BagPlot.extract_data(
+        bag_topic="/vicon/wam_EE/wam_EE", zeroing=True, dict_var_type=POSE_VARS,
+    )
+    # data_sets_3d["WAM base"]= BagPlot.extract_data(
+    #     bag_topic="/vicon/base_EE/base_base", zeroing=True, dict_var_type=POSE_VARS,
     # ),
-    # "Summit Base"       : BagPlot.extract_data(
-    #     bag_topic="/vicon/summit_base/summit_base", zeroing=True,
-    #     dict_var_type={TYPES_VAR.POSITION_XYZ: 'y'},
-    # ),
+data_sets_3d.update({
     "VINS est"       : BagPlot.extract_data(
-        bag_topic="/vins_estimator/path", zeroing=True, dict_var_type=VICON_VARS,
+        bag_topic="/vins_estimator/path", zeroing=True, dict_var_type=POSE_VARS,
     ),
-    # "VINS loop-fusion"       : BagPlot.extract_data(
-    #     bag_topic="/loop_fusion/pose_graph_path", zeroing=True,
-    #     dict_var_type={TYPES_VAR.POSITION_XYZ: 'y'},
-    # ),
-}
-# %% Plot:
+    "VINS loop"       : BagPlot.extract_data(
+        bag_topic="/loop_fusion/pose_graph_path", zeroing=True, dict_var_type=POSE_VARS,
+    ),
+})
+
+for label,data in data_sets_3d.items():
+    print(f"> [{label}] t0:{data['t0']}")
+    
+# %% 
+# -------------------------------- Plot: 3D trajectories -------------------------------- %% #
+# 4. Plot:
 from scipy.spatial.transform import Rotation as R
 def plot_spatial(bag_plot, 
         data_sets_3d, title=None, 
         figsize=Bags_Data_Plot.DEFAULT_FIGSIZE, projection='3d', proj_type='ortho',
         N_sample=1, show_grid=True, view_angles=[(30,10),(70,45),(10,10)],
-        show_orientations=False, N_orientations_sample=10
+        show_orientations=False, N_orientations_sample=10,zero_orienting=False,
+        scatter_or_line="line",
 ):
     """ Plot is 3D Spatial Coordinates per data bag
         - muxing data from multiple topics
@@ -456,16 +499,18 @@ def plot_spatial(bag_plot,
     fig.subplots_adjust(wspace=0, hspace=0)
     axs = [fig.add_subplot(N_views,N_bags,i+1, projection=projection, proj_type=proj_type) for i in range(N_bags*N_views)]
     
-    CMAP = CMAP_Selector()
+    CMAP = CMAP_Selector("Seq2")
     cmap_handles, handler_map = CMAP.get_cmap_handles(N_color=len(data_sets_3d.keys()))  
-
+    if_scatter = scatter_or_line == "scatter"
     for j in range(N_bags):
         for i, (label, data) in enumerate(data_sets_3d.items()):
             # copy data:
-            t_ = np.array(data['t'][j][::N_sample].copy())
-            x_ = np.array(data['y'][j][::N_sample].copy())
-            
             is_data_valid = len(data['t'][j]) > 1
+                
+            if is_data_valid:
+                t_ = np.array(data['t'][j][::N_sample].copy())
+                x_ = np.array(data['y'][j][::N_sample].copy())
+            
             if is_data_valid:
                 # orientation correction:
                 xu_ = x_[::N_orientations_sample]
@@ -476,7 +521,7 @@ def plot_spatial(bag_plot,
                     ic(np.shape(uu_), np.shape(xu_), uu_[0])
                     r_ = R.from_quat(uu_)
 
-            if label == "VINS est" and is_data_valid:
+            if label in ["VINS est", "VINS loop"] and is_data_valid and zero_orienting is True:
                 # ic(label, j, u_[1:5])
                 # rr_ = R.from_quat(u_[1:5])
                 # ic(rr_.as_euler('zyx', degrees=True))
@@ -497,7 +542,11 @@ def plot_spatial(bag_plot,
                 axs[view_idx].set_zlabel("z")
                 # plot points:
                 if is_data_valid:
-                    axs[view_idx].scatter3D(x_[:,0], x_[:,1], x_[:,2], c=t_, cmap=CMAP[i])
+                    if if_scatter:
+                        axs[view_idx].scatter3D(x_[:,0], x_[:,1], x_[:,2], c=t_, cmap=CMAP[i], depthshade=True)
+                    else:
+                        axs[view_idx].plot3D(x_[:,0], x_[:,1], x_[:,2], color=CWheel[i], label=label)
+                        axs[view_idx].legend(bbox_to_anchor=(0.3, 0.9), fontsize=10)
                     if show_orientations:
                         ex_ = r_.apply([1,0,0])
                         ey_ = r_.apply([0,1,0])
@@ -513,21 +562,24 @@ def plot_spatial(bag_plot,
                 
         axs[j].set_title(f"{bag_plot.list_of_bag_labels[j]}")
         for k in range(N_views): # FIXME: all legens will show even there is no data plot, need sth else?? (no need for now)
-            axs[j+k*N_bags].legend(
-                handles=cmap_handles, labels=data_sets_3d.keys(), handler_map=handler_map, 
-                bbox_to_anchor=(0.3, 0.9), fontsize=10)
+            if if_scatter:
+                axs[j+k*N_bags].legend(
+                    handles=cmap_handles, labels=data_sets_3d.keys(), handler_map=handler_map, 
+                    bbox_to_anchor=(0.3, 0.9), fontsize=10)
     
     # save file:
     if title is None:
         title = " and ".join(data_sets_3d.keys())
-    AM.save_fig(fig, f"{title}_spatial")
+    AM.save_fig(fig, f"{title}_spatial_{scatter_or_line}")
         
     return fig, axs
 
 # # 4. Plot:
 ### pip install ipympl
 # fig, axs = plot_spatial(BagPlot, data_sets_3d, figsize=(10,8), view_angles=[(30,45)], show_orientations=False)
-fig, axs = plot_spatial(BagPlot, data_sets_3d, figsize=(10,8)) # default 3 views
+fig, axs = plot_spatial(BagPlot, data_sets_3d, figsize=(10,8), zero_orienting=False, scatter_or_line='scatter') # default 3 views
+plt.show()
+fig, axs = plot_spatial(BagPlot, data_sets_3d, figsize=(10,8), zero_orienting=False, scatter_or_line='line') # default 3 views
 plt.show()
 
 # fig.canvas.toolbar_visible = True
