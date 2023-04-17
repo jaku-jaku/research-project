@@ -30,14 +30,14 @@ from utils.uwarl_bag_parser import BagParser, TYPES_VAR
 from utils.uwarl_plot import Color_Wheel, COLOR_TABLE_1, CMAP_Selector, HandlerColormap, get_color_table
 
 from configs.uwarl_common import PARSER_CALLBACKS
-from configs.uwarl_test_set import TEST_SET_STEREO_IMU, TEST_SET_TEMPLATE
+from configs.uwarl_test_set import TEST_SET_STEREO_IMU, TEST_SET_MONO_IMU, TEST_SET_STEREO
 
 # %% [markdown]
 # # 1. Pre-Config
 FIG_OUT_DIR = "/home/jx/UWARL_catkin_ws/src/vins-research-pkg/research-project/output/vins_analysis"
 
 BAG_TEST_SET = TEST_SET_STEREO_IMU
-BAG_FILES_SELECTED = BAG_TEST_SET.EE_i2
+BAG_FILES_SELECTED = BAG_TEST_SET.Base_i9
 BAG_DRECTORY = BAG_TEST_SET.DIRECTORY
 
 FEATURE_PLOT_VOLTAGE_JOINT_EFFORTS = False
@@ -455,7 +455,7 @@ POSE_VARS = {
     TYPES_VAR.ORIENTATION_XYZW: 'r',
 }
 data_sets_3d = dict()
-if AM._prefix in [TEST_SET_TEMPLATE.Base_i8.name, TEST_SET_TEMPLATE.Base_i9.name]:
+if AM._prefix in [BAG_TEST_SET.Base_i8.name, BAG_TEST_SET.Base_i9.name]:
     data_sets_3d["Summit Base"] = BagPlot.extract_data(
         bag_topic="/vicon/summit_base/summit_base", zeroing=True, dict_var_type=POSE_VARS,
     )
