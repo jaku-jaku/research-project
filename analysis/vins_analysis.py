@@ -30,18 +30,20 @@ from utils.uwarl_bag_parser import BagParser, TYPES_VAR
 from utils.uwarl_plot import Color_Wheel, COLOR_TABLE_1, CMAP_Selector, HandlerColormap, get_color_table
 
 from configs.uwarl_common import PARSER_CALLBACKS
-from configs.uwarl_test_set import TEST_SET_STEREO_IMU, TEST_SET_MONO_IMU, TEST_SET_STEREO
+from configs.uwarl_test_set import TEST_SET_STEREO_IMU, TEST_SET_MONO_IMU, TEST_SET_STEREO, TEST_SET_SINGLE
 
 # %% [markdown]
 # # 1. Pre-Config
 FIG_OUT_DIR = "/home/jx/UWARL_catkin_ws/src/vins-research-pkg/research-project/output/vins_analysis"
 
-BAG_TEST_SET = TEST_SET_STEREO_IMU
-BAG_FILES_SELECTED = BAG_TEST_SET.Base_i9
-BAG_DRECTORY = BAG_TEST_SET.DIRECTORY
+BAG_TEST_SET        = TEST_SET_SINGLE
+BAG_FILES_SELECTED  = BAG_TEST_SET.Base_i9
+BAG_DRECTORY        = BAG_TEST_SET.DIRECTORY
 
-FEATURE_PLOT_VOLTAGE_JOINT_EFFORTS = False
-FEATURE_OUTPUT_BAG_META = True
+FEATURE_PLOT_VOLTAGE_JOINT_EFFORTS  = True
+FEATURE_OUTPUT_BAG_META             = True
+FEATURE_AUTO_SAVE                   = True
+FEATURE_AUTO_CLOSE_FIGS             = False
 
 print(f"BAG_FILES_SELECTED: {BAG_FILES_SELECTED}")
 print(f"BAG_DRECTORY: {BAG_DRECTORY}")
@@ -153,8 +155,8 @@ AM = AnalysisManager(
     run_name="run_{}".format(datetime.now().strftime("%Y-%m-%d")), 
     test_set_name=BAG_TEST_SET.__name__,
     prefix=BAG_FILES_SELECTED.name,
-    auto_save=True,
-    auto_close=False,
+    auto_save=FEATURE_AUTO_SAVE,
+    auto_close=FEATURE_AUTO_CLOSE_FIGS,
     bag_directory=BAG_DRECTORY.value,
 )
 
@@ -306,6 +308,7 @@ class Bags_Data_Plot:
         _payload['t0'] = []
         for i in range(self.N_bags):
             _len = []
+            dT_s = self.list_of_dT_s[i]
             
             if bag_topic in self.list_of_bags[i].bag_data:
                 topic_msg = self.list_of_bags[i].bag_data[bag_topic]
@@ -316,14 +319,10 @@ class Bags_Data_Plot:
                     _time = topic_msg[TYPES_VAR.TIME_STAMP_SEC] 
                     _payload['t0'].append(_time[0]) # record time zero
                     _time = np.subtract(_time, _time[0]) # reset to zero start time
-                else:
-                    # generate time stamps uniformly, if there is no timestamp in the bag file:
-                    dT_s = self.list_of_dT_s[i]
-                    _time = np.arange(0, dT_s, dT_s/len(_data))[0:len(_data)]
-                    _payload['t0'].append(0)
-                _payload['t'].append(_time)
+
                 
                 # append variables:
+                _data = None
                 for var_type, symbol in dict_var_type.items():
                     if symbol not in _payload:
                         _payload[symbol] = [] # initialize
@@ -339,8 +338,15 @@ class Bags_Data_Plot:
                     
                     _len.append(len(_data))
                     _payload[symbol].append(_data)
+                    
+                if(TYPES_VAR.TIME_STAMP_SEC not in topic_msg) and _data is not None:
+                    # generate time stamps uniformly, if there is no timestamp in the bag file:
+                    _time = np.arange(0, dT_s, dT_s/len(_data))[0:len(_data)]
+                    _payload['t0'].append(0)
                 
                 assert np.min(_len) == np.max(_len), f"Data variable lengths are expected to be same size in topic {_len}"
+                # append time stamps:
+                _payload['t'].append(_time)
             
             else: # if does not exist in the bag file:
                 for var_type, symbol in dict_var_type.items():
