@@ -6,7 +6,7 @@ from datetime import datetime
 from dataclasses import dataclass
 from typing import Dict, List, Tuple, Union, Callable, Optional
 from enum import Enum
-
+from pathlib import Path
 
 # 3rd party lib
 import pandas as pd
@@ -34,10 +34,10 @@ from configs.uwarl_test_set import TEST_SET_STEREO_IMU, TEST_SET_MONO_IMU, TEST_
 
 # %% [markdown]
 # # 1. Pre-Config
-FIG_OUT_DIR = "/home/jx/UWARL_catkin_ws/src/vins-research-pkg/research-project/output/vins_analysis"
+FIG_OUT_DIR = f"{Path.home()}/UWARL_catkin_ws/src/vins-research-pkg/research-project/output/vins_analysis"
 
 BAG_TEST_SET        = TEST_SET_SINGLE
-BAG_FILES_SELECTED  = BAG_TEST_SET.Base_i9
+BAG_FILES_SELECTED  = BAG_TEST_SET.Base_i8
 BAG_DRECTORY        = BAG_TEST_SET.DIRECTORY
 
 FEATURE_PLOT_VOLTAGE_JOINT_EFFORTS  = True
@@ -591,5 +591,21 @@ plt.show()
 # fig.canvas.toolbar_visible = True
 # fig.canvas.header_visible = True
 # fig.canvas.resizable = True
+
+# %%
+
+POSE_VARS = {
+    TYPES_VAR.JOINT_POSITION: 'x',
+}
+data_sets_states = dict()
+data_sets_states.update({
+    "Joint States"       : BagPlot.extract_data(
+        bag_topic="/wam/joint_states", zeroing=True, dict_var_type=POSE_VARS,
+    ),
+})
+
+# %%
+traj = data_sets_states['Joint States']['x'][0]
+traj_10 = np.concatenate((np.zeros((len(traj), 3)),traj), axis=1)
 
 # %%

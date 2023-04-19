@@ -1,7 +1,8 @@
 from enum import Enum
+from pathlib import Path
 
 class TEST_SET_MONO_IMU(Enum):
-    DIRECTORY = "/home/jx/.ros/bag_replay_recorder_files/mono_imu"
+    DIRECTORY = f"{Path.home()}/.ros/bag_replay_recorder_files/mono_imu"
     EE_i0 = [
     ]
     EE_i1 = [
@@ -61,7 +62,7 @@ class TEST_SET_MONO_IMU(Enum):
     ]
     
 class TEST_SET_STEREO_IMU(Enum):
-    DIRECTORY = "/home/jx/.ros/bag_replay_recorder_files/stereo_imu"
+    DIRECTORY = f"{Path.home()}/.ros/bag_replay_recorder_files/stereo_imu"
     EE_i0 = [
     ]
     EE_i1 = [
@@ -122,7 +123,7 @@ class TEST_SET_STEREO_IMU(Enum):
 
 
 class TEST_SET_STEREO(Enum):
-    DIRECTORY = "/home/jx/.ros/bag_replay_recorder_files/stereo"
+    DIRECTORY = f"{Path.home()}/.ros/bag_replay_recorder_files/stereo"
     EE_i0 = [
     ]
     EE_i1 = [    
@@ -184,7 +185,7 @@ class TEST_SET_STEREO(Enum):
 
 # ==================================================================================================== TEMPLATE:
 class TEST_SET_TEMPLATE(Enum):
-    DIRECTORY = "/home/jx/.ros/bag_replay_recorder_files"
+    DIRECTORY = f"{Path.home()}/.ros/bag_replay_recorder_files"
     EE_i0 = [
     ]
     EE_i1 = [
@@ -199,7 +200,7 @@ class TEST_SET_TEMPLATE(Enum):
     ]
 # ==================================================================================================== TEST_SET_TEMPLATE:
 class TEST_SET_SINGLE(Enum):
-    DIRECTORY = "/home/jx/.ros/bag_replay_recorder_files/mono_imu"
+    DIRECTORY = f"{Path.home()}/.ros/bag_replay_recorder_files/mono_imu"
     EE_i0 = [
     ]
     EE_i1 = [
