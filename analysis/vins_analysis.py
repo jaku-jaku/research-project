@@ -594,18 +594,18 @@ plt.show()
 
 # %%
 
-POSE_VARS = {
-    TYPES_VAR.JOINT_POSITION: 'x',
-}
-data_sets_states = dict()
-data_sets_states.update({
-    "Joint States"       : BagPlot.extract_data(
-        bag_topic="/wam/joint_states", zeroing=True, dict_var_type=POSE_VARS,
-    ),
-})
+# POSE_VARS = {
+#     TYPES_VAR.JOINT_POSITION: 'x',
+# }
+# data_sets_states = dict()
+# data_sets_states.update({
+#     "Joint States"       : BagPlot.extract_data(
+#         bag_topic="/wam/joint_states", zeroing=True, dict_var_type=POSE_VARS,
+#     ),
+# })
 
-# %%
-traj = data_sets_states['Joint States']['x'][0]
-traj_10 = np.concatenate((np.zeros((len(traj), 3)),traj), axis=1)
+# # %%
+# traj = data_sets_states['Joint States']['x'][0]
+# traj_10 = np.concatenate((np.zeros((len(traj), 3)),traj), axis=1)
 
 # %%
