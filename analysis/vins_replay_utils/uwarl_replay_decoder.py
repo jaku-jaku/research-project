@@ -21,7 +21,7 @@ def auto_generate_labels_from_bag_file_name(list_of_bag_path:List[str]):
     # auto generate labels based on demo id
     id_list = ["NULL"]
     for konfig_base in ["FIX", "SPI", "FWD", "RVR", "CIR", "88"]:
-        for kongig_arm in ["Home", "Pt-F", "Pt-U", "Pt-D", "Pt-LR", "Pt-UD"]:
+        for kongig_arm in ["Ext-F", "Pt-F", "Pt-U", "Pt-D", "Pt-LR", "Pt-UD"]:
             id_list.append(f"{konfig_base}-{kongig_arm}")
         
     _bag_dict = dict()

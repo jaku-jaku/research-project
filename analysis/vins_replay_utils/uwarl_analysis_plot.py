@@ -53,7 +53,10 @@ class AnalysisManager:
 
     def _save_info(self, bag_dict: Dict[str, str]):
         self._bag_dict = bag_dict
-        self.save_dict(bag_dict, "info")
+        if bag_dict: # only if exists
+            self.save_dict(bag_dict, "info")
+        else:
+            print(" [WARNING] Empty bag_dict!")
             
     def save_fig(self, fig, tag):
         if self._auto_save:
