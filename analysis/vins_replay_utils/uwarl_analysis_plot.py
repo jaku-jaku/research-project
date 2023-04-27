@@ -58,7 +58,9 @@ class AnalysisManager:
         else:
             print(" [WARNING] Empty bag_dict!")
             
-    def save_fig(self, fig, tag):
+    def save_fig(self, fig, tag, title=None):
+        if title:
+            plt.title(title)
         if self._auto_save:
             file_name=f"{self._output_dir}/plot_{tag.replace(' ', '_')}.png"
             fig.savefig(file_name, bbox_inches = 'tight')

@@ -78,9 +78,15 @@ class MultiSensor_Camera_Node:
         ax.set_zlabel('z')
         return fig, ax
 
+    def get_cam_extrinsic(self, index):
+        return np.array(self._cam_config[f"body_T_cam{index}"]["data"]).reshape((4,4))
+    
+    def get_cam_aspect_ratio(self, index):
+        return self._cam_subconfigs[index]["image_height"] / self._cam_subconfigs[index]["image_width"]
+
     def plot_camera(self, 
             ax, RBT_SE3=np.eye(4), 
-            show_body_origin=True, show_axis=True, 
+            show_body_origin=True, show_axis=True, auto_adjust_frame=True,
             axis_length=0.15,
             alpha=0.35, linewidths=0.3,
             facecolors='g', edgecolors='r',
@@ -90,37 +96,57 @@ class MultiSensor_Camera_Node:
         @RBT_SE3 Rigid Body Transformation Matrix in \SE(3)
         """
         for i in range(self._n_cams): 
-            extrinsic       = np.array(self._cam_config[f"body_T_cam{i}"]["data"]).reshape((4,4))
-            aspect_ratio    = self._cam_subconfigs[i]["image_height"] / self._cam_subconfigs[i]["image_width"]
-            self.plot_camera_extrinsic(ax, extrinsic, RBT_SE3=RBT_SE3, aspect_ratio=aspect_ratio, f_length=axis_length,
-                show_axis=show_axis, facecolors=facecolors, linewidths=linewidths, edgecolors=edgecolors, alpha=alpha)
+            extrinsic = self.get_cam_extrinsic(index=i)
+            aspect_ratio = self.get_cam_aspect_ratio(index=i)
+            self.plot_wireframe_camera(ax, extrinsic, RBT_SE3=RBT_SE3, aspect_ratio=aspect_ratio, f_length=axis_length,
+                show_axis=show_axis, facecolors=facecolors, linewidths=linewidths, edgecolors=edgecolors, alpha=alpha, 
+                auto_adjust_frame=auto_adjust_frame)
             ic(extrinsic)
 
         if (self._if_imu and show_axis) or show_body_origin:
             self.plot_axis(ax, RBT_SE3=RBT_SE3, q_length=axis_length)
-
-    def plot_camera_extrinsic(self, 
+        
+    def plot_wireframe_camera(self, 
             ax, extrinsic, RBT_SE3=np.eye(4,4), 
             f_length=0.15, aspect_ratio=0.1,
-            show_axis=True, 
+            show_axis=True, auto_adjust_frame=False,
             alpha=0.35, linewidths=0.3,
-            facecolors='g', edgecolors='r',
+            facecolors='g', edgecolors='r', 
         ):
-        vertex_std = np.array([[0, 0, 0, 1],
-                               [ f_length * aspect_ratio, -f_length * aspect_ratio, f_length, 1],
-                               [ f_length * aspect_ratio,  f_length * aspect_ratio, f_length, 1],
-                               [-f_length * aspect_ratio,  f_length * aspect_ratio, f_length, 1],
-                               [-f_length * aspect_ratio, -f_length * aspect_ratio, f_length, 1]])
-        vertex_transformed = vertex_std @ extrinsic.T
-        vertex_transformed = vertex_transformed @ RBT_SE3.T
+        vertex_std = [  [ 0, 0,0,1],
+                        [ 1,-1,1,1],
+                        [ 1, 1,1,1],
+                        [-1, 1,1,1],
+                        [-1,-1,1,1],]
+        # scaling:
+        vertex_std = vertex_std * np.array([f_length * aspect_ratio, f_length * aspect_ratio, f_length, 1]).T
+        vertex_std = vertex_std.T
+        # extrinsic transformation:
+        vertex_transformed = extrinsic @ vertex_std
+        # rigid body transformation:
+        vertex_transformed = RBT_SE3 @ vertex_transformed
+        vertex_transformed = vertex_transformed.T
+        # mesh construction:
         meshes = [[vertex_transformed[0, :-1], vertex_transformed[1][:-1], vertex_transformed[2, :-1]],
                   [vertex_transformed[0, :-1], vertex_transformed[2, :-1], vertex_transformed[3, :-1]],
                   [vertex_transformed[0, :-1], vertex_transformed[3, :-1], vertex_transformed[4, :-1]],
                   [vertex_transformed[0, :-1], vertex_transformed[4, :-1], vertex_transformed[1, :-1]],
                   [vertex_transformed[1, :-1], vertex_transformed[2, :-1], vertex_transformed[3, :-1], vertex_transformed[4, :-1]]]
+        # collection plot:
         ax.add_collection3d(
             Poly3DCollection(meshes, facecolors=facecolors, linewidths=linewidths, edgecolors=edgecolors, alpha=alpha))
         
+        # auto adjust bounds
+        if auto_adjust_frame:
+            graph_size = np.max(np.max(np.abs(vertex_transformed[:,:-1])))
+            if graph_size > np.max(ax.get_ylim()):
+                graph_size = [-graph_size, graph_size]
+                ax.set_xlim(graph_size)
+                ax.set_ylim(graph_size)
+                ax.set_zlim(graph_size)
+                print(" [WARN] the extrinsic is out-of scope, readjusting wire-frame.")
+        
+        # axis plot:
         if show_axis:
             pose = RBT_SE3 @ extrinsic
             self.plot_axis(ax, RBT_SE3=pose, q_length=f_length/3)
