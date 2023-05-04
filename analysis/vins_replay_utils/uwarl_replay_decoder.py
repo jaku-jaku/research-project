@@ -4,20 +4,24 @@ from datetime import datetime
 from icecream import ic
 
 def decode_replayed_vins_bag_file_name(_bag_path:str):
-    prefix = _bag_path.split("_recording_")[0]
-    unique_id, t_window, run_id, _, demo_id = prefix.split("_")
+    prefix = _bag_path.split("_vins-replay")[0]
+    unique_id, demo_id = prefix.split("_")
     tag, session_id, run_id = unique_id.split("-")
+    _, demo_id_int = demo_id.split("-")
     description = {
         "cam-session-run": unique_id,
         "tag": tag,
         "session_id": session_id,
-        "dt": t_window,
-        "demo": demo_id,
+        "dt": "NA",
+        "demo": demo_id_int,
         "run_id": run_id,
     }
     return description
 
-def auto_generate_labels_from_bag_file_name(list_of_bag_path:List[str]):
+def auto_generate_labels_from_bag_file_name(
+    list_of_bag_path:List[str],
+):
+    # TODO: this is not scalable, depending on the demo code
     # auto generate labels based on demo id
     id_list = ["NULL"]
     for konfig_base in ["FIX", "SPI", "FWD", "RVR", "CIR", "88"]:

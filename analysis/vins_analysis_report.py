@@ -18,7 +18,7 @@ from utils.uwarl_bag_parser import BagParser, TYPES_VAR
 
 from configs.uwarl_common import PARSER_CALLBACKS
 # from configs.uwarl_test_set import TEST_SET_STEREO_IMU, TEST_SET_MONO_IMU, TEST_SET_STEREO, TEST_SET_SINGLE
-from configs.uwarl_test_set_d455 import TEST_SET_MONO_RGB_IMU, TEST_SET_MONO_IMU, TEST_SET_STEREO_IMU, TEST_SET_STEREO
+from configs.uwarl_test_set_d455 import TEST_SET_TITLE, TEST_SET_MONO_RGB_IMU, TEST_SET_MONO_IMU, TEST_SET_STEREO_IMU, TEST_SET_STEREO
 
 from vins_replay_utils.uwarl_replay_decoder import auto_generate_labels_from_bag_file_name, ProcessedData
 from vins_replay_utils.uwarl_analysis_plot import AnalysisManager, MultiBagsDataManager, plot_time_parallel, plot_time_series, plot_spatial
@@ -31,8 +31,8 @@ FEATURE_AUTO_SAVE                   = True
 FEATURE_AUTO_CLOSE_FIGS             = True
 FEATURE_OUTPUT_BAG_META             = True
 
-FEATURE_PLOT_VOLTAGE_JOINT_EFFORTS  = False
-FEATURE_PLOT_3D_TRAJECTORIES        = False
+FEATURE_PLOT_VOLTAGE_JOINT_EFFORTS  = True
+FEATURE_PLOT_3D_TRAJECTORIES        = True
 FEATURE_PLOT_CAM_CONFIGS            = False
 
 PLOT_FEATURE_FIG_SIZE               = (5,4)
@@ -51,11 +51,12 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
     ic(AUTO_BAG_DICT);
             
     # -------------------------------- Manager & Configs -------------------------------- %% #
+    date_time = datetime.now().strftime("%Y-%m-%d")
     BP = BagParser(PARSER_CALLBACKS)
     AM = AnalysisManager(
         bag_dict=AUTO_BAG_DICT,
         output_dir=FIG_OUT_DIR,
-        run_name="run_{}".format(datetime.now().strftime("%Y-%m-%d")), 
+        run_name=f"run_{date_time}/{TEST_SET_TITLE}", 
         test_set_name=bag_test_case_name,
         prefix=bag_subset.name,
         auto_save=FEATURE_AUTO_SAVE,
@@ -124,7 +125,7 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
         }
         data_sets_3d = dict()
         # TODO: please re-orient Vicon data based on the initial orientation:
-        if "Base" in AM._prefix:
+        if "base" in AM._prefix:
             data_sets_3d["Vicon Base"]         = DM.extract_data(
                 bag_topic="/vicon/summit_base/summit_base", zeroing=True, dict_var_type=POSE_VARS,
             )
@@ -176,7 +177,8 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
 
 # -------------------------------- bag_test_set -------------------------------- #
 # go through each test set:
-for bag_test_case in [TEST_SET_MONO_RGB_IMU, TEST_SET_MONO_IMU, TEST_SET_STEREO_IMU, TEST_SET_STEREO]:
+for bag_test_case in [TEST_SET_MONO_RGB_IMU, TEST_SET_STEREO_IMU]:
+    #[TEST_SET_MONO_RGB_IMU, TEST_SET_MONO_IMU, TEST_SET_STEREO_IMU, TEST_SET_STEREO]:
     # go through all the bags set in each test set
     for bag_subset in bag_test_case:
         if_valid = bag_subset is not bag_test_case.CONFIG
@@ -184,3 +186,4 @@ for bag_test_case in [TEST_SET_MONO_RGB_IMU, TEST_SET_MONO_IMU, TEST_SET_STEREO_
         if if_valid and if_exist:
             generate_report(bag_test_case.__name__, bag_test_case.CONFIG.value, bag_subset)
             
+# %%

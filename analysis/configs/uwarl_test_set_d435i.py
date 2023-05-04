@@ -1,3 +1,4 @@
+# ARCHIVED: no longer supported
 from enum import Enum
 from pathlib import Path
 
