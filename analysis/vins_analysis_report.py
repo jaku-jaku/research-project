@@ -18,20 +18,28 @@ from utils.uwarl_bag_parser import BagParser, TYPES_VAR
 
 from configs.uwarl_common import PARSER_CALLBACKS
 # from configs.uwarl_test_set import TEST_SET_STEREO_IMU, TEST_SET_MONO_IMU, TEST_SET_STEREO, TEST_SET_SINGLE
-from configs.uwarl_test_set_d455 import TEST_SET_TITLE, TEST_SET_MONO_RGB_IMU, TEST_SET_MONO_IMU, TEST_SET_STEREO_IMU, TEST_SET_STEREO
+from configs.uwarl_test_set_d455 import (
+    TEST_SET_TITLE, TEST_SET_MONO_RGB_IMU, 
+    TEST_SET_MONO_RGB_IMU_ACC_TIC, 
+    TEST_SET_MONO_RGB_IMU_INIT_GUESS_TIC,
+    TEST_SET_MONO_RGB_IMU_ACC_TCI,
+    TEST_SET_MONO_RGB_IMU_ACC_TIC_MANUFACTURED,
+    TEST_SET_MONO_RGB_IMU_ACC_TIC_V2,
+)
 
 from vins_replay_utils.uwarl_replay_decoder import auto_generate_labels_from_bag_file_name, ProcessedData
 from vins_replay_utils.uwarl_analysis_plot import AnalysisManager, MultiBagsDataManager, plot_time_parallel, plot_time_series, plot_spatial
 
 from vins_replay_utils.uwarl_camera import MultiSensor_Camera_Node
+
 # -------------------------------- Files Automation -------------------------------- %% #
 # # 1. Pre-Config
 FIG_OUT_DIR = f"{Path.home()}/UWARL_catkin_ws/src/vins-research-pkg/research-project/output/vins_analysis"
 FEATURE_AUTO_SAVE                   = True
 FEATURE_AUTO_CLOSE_FIGS             = True
-FEATURE_OUTPUT_BAG_META             = True
+FEATURE_OUTPUT_BAG_META             = False
 
-FEATURE_PLOT_VOLTAGE_JOINT_EFFORTS  = True
+FEATURE_PLOT_VOLTAGE_JOINT_EFFORTS  = False
 FEATURE_PLOT_3D_TRAJECTORIES        = True
 FEATURE_PLOT_CAM_CONFIGS            = False
 
@@ -43,13 +51,14 @@ PLOT_FEATURE_VIEW_ANGLES            = [(30,10),(70,45),(10,10)]
 FEATURE_PROCESS_BAGS = (FEATURE_PLOT_VOLTAGE_JOINT_EFFORTS or FEATURE_PLOT_3D_TRAJECTORIES)
 # -------------------------------- REPORT -------------------------------- %% #
 def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
-    
+
+#%%
     if FEATURE_PROCESS_BAGS:
         AUTO_BAG_DICT = auto_generate_labels_from_bag_file_name(bag_subset.value)
     else:
         AUTO_BAG_DICT = None
     ic(AUTO_BAG_DICT);
-            
+#%%         
     # -------------------------------- Manager & Configs -------------------------------- %% #
     date_time = datetime.now().strftime("%Y-%m-%d")
     BP = BagParser(PARSER_CALLBACKS)
@@ -63,7 +72,7 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
         auto_close=FEATURE_AUTO_CLOSE_FIGS,
         bag_directory=bag_test_case_config["directory"],
     )
-
+#%%
     # # 2. Data Pre-Processing
     # -------------------------------- Pre-Processing -------------------------------- %% #
     # 0. Process Config File
@@ -84,11 +93,12 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
     # DEBUG: save a sample here:
     if FEATURE_OUTPUT_BAG_META and FEATURE_PROCESS_BAGS:
         for label, data in pData.items():
+            AM.save_dict(data._bag_dict, "info")
             AM.save_dict(data.bag_samples, "bag_samples")
             AM.save_dict(data.bag_topics, "bag_topics")
             AM.save_dict(data.bag_info, "bag_info")
             break
-
+#%%
     # # 3. Plotting Multiple datasets from multiple bagfiles
     # -------------------------------- Multi-Bag Data -------------------------------- %% #    
     # 2. Load into data plotter:
@@ -113,9 +123,11 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
         }
 
         # 4. Plot:
-        plot_time_series(AM, DM, data_sets_y)
-        plot_time_parallel(AM, DM, data_sets_y, figsize=(15,4))
-
+        fig,ax,title = plot_time_series(DM, data_sets_y)
+        AM.save_fig(fig, title)
+        fig,ax,title = plot_time_parallel(DM, data_sets_y, figsize=(15,4))
+        AM.save_fig(fig, title)
+#%%
     # -------------------------------- Plot Data Prep: 3D trajectories -------------------------------- %% #
     if FEATURE_PLOT_3D_TRAJECTORIES:
         # 3. assemble data sets:
@@ -154,22 +166,26 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
 
         for label,data in data_sets_3d.items():
             print(f"> [{label}] t0:{data['t0']}")
-            
+#%%
         # # 4. Plot:
         ### pip install ipympl
         # fig, axs = plot_spatial(BagPlot, data_sets_3d, figsize=(10,8), view_angles=[(30,45)], show_orientations=False)
-        fig, axs = plot_spatial(AM, DM, data_sets_3d, scatter_or_line='scatter',
+        fig, axs, title = plot_spatial(DM, data_sets_3d, scatter_or_line='scatter',
             figsize=PLOT_FEATURE_FIG_SIZE, 
             zero_orienting=True, 
             show_orientations=PLOT_FEATURE_SHOW_ORIENTATIONS,
             view_angles=PLOT_FEATURE_VIEW_ANGLES,
         ) # default 3 views
-        fig, axs = plot_spatial(AM, DM, data_sets_3d, scatter_or_line='line',
+        AM.save_fig(fig, title)
+        
+        fig, axs, title = plot_spatial(DM, data_sets_3d, scatter_or_line='line',
             figsize=PLOT_FEATURE_FIG_SIZE, 
             zero_orienting=PLOT_FEATURE_ORIENTING,
             show_orientations=PLOT_FEATURE_SHOW_ORIENTATIONS,
             view_angles=PLOT_FEATURE_VIEW_ANGLES,
         ) # default 3 views
+        AM.save_fig(fig, title)
+        
 
 # %% MAIN --------------------------------:
 # - organize your replayed vins dataset in `uwarl_test_set.py`
@@ -177,13 +193,15 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
 
 # -------------------------------- bag_test_set -------------------------------- #
 # go through each test set:
-for bag_test_case in [TEST_SET_MONO_RGB_IMU, TEST_SET_STEREO_IMU]:
+for bag_test_case in [TEST_SET_MONO_RGB_IMU_ACC_TIC_V2]:
+    #TEST_SET_MONO_RGB_IMU_ACC_TIC, TEST_SET_MONO_RGB_IMU_INIT_GUESS_TIC]:
     #[TEST_SET_MONO_RGB_IMU, TEST_SET_MONO_IMU, TEST_SET_STEREO_IMU, TEST_SET_STEREO]:
     # go through all the bags set in each test set
-    for bag_subset in bag_test_case:
-        if_valid = bag_subset is not bag_test_case.CONFIG
+    for bag_subset in bag_test_case.TESTSET.value:
         if_exist = len(bag_subset.value) > 0
-        if if_valid and if_exist:
+        if if_exist:
             generate_report(bag_test_case.__name__, bag_test_case.CONFIG.value, bag_subset)
+        else:
+            print(f"WARNING, test subset is empty, skipping tests {bag_subset.name}")
             
 # %%

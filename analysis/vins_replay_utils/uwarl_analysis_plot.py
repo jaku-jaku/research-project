@@ -45,24 +45,20 @@ class AnalysisManager:
         # create output folder
         self._create_dir(output_dir, run_name, test_set_name)
         # save info
-        self._save_info(bag_dict=bag_dict)
+        self._bag_dict = bag_dict
+        if not bag_dict: # only if exists
+            print(" [WARNING] Empty bag_dict!")
     
     def _create_dir(self, output_dir: str, run_name: str, test_set_name):
-        self._output_dir = f"{output_dir}/{run_name}/{test_set_name}/{self._prefix}"
+        self._output_dir = f"{output_dir}/{run_name}/{test_set_name}"#/{self._prefix}"
         create_all_folders(self._output_dir)
 
-    def _save_info(self, bag_dict: Dict[str, str]):
-        self._bag_dict = bag_dict
-        if bag_dict: # only if exists
-            self.save_dict(bag_dict, "info")
-        else:
-            print(" [WARNING] Empty bag_dict!")
-            
     def save_fig(self, fig, tag, title=None):
         if title:
             plt.title(title)
         if self._auto_save:
-            file_name=f"{self._output_dir}/plot_{tag.replace(' ', '_')}.png"
+            output_path=self.output_path()
+            file_name=f"{output_path}plot_{tag.replace(' ', '_')}.png"
             fig.savefig(file_name, bbox_inches = 'tight')
             print(f"Saved figure to {file_name}")
         if self._auto_close:
@@ -73,9 +69,13 @@ class AnalysisManager:
     
     def save_dict(self, data, file_name):
         if self._auto_save:
-            with open(f"{self._output_dir}/{file_name}.yaml", "w") as f:
+            output_path=self.output_path()
+            with open(f"{output_path}{file_name}.yaml", "w") as f:
                 yaml.dump(data, f)
 
+    def output_path(self):
+        return f"{self._output_dir}/{self._prefix}_"
+    
 # -------------------------------- Multi-Bag Plotter -------------------------------- %% #
 class MultiBagsDataManager:
     # list of data placeholder:
@@ -219,7 +219,7 @@ def plot_data_sets_subplots(data_sets_xys, xlabel="", figsize=(5, 5)):
 # %% 
 # -------------------------------- Plot Time Functions -------------------------------- %% #
 
-def plot_time_series(AM, bag_plot, data_sets_y, title=None, if_label_bags=True, figsize=DEFAULT_FIGSIZE):
+def plot_time_series(bag_plot, data_sets_y, title=None, if_label_bags=True, figsize=DEFAULT_FIGSIZE):
     """
     data_sets_y = {
         "Voltage (V)"       : battery_v,
@@ -266,12 +266,10 @@ def plot_time_series(AM, bag_plot, data_sets_y, title=None, if_label_bags=True, 
             label = bag_plot.list_of_bag_labels[i]
             plt.axvline(x=t_end, color = 'r', ls='--', alpha=0.5)
             plt.text(t_end, y_range[1], f" [{label}]", color='r', verticalalignment='top', horizontalalignment='right')
-    
-    AM.save_fig(fig, f"{title}_time_series")
-    
-    return fig, ax
+        
+    return fig, ax, f"{title}_time_series"
 
-def plot_time_parallel(AM, bag_plot, data_sets_y, title=None, figsize=DEFAULT_FIGSIZE):
+def plot_time_parallel(bag_plot, data_sets_y, title=None, figsize=DEFAULT_FIGSIZE):
     """
     data_sets_y = {
         "Voltage (V)"       : battery_v,
@@ -291,15 +289,14 @@ def plot_time_parallel(AM, bag_plot, data_sets_y, title=None, figsize=DEFAULT_FI
         
     fig, ax = plot_data_sets_subplots(data_sets_xys, xlabel="Time (s)", figsize=figsize)
     ax[0].set_title(f"{title} ({bag_plot.N_bags} bags)")
-    AM.save_fig(fig, f"{title}_time_parallel")
-    
-    return fig, ax
+
+    return fig, ax, f"{title}_time_parallel"
     
 # %% 
 # -------------------------------- Plot: 3D trajectories -------------------------------- %% #
 # 4. Plot:
 from scipy.spatial.transform import Rotation as R
-def plot_spatial(AM, bag_plot, 
+def plot_spatial(bag_plot, 
         data_sets_3d, title=None, 
         figsize=DEFAULT_FIGSIZE, projection='3d', proj_type='ortho',
         N_sample=1, show_grid=True, view_angles=[(30,10),(70,45),(10,10)],
@@ -394,6 +391,6 @@ def plot_spatial(AM, bag_plot,
     attr=f"{scatter_or_line}"
     attr+= "_oriented" if zero_orienting else ""
     attr+= "_pose" if show_orientations else ""
-    AM.save_fig(fig, f"{title}_spatial_{attr}")
+    title = f"{title}_spatial_{attr}"
 
-    return fig, axs
+    return fig, axs, title

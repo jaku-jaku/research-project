@@ -7,13 +7,20 @@ from matplotlib.legend_handler import HandlerBase
 COLOR_TABLE_1 = ["#b74f6fff","#628395ff","#dfd5a5ff","#dbad6aff","#cf995fff"]
 class Color_Wheel:
     # rotate color wheel
-    def __init__(self, color_table=COLOR_TABLE_1) -> None:
+    def __init__(self, color_table=COLOR_TABLE_1):
         self._color_table = color_table
         self._N = len(self._color_table)
+        self._i = 0
     
     def __getitem__(self, i: int):
         i = i % self._N
         return self._color_table[i]
+    
+    def next(self):
+        color = self[self._i]
+        self._i = (1+self._i)% self._N
+        return color
+        
 
 def get_color_table(cmap_name="viridis", N=10):
     cmap = mpl.cm.get_cmap(cmap_name)
