@@ -300,8 +300,8 @@ def plot_spatial(bag_plot,
         data_sets_3d, title=None, 
         figsize=DEFAULT_FIGSIZE, projection='3d', proj_type='ortho',
         N_sample=1, show_grid=True, view_angles=[(30,10),(70,45),(10,10)],
-        show_orientations=False, N_orientations_sample=10,zero_orienting=False,
-        scatter_or_line="line",
+        show_orientations=False, N_orientations_sample=10, zero_orienting=False,
+        scatter_or_line="line", bag_subset=None
 ):
     """ Plot is 3D Spatial Coordinates per data bag
         - muxing data from multiple topics
@@ -349,6 +349,13 @@ def plot_spatial(bag_plot,
                 x_=r2_.apply(x_)
                 label_list[-1] += " (re-oriented)"
             
+            if "Vicon Base" in label and bag_subset is not None:
+                if "base" not in bag_subset[j]:
+                    continue
+            if "Vicon EE" in label and bag_subset is not None:
+                if "EE" not in bag_subset[j]:
+                    continue
+                
             for k in range(N_views):
                 view_idx = j+k*N_bags
                 axs[view_idx].view_init(*view_angles[k])

@@ -1,7 +1,8 @@
 from typing import Dict, List, Tuple, Union, Callable, Optional
 from datetime import datetime
+import json
 
-from icecream import ic
+from icecream import ic # DEBUG ONLY
 
 def decode_replayed_vins_bag_file_name(_bag_path:str):
     prefix = _bag_path.split("_vins-replay")[0]
@@ -18,8 +19,28 @@ def decode_replayed_vins_bag_file_name(_bag_path:str):
     }
     return description
 
+def auto_generate_labels_from_bag_file_name_with_json_config(
+    list_of_bag_path:List[str], json_map_file_name: str
+):
+    # TODO: this is not scalable, depending on the demo code
+    # auto generate labels based on demo id
+    dict_map = {}
+    with open(f"{json_map_file_name}", "r") as data:
+        dict_map = json.load(data)
+    # ic(dict_map, list_of_bag_path)
+    _bag_dict = dict()
+    for path in list_of_bag_path:
+        description = decode_replayed_vins_bag_file_name(path)
+        demo = dict_map[description["demo"]]
+        tag = description["tag"]
+        session_id = description["session_id"]
+        run_id = description["run_id"]
+        bag_label = f"{tag}-{demo}-s{session_id}-i{run_id}"
+        _bag_dict[bag_label] = path
+    return _bag_dict
+
 def auto_generate_labels_from_bag_file_name(
-    list_of_bag_path:List[str],
+    list_of_bag_path:List[str], 
 ):
     # TODO: this is not scalable, depending on the demo code
     # auto generate labels based on demo id
