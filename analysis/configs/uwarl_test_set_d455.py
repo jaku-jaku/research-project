@@ -16,6 +16,7 @@ rx = R.from_euler('x', 90, degrees=True)
 
 TEST_SET_TITLE = "D455"
 
+#### BATCH TESTS 05 04 2023 ####
 class DATASET_DEMO_0504_MONO_RGB(Enum):
     ExtF = [
     ]
@@ -195,10 +196,215 @@ class TEST_SET_MONO_RGB_IMU_ACC_TIC_V2(Enum):
     }
     TESTSET = DATASET_DEMO_0504_MONO_RGB
 
-class TEST_SET_MONO_RGB_IMU_ACC_TIC_V4(Enum):
+class TEST_SET_MONO_RGB_IMU_ACC_TIC_V5(Enum):
     CONFIG = {
-        "directory": f"{Path.home()}/.ros/bag_replay_recorder_files/waterloo_steel_demo_0504/mono_rgb_imu/S-1_E-1_accurate_T_ic_v4/2023-05-10",
+        "directory": f"{Path.home()}/.ros/bag_replay_recorder_files/waterloo_steel_demo_0504/mono_rgb_imu/S-1_E-1_accurate_T_ic_v5/2023-05-10",
         "camera_config_file": f"{Path.home()}/UWARL_catkin_ws/src/vins-research-pkg/VINS-Fusion/config/uwarl_d455/mono_rgb_imu_config_EE.yaml",
         "demo_map": f"{Path.home()}/.ros/bagfiles/waterloo_steel_demo_0504/session_5/demo_map.json",
     }
     TESTSET = DATASET_DEMO_0504_MONO_RGB
+
+
+#### BATCH TESTS 05 11 2023 ####
+class DATASET_DEMO_0511_MONO_RGB(Enum):
+    BEE_31 = [
+        "base-2-1_DEMO-31_vins-replay.bag",
+        "EE-2-1_DEMO-31_vins-replay.bag",
+    ]
+    BEE_32 = [
+        "base-2-2_DEMO-32_vins-replay.bag",
+        "EE-2-2_DEMO-32_vins-replay.bag",
+    ]
+    BEE_33 = [
+        "base-2-3_DEMO-33_vins-replay.bag",
+        "EE-2-3_DEMO-33_vins-replay.bag",
+    ]
+    BEE_34 = [
+        "base-2-4_DEMO-34_vins-replay.bag",
+        "EE-2-4_DEMO-34_vins-replay.bag",
+    ]
+    BEE_35 = [
+        "base-2-5_DEMO-35_vins-replay.bag",
+        "EE-2-5_DEMO-35_vins-replay.bag",
+    ]
+    BEE_36 = [
+        "base-2-6_DEMO-36_vins-replay.bag",
+        "EE-2-6_DEMO-36_vins-replay.bag",
+    ]
+
+    SPIN_07 = [
+        "base-1-13_DEMO-7_vins-replay.bag",
+        "EE-1-13_DEMO-7_vins-replay.bag",
+    ]
+    SPIN_08 = [
+        "base-1-14_DEMO-8_vins-replay.bag",
+        "EE-1-14_DEMO-8_vins-replay.bag",
+    ]
+    SPIN_09 = [
+        "base-1-15_DEMO-9_vins-replay.bag",
+        "EE-1-15_DEMO-9_vins-replay.bag",
+    ]
+    SPIN_10 = [
+        "base-1-16_DEMO-10_vins-replay.bag",
+        "EE-1-16_DEMO-10_vins-replay.bag",
+    ]
+    SPIN_11 = [
+        "base-1-17_DEMO-11_vins-replay.bag",
+        "EE-1-17_DEMO-11_vins-replay.bag",
+    ]
+
+    CIRC_25 = [
+        "base-1-18_DEMO-25_vins-replay.bag",
+        "EE-1-18_DEMO-25_vins-replay.bag",
+    ]
+    CIRC_26 = [
+        "base-1-19_DEMO-26_vins-replay.bag",
+        "EE-1-19_DEMO-26_vins-replay.bag",
+    ]
+    CIRC_27 = [
+        "base-1-20_DEMO-27_vins-replay.bag",
+        "EE-1-20_DEMO-27_vins-replay.bag",
+    ]
+    CIRC_28 = [
+        "base-1-21_DEMO-28_vins-replay.bag",
+        "EE-1-21_DEMO-28_vins-replay.bag",
+    ]
+    CIRC_29 = [
+        "base-1-22_DEMO-29_vins-replay.bag",
+        "EE-1-22_DEMO-29_vins-replay.bag",
+    ]
+    
+    FWD_13_NO_BOARD = [
+        "base-0-1_DEMO-13_vins-replay.bag",
+        "EE-0-1_DEMO-13_vins-replay.bag",
+    ]
+    FWD_14_NO_BOARD = [
+        "base-0-3_DEMO-14_vins-replay.bag",
+        "EE-0-3_DEMO-14_vins-replay.bag",
+    ]
+    FWD_15_NO_BOARD = [
+        "base-0-6_DEMO-15_vins-replay.bag",
+        "EE-0-6_DEMO-15_vins-replay.bag",
+    ]
+    FWD_16_NO_BOARD = [
+        "base-0-8_DEMO-16_vins-replay.bag",
+        "EE-0-8_DEMO-16_vins-replay.bag",
+    ]
+    FWD_17_NO_BOARD = [
+        "base-0-10_DEMO-17_vins-replay.bag",
+        "EE-0-10_DEMO-17_vins-replay.bag",
+    ]
+    FWD_18_NO_BOARD = [
+        "base-0-12_DEMO-18_vins-replay.bag",
+        "EE-0-12_DEMO-18_vins-replay.bag",
+    ]
+
+    RVR_19_NO_BOARD = [
+        "base-0-2_DEMO-19_vins-replay.bag",
+        "EE-0-2_DEMO-19_vins-replay.bag",
+    ]
+    RVR_20_NO_BOARD = [
+        "base-0-5_DEMO-20_vins-replay.bag",
+        "EE-0-5_DEMO-20_vins-replay.bag",
+    ]
+    RVR_21_NO_BOARD = [
+        "base-0-7_DEMO-21_vins-replay.bag",
+        "EE-0-7_DEMO-21_vins-replay.bag",
+    ]
+    RVR_22_NO_BOARD = [
+        "base-0-9_DEMO-22_vins-replay.bag",
+        "EE-0-9_DEMO-22_vins-replay.bag",
+    ]
+    RVR_23_NO_BOARD = [
+        "base-0-11_DEMO-23_vins-replay.bag",
+        "EE-0-11_DEMO-23_vins-replay.bag",
+    ]
+    RVR_24_NO_BOARD = [
+        "base-0-13_DEMO-24_vins-replay.bag",
+        "EE-0-13_DEMO-24_vins-replay.bag",
+    ]
+
+    FWD_13 = [
+        "base-1-0_DEMO-13_vins-replay.bag",
+        "EE-1-0_DEMO-13_vins-replay.bag",
+    ]
+    FWD_14 = [
+        "base-1-2_DEMO-14_vins-replay.bag",
+        "EE-1-2_DEMO-14_vins-replay.bag",
+    ]
+    FWD_15 = [
+        "base-1-5_DEMO-15_vins-replay.bag",
+        "EE-1-5_DEMO-15_vins-replay.bag",
+    ]
+    FWD_16 = [
+        "base-1-7_DEMO-16_vins-replay.bag",
+        "EE-1-7_DEMO-16_vins-replay.bag",
+    ]
+    FWD_17 = [
+        "base-1-9_DEMO-17_vins-replay.bag",
+        "EE-1-9_DEMO-17_vins-replay.bag",
+    ]
+    FWD_18 = [
+        "base-1-11_DEMO-18_vins-replay.bag",
+        "EE-1-11_DEMO-18_vins-replay.bag",
+    ]
+
+    RVR_19 = [
+        "base-1-1_DEMO-19_vins-replay.bag",
+        "EE-1-1_DEMO-19_vins-replay.bag",
+    ]
+    RVR_20 = [
+        "base-1-4_DEMO-20_vins-replay.bag",
+        "EE-1-4_DEMO-20_vins-replay.bag",
+    ]
+    RVR_21 = [
+        "base-1-6_DEMO-21_vins-replay.bag",
+        "EE-1-6_DEMO-21_vins-replay.bag",
+    ]
+    RVR_22 = [
+        "base-1-8_DEMO-22_vins-replay.bag",
+        "EE-1-8_DEMO-22_vins-replay.bag",
+    ]
+    RVR_23 = [
+        "base-1-10_DEMO-23_vins-replay.bag",
+        "EE-1-10_DEMO-23_vins-replay.bag",
+    ]
+    RVR_24 = [
+        "base-1-12_DEMO-24_vins-replay.bag",
+        "EE-1-12_DEMO-24_vins-replay.bag",
+    ]
+
+    STATIONARY_3 = [
+        "base-3-0_DEMO-3_vins-replay.bag",
+        "EE-3-0_DEMO-3_vins-replay.bag",
+    ]
+    STATIONARY_5 = [
+        "base-3-1_DEMO-5_vins-replay.bag",
+        "EE-3-1_DEMO-5_vins-replay.bag",
+    ]
+    STATIONARY_6 = [
+        "base-3-2_DEMO-6_vins-replay.bag",
+        "EE-3-2_DEMO-6_vins-replay.bag",
+    ]
+
+    FREE_STYLE_1 = [
+        "base-4-0_DEMO-2_vins-replay.bag",
+        "EE-4-0_DEMO-2_vins-replay.bag",
+    ]
+    FREE_STYLE_2 = [
+        "base-4-1_DEMO-1_vins-replay.bag",
+        "EE-4-1_DEMO-1_vins-replay.bag",
+    ]
+    STATIONARY_LAB = [
+        "base-5-0_DEMO-1_vins-replay.bag",
+        "EE-5-0_DEMO-1_vins-replay.bag",
+    ]
+
+class TEST_SET_MONO_RGB_IMU_ACC_0511(Enum):
+    CONFIG = {
+        "directory": f"{Path.home()}/.ros/bag_replay_recorder_files/waterloo_steel_demo_0511/mono_rgb_imu/S-1_E-1_accurate_T_ic_new/2023-05-12",
+        "camera_config_file_base": f"{Path.home()}/UWARL_catkin_ws/src/vins-research-pkg/VINS-Fusion/config/uwarl_d455/mono_rgb_imu_config_base.yaml",
+        "camera_config_file_EE": f"{Path.home()}/UWARL_catkin_ws/src/vins-research-pkg/VINS-Fusion/config/uwarl_d455/mono_rgb_imu_config_EE.yaml",
+        "demo_map": f"{Path.home()}/.ros/bagfiles/waterloo_steel_demo_0511/session_0/demo_map.json",
+    }
+    TESTSET = DATASET_DEMO_0511_MONO_RGB
