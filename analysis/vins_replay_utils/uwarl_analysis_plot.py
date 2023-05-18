@@ -53,13 +53,13 @@ class AnalysisManager:
         self._output_dir = f"{output_dir}/{run_name}/{test_set_name}"#/{self._prefix}"
         create_all_folders(self._output_dir)
 
-    def save_fig(self, fig, tag, title=None):
+    def save_fig(self, fig, tag, title=None, dpi=600):
         if title:
             plt.title(title)
         if self._auto_save:
             output_path=self.output_path()
             file_name=f"{output_path}plot_{tag.replace(' ', '_')}.png"
-            fig.savefig(file_name, bbox_inches = 'tight')
+            fig.savefig(file_name, bbox_inches = 'tight', dpi=dpi)
             print(f"Saved figure to {file_name}")
         if self._auto_close:
             plt.show(block=False)
@@ -300,8 +300,8 @@ def plot_spatial(bag_plot,
         data_sets_3d, title=None, 
         figsize=DEFAULT_FIGSIZE, projection='3d', proj_type='ortho',
         N_sample=1, show_grid=True, view_angles=[(30,10),(70,45),(10,10)],
-        show_orientations=False, N_orientations_sample=10, zero_orienting=False,
-        scatter_or_line="line", bag_subset=None
+        show_orientations=False, N_orientations_sample=20, zero_orienting=False,
+        scatter_or_line="line", bag_subset=None, camera=None,
 ):
     """ Plot is 3D Spatial Coordinates per data bag
         - muxing data from multiple topics
@@ -321,21 +321,23 @@ def plot_spatial(bag_plot,
         for i, (label, data) in enumerate(data_sets_3d.items()):
             # copy data:
             is_data_valid = len(data['t'][j]) > 1
+     
+            if "Vicon Base" in label and bag_subset is not None:
+                if "base" not in bag_subset[j]:
+                    continue
+            if "Vicon EE" in label and bag_subset is not None:
+                if "EE" not in bag_subset[j]:
+                    continue
                 
             if is_data_valid:
-                t_ = np.array(data['t'][j][::N_sample].copy())
-                x_ = np.array(data['y'][j][::N_sample].copy())
+                N_sample_ = N_sample
+                if "Vicon" in label: # reduce vicon sampling rate
+                    N_sample_ = int(N_sample*10)
+                t_ = np.array(data['t'][j][::N_sample_].copy())
+                x_ = np.array(data['y'][j][::N_sample_].copy())
+                u_ = np.array(data['r'][j][::N_sample_].copy())
                 label_list.append(label)
             
-            if is_data_valid:
-                # orientation correction:
-                xu_ = x_[::N_orientations_sample]
-                u_ = np.array(data['r'][j][::N_sample].copy())
-                uu_ = np.array(data['r'][j][::N_orientations_sample].copy())
-                if show_orientations:
-                    uu_[0] = uu_[1] # u_ may be 0 quaternion
-                    ic(np.shape(uu_), np.shape(xu_), uu_[0])
-                    r_ = R.from_quat(uu_)
 
             if "Vicon" in label and is_data_valid and zero_orienting is True:
                 # ic(label, j, u_[1:5])
@@ -348,14 +350,17 @@ def plot_spatial(bag_plot,
                 ic(r2_deg)
                 x_=r2_.apply(x_)
                 label_list[-1] += " (re-oriented)"
-            
-            if "Vicon Base" in label and bag_subset is not None:
-                if "base" not in bag_subset[j]:
-                    continue
-            if "Vicon EE" in label and bag_subset is not None:
-                if "EE" not in bag_subset[j]:
-                    continue
-                
+       
+            if is_data_valid:
+                # orientation correction:
+                N_sample_rate = max(int(len(x_) / N_orientations_sample), 1)
+                xu_ = x_[::N_sample_rate]
+                uu_ = u_[::N_sample_rate]
+                if show_orientations:
+                    uu_[0] = uu_[1] # u_ may be 0 quaternion
+                    ic(np.shape(uu_), np.shape(xu_), uu_[0])
+                    r_ = R.from_quat(uu_)
+
             for k in range(N_views):
                 view_idx = j+k*N_bags
                 axs[view_idx].view_init(*view_angles[k])
@@ -367,17 +372,25 @@ def plot_spatial(bag_plot,
                 # plot points:
                 if is_data_valid:
                     if if_scatter:
-                        axs[view_idx].scatter3D(x_[:,0], x_[:,1], x_[:,2], c=t_, cmap=CMAP[i], depthshade=True)
+                        axs[view_idx].scatter3D(x_[:,0], x_[:,1], x_[:,2], c=t_, cmap=CMAP[i], depthshade=True, label=label_list[-1], alpha=0.2, marker=".")
                     else:
                         axs[view_idx].plot3D(x_[:,0], x_[:,1], x_[:,2], color=CWheel[i], label=label_list[-1])
                         axs[view_idx].legend(bbox_to_anchor=(0.3, 0.9), fontsize=10)
                     if show_orientations:
-                        ex_ = r_.apply([1,0,0])
-                        ey_ = r_.apply([0,1,0])
-                        ez_ = r_.apply([0,0,1])
-                        axs[view_idx].quiver(xu_[:,0], xu_[:,1], xu_[:,2], ex_[:,0], ex_[:,1], ex_[:,2], length=0.1, normalize=True, color="red")
-                        axs[view_idx].quiver(xu_[:,0], xu_[:,1], xu_[:,2], ey_[:,0], ey_[:,1], ey_[:,2], length=0.1, normalize=True, color="green")
-                        axs[view_idx].quiver(xu_[:,0], xu_[:,1], xu_[:,2], ez_[:,0], ez_[:,1], ez_[:,2], length=0.1, normalize=True, color="blue")
+                        if camera and "VINS" in label:
+                            for r, x in zip(r_.as_dcm(), xu_):
+                                T_rbt = np.eye(4)
+                                T_rbt[0:3,0:3] = r # 3x3
+                                T_rbt[0:3, 3] = x
+                                # ic(r, x, T_rbt)
+                                camera.plot_camera(ax=axs[view_idx], RBT_SE3=T_rbt, verbose=False)
+                        else:
+                            ex_ = r_.apply([1,0,0])
+                            ey_ = r_.apply([0,1,0])
+                            ez_ = r_.apply([0,0,1])
+                            axs[view_idx].quiver(xu_[:,0], xu_[:,1], xu_[:,2], ex_[:,0], ex_[:,1], ex_[:,2], length=0.1, normalize=True, color="red")
+                            axs[view_idx].quiver(xu_[:,0], xu_[:,1], xu_[:,2], ey_[:,0], ey_[:,1], ey_[:,2], length=0.1, normalize=True, color="green")
+                            axs[view_idx].quiver(xu_[:,0], xu_[:,1], xu_[:,2], ez_[:,0], ez_[:,1], ez_[:,2], length=0.1, normalize=True, color="blue")
                     
                     a_ = np.max(np.abs([np.max(x_, axis=0), np.min(x_, axis=0)]))
                     axs[view_idx].set_xlim3d(-a_, a_)
@@ -385,7 +398,7 @@ def plot_spatial(bag_plot,
                     axs[view_idx].set_zlim3d(-a_, a_)
                 
         axs[j].set_title(f"{bag_plot.list_of_bag_labels[j]}")
-        for k in range(N_views): # FIXME: all legens will show even there is no data plot, need sth else?? (no need for now)
+        for k in range(N_views): 
             if if_scatter:
                 axs[j+k*N_bags].legend(
                     handles=cmap_handles, labels=label_list, handler_map=handler_map, 

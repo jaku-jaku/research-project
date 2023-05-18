@@ -27,6 +27,8 @@ from configs.uwarl_test_set_d455 import (
     TEST_SET_MONO_RGB_IMU_ACC_TIC_V2,
     TEST_SET_MONO_RGB_IMU_ACC_TIC_V5,
     TEST_SET_MONO_RGB_IMU_ACC_0511,
+    TEST_SET_MONO_RGB_IMU_ACC_0511_MAF,
+    TEST_SET_MONO_RGB_IMU_ACC_0518,
 )
 
 from vins_replay_utils.uwarl_replay_decoder import auto_generate_labels_from_bag_file_name_with_json_config, ProcessedData
@@ -43,16 +45,16 @@ FEATURE_OUTPUT_BAG_META             = False
 
 FEATURE_PLOT_VOLTAGE_JOINT_EFFORTS  = False
 FEATURE_PLOT_3D_TRAJECTORIES        = True
-FEATURE_PLOT_CAM_CONFIGS            = False
+FEATURE_PLOT_CAM_CONFIGS            = True
 
-PLOT_FEATURE_ORIENTING              = False
-PLOT_FEATURE_SHOW_ORIENTATIONS      = False
+PLOT_FEATURE_ORIENTING              = False # TODO: orientation correction needed to be implemented
+PLOT_FEATURE_SHOW_ORIENTATIONS      = True
 PLOT_FEATURE_VIEW_ANGLES            = [(30,10),(70,45),(10,10)]#[(30,10),(70,45),(10,10)]
 PLOT_FEATURE_VIEW_ANGLES_SEPARATED  = True
-PLOT_FEATURE_SCATTER_PLOT           = False
-PLOT_FEATURE_FIG_SIZE_SCATTER       = (10,8)
+PLOT_FEATURE_SCATTER_PLOT           = True
+PLOT_FEATURE_FIG_SIZE_SCATTER       = (16,16)
 PLOT_FEATURE_LINE_PLOT              = True
-PLOT_FEATURE_FIG_SIZE_LINE          = (5,4)
+PLOT_FEATURE_FIG_SIZE_LINE          = (4,4)
 RUN_NAME = ""
 
 FEATURE_PROCESS_BAGS = (FEATURE_PLOT_VOLTAGE_JOINT_EFFORTS or FEATURE_PLOT_3D_TRAJECTORIES)
@@ -88,9 +90,10 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
     # -------------------------------- Pre-Processing -------------------------------- %% #
     # 0. Process Config File
     # 0.1 generate camera pose:
+    camera = None
     if FEATURE_PLOT_CAM_CONFIGS:
         # TODO: add camera plot functions
-        camera = MultiSensor_Camera_Node(_config_file=bag_test_case_config["camera_config_file"])
+        camera = MultiSensor_Camera_Node(_config_file=bag_test_case_config["camera_config_file_EE"])
         fig, ax = camera.create_3d_figure()
         camera.plot_camera(ax=ax)
         AM.save_fig(fig, tag="camera_config")
@@ -156,6 +159,12 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
         data_sets_3d["Vicon EE"]           = DM.extract_data(
             bag_topic="/vicon/wam_EE/wam_EE", zeroing=True, dict_var_type=POSE_VARS,
         )
+        data_sets_3d["Vicon Cam Base"]           = DM.extract_data(
+            bag_topic="/vicon/cam_base/cam_base", zeroing=True, dict_var_type=POSE_VARS,
+        )
+        data_sets_3d["Vicon Cam EE"]           = DM.extract_data(
+            bag_topic="/vicon/cam_EE/cam_EE", zeroing=True, dict_var_type=POSE_VARS,
+        )
         # data_sets_3d["WAM base"]= BagPlot.extract_data(
         #     bag_topic="/vicon/base_EE/base_base", zeroing=True, dict_var_type=POSE_VARS,
         # ),
@@ -186,18 +195,19 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
                 if PLOT_FEATURE_SCATTER_PLOT:
                     fig, axs, title = plot_spatial(DM, data_sets_3d, scatter_or_line='scatter',
                         figsize=PLOT_FEATURE_FIG_SIZE_SCATTER, 
-                        zero_orienting=True, 
+                        zero_orienting=PLOT_FEATURE_ORIENTING, 
                         show_orientations=PLOT_FEATURE_SHOW_ORIENTATIONS,
                         view_angles=[angle],
                         bag_subset=bag_subset.value,
                         title=RUN_NAME,
+                        camera=camera,
                     ) # default 3 views
                     AM.save_fig(fig, f"{title}_{j}")
                 if PLOT_FEATURE_LINE_PLOT:
                     fig, axs, title = plot_spatial(DM, data_sets_3d, scatter_or_line='line',
                         figsize=PLOT_FEATURE_FIG_SIZE_LINE, 
                         zero_orienting=PLOT_FEATURE_ORIENTING,
-                        show_orientations=PLOT_FEATURE_SHOW_ORIENTATIONS,
+                        show_orientations=False,
                         view_angles=[angle],
                         bag_subset=bag_subset.value,
                         title=RUN_NAME,
@@ -233,7 +243,7 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
 # -------------------------------- bag_test_set -------------------------------- #
 # go through each test set:
 for bag_test_case in [
-        TEST_SET_MONO_RGB_IMU_ACC_0511
+        TEST_SET_MONO_RGB_IMU_ACC_0518
         # TEST_SET_MONO_RGB_IMU_ACC_TIC_V2,
         # TEST_SET_MONO_RGB_IMU_ACC_TIC,
         # TEST_SET_MONO_RGB_IMU_INIT_GUESS_TIC,
@@ -250,5 +260,7 @@ for bag_test_case in [
             generate_report(bag_test_case.__name__, bag_test_case.CONFIG.value, bag_subset)
         else:
             print(f"WARNING, test subset is empty, skipping tests {bag_subset.name}")
+        
+        # break
             
 # %%
