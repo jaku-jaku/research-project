@@ -419,7 +419,7 @@ class TEST_SET_MONO_RGB_IMU_ACC_0511_MAF(Enum):
     TESTSET = DATASET_DEMO_0511_MONO_RGB
 
 
-#### BATCH TESTS 05 11 2023 ####
+#### BATCH TESTS 05 18 2023 ####
 class DATASET_DEMO_0518_MONO_RGB(Enum):
     BEE_31 = ["EE-1-5_DEMO-31_vins-replay.bag","EE-0-27_DEMO-31_vins-replay.bag"]
     BEE_32 = ["EE-1-4_DEMO-32_vins-replay.bag","EE-0-28_DEMO-32_vins-replay.bag"]
@@ -471,3 +471,53 @@ class TEST_SET_MONO_RGB_IMU_ACC_0518(Enum):
         "demo_map": f"{Path.home()}/.ros/bagfiles/waterloo_steel_demo_0518/session_0/demo_map.json",
     }
     TESTSET = DATASET_DEMO_0518_MONO_RGB
+
+
+#### BATCH TESTS 05 19 2023 ####
+class DATASET_DEMO_0519_MONO_RGB(Enum):
+    BEE_31 = ["base-0-29_DEMO-31_vins-replay.bag","EE-0-29_DEMO-31_vins-replay.bag"]
+    BEE_32 = ["base-0-30_DEMO-32_vins-replay.bag","EE-0-30_DEMO-32_vins-replay.bag"]
+    BEE_33 = ["base-0-31_DEMO-33_vins-replay.bag","EE-0-31_DEMO-33_vins-replay.bag"]
+    BEE_34 = ["base-0-32_DEMO-34_vins-replay.bag","EE-0-32_DEMO-34_vins-replay.bag"]
+    BEE_35 = ["base-0-33_DEMO-35_vins-replay.bag","EE-0-33_DEMO-35_vins-replay.bag"]
+    BEE_36 = ["base-0-35_DEMO-36_vins-replay.bag","EE-0-35_DEMO-36_vins-replay.bag"]
+
+    SPIN_07 = ["base-0-22_DEMO-7_vins-replay.bag", "EE-0-22_DEMO-7_vins-replay.bag"]
+    SPIN_08 = ["base-0-23_DEMO-8_vins-replay.bag", "EE-0-23_DEMO-8_vins-replay.bag"]
+    SPIN_09 = ["base-0-25_DEMO-9_vins-replay.bag", "EE-0-25_DEMO-9_vins-replay.bag"]
+    SPIN_10 = ["base-0-26_DEMO-10_vins-replay.bag", "EE-0-26_DEMO-10_vins-replay.bag"]
+    SPIN_11 = ["base-0-27_DEMO-11_vins-replay.bag", "EE-0-27_DEMO-11_vins-replay.bag"]
+    SPIN_12 = ["base-0-28_DEMO-12_vins-replay.bag", "EE-0-28_DEMO-12_vins-replay.bag"]
+
+    CIRC_25 = ["base-0-16_DEMO-25_vins-replay.bag", "EE-0-16_DEMO-25_vins-replay.bag"]
+    CIRC_26 = ["base-0-17_DEMO-26_vins-replay.bag", "EE-0-17_DEMO-26_vins-replay.bag"]
+    CIRC_27 = ["base-0-18_DEMO-27_vins-replay.bag", "EE-0-18_DEMO-27_vins-replay.bag"]
+    CIRC_28 = ["base-0-19_DEMO-28_vins-replay.bag", "EE-0-19_DEMO-28_vins-replay.bag"]
+    CIRC_29 = ["base-0-20_DEMO-29_vins-replay.bag", "EE-0-20_DEMO-29_vins-replay.bag"]
+    CIRC_30 = ["base-0-21_DEMO-30_vins-replay.bag", "EE-0-21_DEMO-30_vins-replay.bag"]
+    
+    FWD_13 = ["base-0-4_DEMO-13_vins-replay.bag", "EE-0-4_DEMO-13_vins-replay.bag"]
+    FWD_14 = ["base-0-6_DEMO-14_vins-replay.bag", "EE-0-6_DEMO-14_vins-replay.bag"]
+    FWD_15 = ["base-0-8_DEMO-15_vins-replay.bag", "EE-0-8_DEMO-15_vins-replay.bag"]
+    FWD_16 = ["base-0-10_DEMO-16_vins-replay.bag", "EE-0-10_DEMO-16_vins-replay.bag"]
+    FWD_17 = ["base-0-12_DEMO-17_vins-replay.bag", "EE-0-12_DEMO-17_vins-replay.bag"]
+    FWD_18 = ["base-0-14_DEMO-18_vins-replay.bag", "EE-0-14_DEMO-18_vins-replay.bag"]
+
+    # RVR_19 = ["EE-1-14_DEMO-19_vins-replay.bag","EE-0-4_DEMO-19_vins-replay.bag"]
+    RVR_20 = ["base-0-7_DEMO-20_vins-replay.bag", "EE-0-7_DEMO-20_vins-replay.bag"]
+    RVR_21 = ["base-0-9_DEMO-21_vins-replay.bag", "EE-0-9_DEMO-21_vins-replay.bag"]
+    RVR_22 = ["base-0-11_DEMO-22_vins-replay.bag", "EE-0-11_DEMO-22_vins-replay.bag"]
+    RVR_23 = ["base-0-13_DEMO-23_vins-replay.bag", "EE-0-13_DEMO-23_vins-replay.bag"]
+    RVR_24 = ["base-0-15_DEMO-24_vins-replay.bag", "EE-0-15_DEMO-24_vins-replay.bag"]
+
+    STATIONARY_5 = ["base-0-1_DEMO-5_vins-replay.bag", "EE-0-1_DEMO-5_vins-replay.bag"]
+    STATIONARY_6 = ["base-0-2_DEMO-6_vins-replay.bag", "EE-0-2_DEMO-6_vins-replay.bag"]
+
+class TEST_SET_MONO_RGB_IMU_ACC_0519(Enum):
+    CONFIG = {
+        "directory": f"{Path.home()}/.ros/bag_replay_recorder_files/waterloo_steel_demo_0519/mono_rgb_imu/S-1_E-1_accurate_T_ic/2023-05-19",
+        "camera_config_file_base": f"{Path.home()}/.ros/bag_replay_recorder_files/waterloo_steel_demo_0519/mono_rgb_imu/S-1_E-1_accurate_T_ic/mono_rgb_imu_config_base.yaml",
+        "camera_config_file_EE": f"{Path.home()}/.ros/bag_replay_recorder_files/waterloo_steel_demo_0519/mono_rgb_imu/S-1_E-1_accurate_T_ic/mono_rgb_imu_config_EE.yaml",
+        "demo_map": f"{Path.home()}/.ros/bagfiles/waterloo_steel_demo_0519/session_0/demo_map.json",
+    }
+    TESTSET = DATASET_DEMO_0519_MONO_RGB

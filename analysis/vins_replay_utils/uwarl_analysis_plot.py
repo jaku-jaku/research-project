@@ -322,10 +322,10 @@ def plot_spatial(bag_plot,
             # copy data:
             is_data_valid = len(data['t'][j]) > 1
      
-            if "Vicon Base" in label and bag_subset is not None:
+            if "Vicon Base" in label or "Vicon Cam Base" in label and bag_subset is not None:
                 if "base" not in bag_subset[j]:
                     continue
-            if "Vicon EE" in label and bag_subset is not None:
+            if "Vicon EE" in label or "Vicon Cam EE" in label and bag_subset is not None:
                 if "EE" not in bag_subset[j]:
                     continue
                 
@@ -344,12 +344,15 @@ def plot_spatial(bag_plot,
                 # rr_ = R.from_quat(u_[1:5])
                 # ic(rr_.as_euler('zyx', degrees=True))
                 # r2_ = R.from_quat(np.mean(uu_,axis=0)) # pick means orientation
-                r2_ = R.from_quat(np.mean(u_[5:20],axis=0)) # pick means orientation
+                ic(label, u_[0:10])
+                r2_ = R.from_quat(u_[1]) # pick means orientation
                 r2_deg = r2_.as_euler('zyx', degrees=True)
-                r2_ = R.from_euler('z', r2_deg[0], degrees=True)
-                ic(r2_deg)
+                ic(label, r2_deg)
+                r2_ = R.from_euler('z', -r2_deg[2], degrees=True)
+                ic(label, r2_.as_euler('zyx', degrees=True))
                 x_=r2_.apply(x_)
                 label_list[-1] += " (re-oriented)"
+                # TODO: reorient vicon with first index
        
             if is_data_valid:
                 # orientation correction:
@@ -372,7 +375,7 @@ def plot_spatial(bag_plot,
                 # plot points:
                 if is_data_valid:
                     if if_scatter:
-                        axs[view_idx].scatter3D(x_[:,0], x_[:,1], x_[:,2], c=t_, cmap=CMAP[i], depthshade=True, label=label_list[-1], alpha=0.2, marker=".")
+                        axs[view_idx].scatter3D(x_[:,0], x_[:,1], x_[:,2], c=t_, cmap=CMAP[i], depthshade=True, label=label_list[-1], alpha=0.6, marker=".")
                     else:
                         axs[view_idx].plot3D(x_[:,0], x_[:,1], x_[:,2], color=CWheel[i], label=label_list[-1])
                         axs[view_idx].legend(bbox_to_anchor=(0.3, 0.9), fontsize=10)

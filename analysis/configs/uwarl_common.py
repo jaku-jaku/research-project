@@ -3,7 +3,7 @@ from uwarl_bag_utils.bag_parser import BagParser
 PARSER_TYPE_GROUP = {
     'accel'     : ['/cam_EE/accel/sample', '/cam_base/accel/sample'],
     'gyro'      : ['/cam_EE/gyro/sample', '/cam_base/gyro/sample'],
-    'vicon'     : ['/vicon/cam_ee/cam_ee', '/vicon/wam_EE/wam_EE', '/vicon/summit_base/summit_base', '/vicon/wam_base/wam_base', '/vicon/wam_ee/wam_ee'],
+    'vicon'     : ['/vicon/cam_EE/cam_EE', '/vicon/cam_base/cam_base', '/vicon/wam_EE/wam_EE', '/vicon/summit_base/summit_base', '/vicon/wam_base/wam_base', '/vicon/wam_ee/wam_ee'],
     'vins-mono' : ['/vins_estimator/path', '/loop_fusion/pose_graph_path'],
     'system'    : ['/uwarl/robotnik_base_hw/voltage'],
 }
@@ -17,6 +17,8 @@ PARSER_CALLBACKS ={
     '/vicon/wam_EE/wam_EE'                   : lambda data,topic,msg: BagParser.parse_vicon(data,topic,msg),
     # /vicon/wam_base/wam_base: geometry_msgs/TransformStamped
     '/vicon/wam_base/wam_base'               : lambda data,topic,msg: BagParser.parse_vicon(data,topic,msg),
+    '/vicon/cam_EE/cam_EE'                   : lambda data,topic,msg: BagParser.parse_vicon(data,topic,msg),
+    '/vicon/cam_base/cam_base'               : lambda data,topic,msg: BagParser.parse_vicon(data,topic,msg),
     
     # '/wam/fts/fts_states'                    : lambda data,topic,msg: BagParser.parse_wam(data,topic,msg),
     '/wam/joint_states'                      : lambda data,topic,msg: BagParser.parse_wam(data,topic,msg),

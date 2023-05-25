@@ -413,11 +413,12 @@ class BagParser:
     @staticmethod
     def parse_vicon(payload, topic, msg):
         if topic in [
-            '/vicon/cam_ee/cam_ee',
             '/vicon/summit_base/summit_base', 
             '/vicon/wam_base/wam_base',
             '/vicon/wam_ee/wam_ee',
             '/vicon/wam_EE/wam_EE',
+            '/vicon/cam_EE/cam_EE',
+            '/vicon/cam_base/cam_base',
         ]:
             data = BagParser._parse_transformation(payload, topic, msg)
             payload.update(data)
