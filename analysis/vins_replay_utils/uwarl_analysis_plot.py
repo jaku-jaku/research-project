@@ -301,7 +301,7 @@ def plot_spatial(bag_plot,
         figsize=DEFAULT_FIGSIZE, projection='3d', proj_type='ortho',
         N_sample=1, show_grid=True, view_angles=[(30,10),(70,45),(10,10)],
         show_orientations=False, N_orientations_sample=20, zero_orienting=False,
-        scatter_or_line="line", bag_subset=None, camera=None,
+        scatter_or_line="line", bag_subset=None, camera=None, zero_position=True,
 ):
     """ Plot is 3D Spatial Coordinates per data bag
         - muxing data from multiple topics
@@ -339,13 +339,13 @@ def plot_spatial(bag_plot,
                 label_list.append(label)
             
 
-            if "Vicon" in label and is_data_valid and zero_orienting is True:
+            if "Vicon" in label and is_data_valid and (zero_orienting is True or True):
                 # ic(label, j, u_[1:5])
                 # rr_ = R.from_quat(u_[1:5])
                 # ic(rr_.as_euler('zyx', degrees=True))
                 # r2_ = R.from_quat(np.mean(uu_,axis=0)) # pick means orientation
                 ic(label, u_[0:10])
-                r2_ = R.from_quat(u_[1]) # pick means orientation
+                r2_ = R.from_quat(u_[0]) # pick means orientation
                 r2_deg = r2_.as_euler('zyx', degrees=True)
                 ic(label, r2_deg)
                 r2_ = R.from_euler('z', -r2_deg[2], degrees=True)
@@ -353,6 +353,10 @@ def plot_spatial(bag_plot,
                 x_=r2_.apply(x_)
                 label_list[-1] += " (re-oriented)"
                 # TODO: reorient vicon with first index
+                
+            if zero_position is True:
+                x_ = np.subtract(x_, x_[0])
+                print(x_[0])
        
             if is_data_valid:
                 # orientation correction:
@@ -375,7 +379,7 @@ def plot_spatial(bag_plot,
                 # plot points:
                 if is_data_valid:
                     if if_scatter:
-                        axs[view_idx].scatter3D(x_[:,0], x_[:,1], x_[:,2], c=t_, cmap=CMAP[i], depthshade=True, label=label_list[-1], alpha=0.6, marker=".")
+                        axs[view_idx].scatter3D(x_[:,0], x_[:,1], x_[:,2], c=t_, cmap=CMAP[i], depthshade=True, label=label_list[-1], alpha=0.2, marker=".")
                     else:
                         axs[view_idx].plot3D(x_[:,0], x_[:,1], x_[:,2], color=CWheel[i], label=label_list[-1])
                         axs[view_idx].legend(bbox_to_anchor=(0.3, 0.9), fontsize=10)
