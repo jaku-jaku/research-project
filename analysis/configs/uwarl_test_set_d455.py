@@ -573,6 +573,15 @@ class TEST_SET_MONO_RGB_IMU_ACC_0612(Enum):
     }
     TESTSET = DATASET_DEMO_0612_MONO_RGB
 
+class TEST_SET_MONO_RGB_IMU_ACC_0612_0821(Enum):
+    CONFIG = {
+        "directory": f"{Path.home()}/.ros/bag_replay_recorder_files/waterloo_steel_demo_0612/mono_rgb_imu/S-1_E-1_accurate_T_ic/2023-08-21",
+        "camera_config_file_base": f"{Path.home()}/.ros/bag_replay_recorder_files/waterloo_steel_demo_0612/mono_rgb_imu/S-1_E-1_accurate_T_ic/mono_rgb_imu_config_base.yaml",
+        "camera_config_file_EE": f"{Path.home()}/.ros/bag_replay_recorder_files/waterloo_steel_demo_0612/mono_rgb_imu/S-1_E-1_accurate_T_ic/mono_rgb_imu_config_EE.yaml",
+        "demo_map": f"{Path.home()}/.ros/bagfiles/waterloo_steel_demo_0612/session_1/demo_map.json",
+    }
+    TESTSET = DATASET_DEMO_0612_MONO_RGB
+
 class TEST_SET_STEREO_ACC_0612(Enum):
     CONFIG = {
         "directory": f"{Path.home()}/.ros/bag_replay_recorder_files/waterloo_steel_demo_0612/stereo/S-1_E-1_accurate_T_ic/2023-06-13",

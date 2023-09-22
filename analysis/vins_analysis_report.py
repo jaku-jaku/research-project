@@ -30,9 +30,10 @@ from configs.uwarl_test_set_d455 import (
     # TEST_SET_MONO_RGB_IMU_ACC_0511_MAF,
     # TEST_SET_MONO_RGB_IMU_ACC_0518,
     # TEST_SET_MONO_RGB_IMU_ACC_0519,
-    TEST_SET_MONO_RGB_IMU_ACC_0612,
-    TEST_SET_STEREO_ACC_0612,
-    TEST_SET_STEREO_IMU_ACC_0612,
+    # TEST_SET_MONO_RGB_IMU_ACC_0612,
+    # TEST_SET_STEREO_ACC_0612,
+    # TEST_SET_STEREO_IMU_ACC_0612,
+    TEST_SET_MONO_RGB_IMU_ACC_0612_0821,
 )
 
 from vins_replay_utils.uwarl_replay_decoder import auto_generate_labels_from_bag_file_name_with_json_config, ProcessedData
@@ -245,9 +246,9 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
 # -------------------------------- bag_test_set -------------------------------- #
 # go through each test set:
 for bag_test_case in [
-        # TEST_SET_MONO_RGB_IMU_ACC_0612,
+        TEST_SET_MONO_RGB_IMU_ACC_0612_0821,
         # TEST_SET_STEREO_ACC_0612,
-        TEST_SET_STEREO_IMU_ACC_0612,
+        # TEST_SET_STEREO_IMU_ACC_0612,
     ]:
     #TEST_SET_MONO_RGB_IMU_ACC_TIC, TEST_SET_MONO_RGB_IMU_INIT_GUESS_TIC]:
     #[TEST_SET_MONO_RGB_IMU, TEST_SET_MONO_IMU, TEST_SET_STEREO_IMU, TEST_SET_STEREO]:
