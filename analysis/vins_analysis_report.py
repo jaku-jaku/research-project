@@ -33,7 +33,7 @@ from configs.uwarl_test_set_d455 import (
     # TEST_SET_MONO_RGB_IMU_ACC_0612,
     # TEST_SET_STEREO_ACC_0612,
     # TEST_SET_STEREO_IMU_ACC_0612,
-    TEST_SET_MONO_RGB_IMU_ACC_0612_0821,
+    TEST_SET_MONO_RGB_IMU_ACC_0612_0922,
 )
 
 from vins_replay_utils.uwarl_replay_decoder import auto_generate_labels_from_bag_file_name_with_json_config, ProcessedData
@@ -44,6 +44,8 @@ from vins_replay_utils.uwarl_camera import MultiSensor_Camera_Node
 # -------------------------------- Files Automation -------------------------------- %% #
 # # 1. Pre-Config
 FIG_OUT_DIR = f"{Path.home()}/UWARL_catkin_ws/src/vins-research-pkg/research-project/output/vins_analysis"
+FEATURE_LOCAL_DEVELOPMENT  = True
+
 FEATURE_AUTO_SAVE                   = True
 FEATURE_AUTO_CLOSE_FIGS             = True
 FEATURE_OUTPUT_BAG_META             = False
@@ -61,12 +63,14 @@ PLOT_FEATURE_FIG_SIZE_SCATTER       = (8,8)
 PLOT_FEATURE_LINE_PLOT              = True
 PLOT_FEATURE_FIG_SIZE_LINE          = (4,4)
 RUN_NAME = ""
-
+RUN_TAG = ""
+if FEATURE_AUTO_CLOSE_FIGS:
+    RUN_TAG = "[DEV]"
+    
 FEATURE_PROCESS_BAGS = (FEATURE_PLOT_VOLTAGE_JOINT_EFFORTS or FEATURE_PLOT_3D_TRAJECTORIES)
 # -------------------------------- REPORT -------------------------------- %% #
 def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
 
-#%%
     if FEATURE_PROCESS_BAGS:
         # ASSUMPTION: this generation assumes that all test cases share same json config
         AUTO_BAG_DICT = auto_generate_labels_from_bag_file_name_with_json_config(
@@ -76,21 +80,21 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
     else:
         AUTO_BAG_DICT = None
     ic(AUTO_BAG_DICT);
-#%%         
+    
     # -------------------------------- Manager & Configs -------------------------------- %% #
     date_time = datetime.now().strftime("%Y-%m-%d")
     BP = BagParser(PARSER_CALLBACKS)
     AM = AnalysisManager(
         bag_dict=AUTO_BAG_DICT,
         output_dir=FIG_OUT_DIR,
-        run_name=f"run_{date_time}/{TEST_SET_TITLE}", 
+        run_name=f"run_{date_time}/{RUN_TAG}{TEST_SET_TITLE}", 
         test_set_name=bag_test_case_name,
         prefix=bag_subset.name,
         auto_save=FEATURE_AUTO_SAVE,
         auto_close=FEATURE_AUTO_CLOSE_FIGS,
         bag_directory=bag_test_case_config["directory"],
     )
-#%%
+
     # # 2. Data Pre-Processing
     # -------------------------------- Pre-Processing -------------------------------- %% #
     # 0. Process Config File
@@ -117,7 +121,7 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
             AM.save_dict(data.bag_topics, "bag_topics")
             AM.save_dict(data.bag_info, "bag_info")
             break
-#%%
+
     # # 3. Plotting Multiple datasets from multiple bagfiles
     # -------------------------------- Multi-Bag Data -------------------------------- %% #    
     # 2. Load into data plotter:
@@ -146,7 +150,7 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
         AM.save_fig(fig, title)
         fig,ax,title = plot_time_parallel(DM, data_sets_y, figsize=(15,4))
         AM.save_fig(fig, title)
-#%%
+
     # -------------------------------- Plot Data Prep: 3D trajectories -------------------------------- %% #
     if FEATURE_PLOT_3D_TRAJECTORIES:
         # 3. assemble data sets:
@@ -189,7 +193,7 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
 
         for label,data in data_sets_3d.items():
             print(f"> [{label}] t0:{data['t0']}")
-#%%
+
         # # 4. Plot:
         ### pip install ipympl
         # fig, axs = plot_spatial(BagPlot, data_sets_3d, figsize=(10,8), view_angles=[(30,45)], show_orientations=False)
@@ -246,20 +250,28 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
 # -------------------------------- bag_test_set -------------------------------- #
 # go through each test set:
 for bag_test_case in [
-        TEST_SET_MONO_RGB_IMU_ACC_0612_0821,
+        TEST_SET_MONO_RGB_IMU_ACC_0612_0922,
         # TEST_SET_STEREO_ACC_0612,
         # TEST_SET_STEREO_IMU_ACC_0612,
     ]:
     #TEST_SET_MONO_RGB_IMU_ACC_TIC, TEST_SET_MONO_RGB_IMU_INIT_GUESS_TIC]:
     #[TEST_SET_MONO_RGB_IMU, TEST_SET_MONO_IMU, TEST_SET_STEREO_IMU, TEST_SET_STEREO]:
     # go through all the bags set in each test set
-    for bag_subset in bag_test_case.TESTSET.value:
+    for test_index, bag_subset in enumerate(bag_test_case.TESTSET.value):
+        
+        # [DEV]:
+        if FEATURE_LOCAL_DEVELOPMENT and test_index < 5: # skip n tests
+            continue
+        
+        # [MAIN]:
         if_exist = len(bag_subset.value) > 0
         if if_exist:
             generate_report(bag_test_case.__name__, bag_test_case.CONFIG.value, bag_subset)
         else:
             print(f"WARNING, test subset is empty, skipping tests {bag_subset.name}")
         
-        # break
+        # [DEV]:
+        if FEATURE_LOCAL_DEVELOPMENT:
+            break
             
 # %%
