@@ -23,6 +23,7 @@ class MultiSensor_Camera_Node:
     # required:
     _config_file: str
     # hidden:
+    _prefix: str = ""
     _load_subconfigs: bool = False
     _verbose: bool = True
     _node_name: str = None
@@ -32,9 +33,9 @@ class MultiSensor_Camera_Node:
     _n_cams: int = 0
     # optional:
     _KEY_PARAM: str = "estimate_extrinsic"
-    _CAM_ID = "cam{0}_calib"
-    _N_CAMS = "num_of_cam"
-    _IF_IMU = "imu"
+    _CAM_ID = "{0}cam{1}_calib"
+    _N_CAMS = "{0}num_of_cam"
+    _IF_IMU = "{0}imu"
     
     def __post_init__(self):
         _config_file = self._config_file
@@ -44,13 +45,13 @@ class MultiSensor_Camera_Node:
         self._node_name = _name
         self._cam_config = self.read_camera_config(path=_config_file)
         # extract sub-configs:
-        self._n_cams = self._cam_config[self._N_CAMS]
+        self._n_cams = self._cam_config[self._N_CAMS.format(self._prefix)]
         if self._load_subconfigs:
             self._cam_subconfigs = list()
             for i in range(self._n_cams):
-                _cam_config_name = os.path.join(_dir, self._cam_config[self._CAM_ID.format(i)])
+                _cam_config_name = os.path.join(_dir, self._cam_config[self._CAM_ID.format(self._prefix, i)])
                 self._cam_subconfigs.append(self.read_camera_config(path=_cam_config_name))
-        self._if_imu = self._cam_config[self._IF_IMU]
+        self._if_imu = self._cam_config[self._IF_IMU.format(self._prefix)]
 
     @staticmethod
     def read_camera_config(path):
@@ -82,7 +83,7 @@ class MultiSensor_Camera_Node:
         return fig, ax
 
     def get_cam_extrinsic(self, index):
-        return np.array(self._cam_config[f"body_T_cam{index}"]["data"]).reshape((4,4))
+        return np.array(self._cam_config[f"{self._prefix}body_T_cam{index}"]["data"]).reshape((4,4))
     
     def get_cam_aspect_ratio(self, index):
         if self._cam_subconfigs:
@@ -91,7 +92,7 @@ class MultiSensor_Camera_Node:
             return self._cam_config["image_height"] / self._cam_config["image_width"]
 
     def get_cam_topic(self, index):
-        key = f"cam{index}_topic"
+        key = f"{self._prefix}cam{index}_topic"
         if key in self._cam_config:
             return self._cam_config[key]
         else:

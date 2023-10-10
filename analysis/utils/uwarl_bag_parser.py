@@ -112,14 +112,29 @@ class BagParser:
         return payload
     
     def process_all_bag_msgs(self):
+        list_of_topics = self._bag_parser_reg_map.keys()
         with self._bag_data_lock:
-            for topic, msg, ros_time in self._bag_data.read_messages():
+            for topic, msg, ros_time in self._bag_data.read_messages(topics=list_of_topics):
                 if self._bag_samples[topic] is None:
                     self._bag_samples[topic] = msg
                 # topic based parsing:
-                if topic in self._bag_parser_reg_map:
-                    payload_ = self._bag_parser_reg_map[topic](self._all_processed_bag, topic, msg)
-                    self._all_processed_bag.update(payload_)
+                payload_ = self._bag_parser_reg_map[topic](self._all_processed_bag, topic, msg)
+                self._all_processed_bag.update(payload_)
+    
+    def process_only_last_bag_msgs(self, T_SPAN_SECONDS=1):
+        list_of_topics = self._bag_parser_reg_map.keys()
+        
+        start_time = self._bag_data.get_start_time()
+        end_time = self._bag_data.get_end_time()
+        start_time_1s_before_end = end_time - T_SPAN_SECONDS if (end_time - start_time) > T_SPAN_SECONDS else start_time
+        
+        with self._bag_data_lock:
+            for topic, msg, ros_time in self._bag_data.read_messages(topics=list_of_topics, start_time=rospy.Time.from_sec(start_time_1s_before_end)):
+                if self._bag_samples[topic] is None:
+                    self._bag_samples[topic] = msg
+                # topic based parsing:
+                payload_ = self._bag_parser_reg_map[topic](self._all_processed_bag, topic, msg)
+                self._all_processed_bag.update(payload_)
 
     def get_bag_samples_safe(self):
         payload = {}

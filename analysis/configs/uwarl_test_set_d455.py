@@ -463,6 +463,10 @@ class DATASET_DEMO_0518_MONO_RGB(Enum):
         "EE-0-2_DEMO-6_vins-replay.bag",
     ]
 
+class DATASET_DEMO_0612_MONO_RGB_DUAL(Enum):
+    SQR_39 = ["dual-1-0_DEMO-39_vins-replay.bag"]
+        
+
 class TEST_SET_MONO_RGB_IMU_ACC_0518(Enum):
     CONFIG = {
         "directory": f"{Path.home()}/.ros/bag_replay_recorder_files/waterloo_steel_demo_0518/mono_rgb_imu/S-1_E-1_accurate_T_ic_manufacture/2023-05-18",
@@ -608,3 +612,10 @@ class TEST_SET_STEREO_IMU_ACC_0612(Enum):
         "demo_map": f"{Path.home()}/.ros/bagfiles/waterloo_steel_demo_0612/session_1/demo_map.json",
     }
     TESTSET = DATASET_DEMO_0612_MONO_RGB
+class TEST_SET_DUAL_MONO_IMU_0612_1010(Enum):
+    CONFIG = {
+        "directory": f"{Path.home()}/.ros/bag_replay_recorder_files/waterloo_steel_demo_0612/mono_rgb_imu/S-1_E-1_dual/2023-10-10",
+        "camera_config_file_dual": f"{Path.home()}/.ros/bag_replay_recorder_files/waterloo_steel_demo_0612/mono_rgb_imu/S-1_E-1_dual/mono_rgb_imu_config_dual.yaml",
+        "demo_map": f"{Path.home()}/.ros/bagfiles/waterloo_steel_demo_0612/session_1/demo_map.json",
+    }
+    TESTSET = DATASET_DEMO_0612_MONO_RGB_DUAL

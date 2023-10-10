@@ -1,24 +1,35 @@
 from uwarl_bag_utils.bag_parser import BagParser
 ### common ###
 PARSER_TYPE_GROUP = {
-    'accel'     : ['/cam_EE/accel/sample', '/cam_base/accel/sample'],
-    'gyro'      : ['/cam_EE/gyro/sample', '/cam_base/gyro/sample'],
-    'vicon'     : ['/vicon/cam_EE/cam_EE', '/vicon/cam_base/cam_base', '/vicon/wam_EE/wam_EE', '/vicon/summit_base/summit_base', '/vicon/wam_base/wam_base', '/vicon/wam_ee/wam_ee'],
-    'vins-mono' : ['/vins_estimator/path', '/loop_fusion/pose_graph_path'],
-    'system'    : ['/uwarl/robotnik_base_hw/voltage'],
+    # 'accel'     : ['/cam_EE/accel/sample', '/cam_base/accel/sample'],
+    # 'gyro'      : ['/cam_EE/gyro/sample', '/cam_base/gyro/sample'],
+    # 'vicon'     : ['/vicon/cam_ee/cam_ee', '/vicon/wam_EE/wam_EE', '/vicon/summit_base/summit_base', '/vicon/wam_base/wam_base', '/vicon/wam_ee/wam_ee'],
+    # 'system'    : ['/uwarl/robotnik_base_hw/voltage'],
+    ### [Dual Vins-Mono] Topics:
+    'vins-GT'   : ['/vins_estimator/base/vicon/path', '/vins_estimator/EE/vicon/path'],
+    'vins-est'  : ['/vins_estimator/base/path', '/vins_estimator/EE/path'],
+    'vins-loop' : ['/loop_fusion/base/pose_graph_path', '/loop_fusion/EE/pose_graph_path'],
 }
 
 PARSER_CALLBACKS ={
-
-    # '/vicon/markers'                 
-    # /vicon/summit_base/summit_base: geometry_msgs/TransformStamped
-    '/vicon/summit_base/summit_base'         : lambda data,topic,msg: BagParser.parse_vicon(data,topic,msg),
-    # /vicon/wam_EE/wam_EE: geometry_msgs/TransformStamped
-    '/vicon/wam_EE/wam_EE'                   : lambda data,topic,msg: BagParser.parse_vicon(data,topic,msg),
-    # /vicon/wam_base/wam_base: geometry_msgs/TransformStamped
-    '/vicon/wam_base/wam_base'               : lambda data,topic,msg: BagParser.parse_vicon(data,topic,msg),
-    '/vicon/cam_EE/cam_EE'                   : lambda data,topic,msg: BagParser.parse_vicon(data,topic,msg),
-    '/vicon/cam_base/cam_base'               : lambda data,topic,msg: BagParser.parse_vicon(data,topic,msg),
+    # '/cam_EE/accel/sample'                   : lambda data,topic,msg: BagParser.parse_l515(data,topic,msg),
+    # '/cam_EE/gyro/sample'                    : lambda data,topic,msg: BagParser.parse_l515(data,topic,msg),
+    # '/cam_base/accel/sample'                 : lambda data,topic,msg: BagParser.parse_l515(data,topic,msg),
+    # '/cam_base/gyro/sample'                  : lambda data,topic,msg: BagParser.parse_l515(data,topic,msg),
+    # '/uwarl/cmd_vel'                         : lambda data,topic,msg: BagParser.parse_summit(data,topic,msg),
+    # '/uwarl/joint_states'                    : lambda data,topic,msg: BagParser.parse_summit(data,topic,msg),
+    # '/uwarl/mavros/imu/data'                 : lambda data,topic,msg: BagParser.parse_summit(data,topic,msg),
+    # '/uwarl/mavros/imu/mag'                  : lambda data,topic,msg: BagParser.parse_summit(data,topic,msg),
+    # '/uwarl/pad_teleop/cmd_vel'              : lambda data,topic,msg: BagParser.parse_summit(data,topic,msg),
+    # '/uwarl/robotnik_base_control/cmd_vel'   : lambda data,topic,msg: BagParser.parse_summit(data,topic,msg),
+    # '/uwarl/robotnik_base_control/odom'      : lambda data,topic,msg: BagParser.parse_summit(data,topic,msg),
+    
+    # '/vicon/cam_ee/cam_ee'                   : lambda data,topic,msg: BagParser.parse_vicon(data,topic,msg),
+    # '/vicon/markers'                         : lambda data,topic,msg: BagParser.parse_vicon(data,topic,msg),
+    # '/vicon/summit_base/summit_base'         : lambda data,topic,msg: BagParser.parse_vicon(data,topic,msg),
+    # '/vicon/wam_base/wam_base'               : lambda data,topic,msg: BagParser.parse_vicon(data,topic,msg),
+    # '/vicon/wam_ee/wam_ee'                   : lambda data,topic,msg: BagParser.parse_vicon(data,topic,msg),
+    # '/vicon/wam_EE/wam_EE'                   : lambda data,topic,msg: BagParser.parse_vicon(data,topic,msg),
     
     # '/wam/fts/fts_states'                    : lambda data,topic,msg: BagParser.parse_wam(data,topic,msg),
     '/wam/joint_states'                      : lambda data,topic,msg: BagParser.parse_wam(data,topic,msg),
@@ -26,64 +37,17 @@ PARSER_CALLBACKS ={
     '/wam/pose'                              : lambda data,topic,msg: BagParser.parse_wam(data,topic,msg),
     
     # [VIO: Vins-Mono]:
-    # /loop_fusion/base_path: nav_msgs/Path
-    # /loop_fusion/camera_pose_visual: visualization_msgs/MarkerArray
-    # /loop_fusion/margin_cloud_loop_rect: sensor_msgs/PointCloud
-    # /loop_fusion/odometry_rect: nav_msgs/Odometry
-    # /loop_fusion/path_1: nav_msgs/Path
-    # /loop_fusion/point_cloud_loop_rect: sensor_msgs/PointCloud
-    # /loop_fusion/pose_graph: visualization_msgs/MarkerArray
-    # /loop_fusion/pose_graph_path: nav_msgs/Path
-    '/loop_fusion/pose_graph_path'    : lambda data,topic,msg: BagParser.parse_vio(data,topic,msg),
-
-    # /vins_estimator/camera_pose: nav_msgs/Odometry
-    # /vins_estimator/camera_pose_visual: visualization_msgs/MarkerArray
-    # /vins_estimator/extrinsic: nav_msgs/Odometry
-    # /vins_estimator/imu_propagate: nav_msgs/Odometry
-    # /vins_estimator/key_poses: visualization_msgs/Marker
-    # /vins_estimator/keyframe_point: sensor_msgs/PointCloud
-    # /vins_estimator/keyframe_pose: nav_msgs/Odometry
-    # /vins_estimator/margin_cloud: sensor_msgs/PointCloud
-    # /vins_estimator/odometry: nav_msgs/Odometry
-    # /vins_estimator/path: nav_msgs/Path
-    '/vins_estimator/path'            : lambda data,topic,msg: BagParser.parse_vio(data,topic,msg),
-    # /vins_estimator/point_cloud: sensor_msgs/PointCloud
+    '/vins_estimator/base/vicon/path'      : lambda data,topic,msg: BagParser.parse_vio(data,topic,msg),
+    '/vins_estimator/EE/vicon/path'        : lambda data,topic,msg: BagParser.parse_vio(data,topic,msg),
     
-    # [SYSTEM: voltage]:
-    # /uwarl/robotnik_base_hw/voltage: std_msgs/Float32
-    '/uwarl/robotnik_base_hw/voltage' : lambda data,topic,msg: BagParser.parse_voltage(data,topic,msg),
-    # /uwarl/joint_states: sensor_msgs/JointState
-    # /uwarl/joy: sensor_msgs/Joy
-    # /uwarl/mavros/imu/data: sensor_msgs/Imu
-    # /uwarl/mavros/imu/mag: sensor_msgs/MagneticField
-    # /uwarl/robotnik_base_control/cmd_vel: geometry_msgs/Twist
-    # /uwarl/robotnik_base_control/odom: nav_msgs/Odometry
-    # /uwarl/robotnik_base_hw/emergency_stop: std_msgs/Bool
-    # /uwarl/robotnik_base_hw/io: robotnik_msgs/inputs_outputs
-    # /uwarl/robotnik_base_hw/state: robotnik_msgs/State
-    # /uwarl/robotnik_base_hw/status: robotnik_msgs/RobotnikMotorsStatus
+    '/vins_estimator/base/path'            : lambda data,topic,msg: BagParser.parse_vio(data,topic,msg),
+    '/vins_estimator/EE/path'              : lambda data,topic,msg: BagParser.parse_vio(data,topic,msg),
     
-    # '/uwarl/cmd_vel': 'geometry_msgs/Twist',
-    # '/uwarl/joint_states': 'sensor_msgs/JointState',
-    # '/uwarl/joy': 'sensor_msgs/Joy',
-    # '/uwarl/mavros/imu/data': 'sensor_msgs/Imu',
-    # '/uwarl/mavros/imu/mag': 'sensor_msgs/MagneticField',
-    # '/uwarl/robotnik_base_control/cmd_vel': 'geometry_msgs/Twist',
-    # '/uwarl/robotnik_base_control/odom': 'nav_msgs/Odometry',
-    # '/uwarl/robotnik_base_hw/emergency_stop': 'std_msgs/Bool',
-    # '/uwarl/robotnik_base_hw/io': 'robotnik_msgs/inputs_outputs',
-    # '/uwarl/robotnik_base_hw/state': 'robotnik_msgs/State',
-    # '/uwarl/robotnik_base_hw/status': 'robotnik_msgs/RobotnikMotorsStatus',
-    # '/uwarl/robotnik_base_hw/voltage': 'std_msgs/Float32',
+    '/loop_fusion/base/pose_graph_path'    : lambda data,topic,msg: BagParser.parse_vio(data,topic,msg),
+    '/loop_fusion/EE/pose_graph_path'      : lambda data,topic,msg: BagParser.parse_vio(data,topic,msg),
     
-    # '/vicon/summit_base/summit_base': 'geometry_msgs/TransformStamped',
-    # '/vicon/wam_EE/wam_EE': 'geometry_msgs/TransformStamped',
-    # '/vicon/wam_base/wam_base': 'geometry_msgs/TransformStamped',
-    
-    # '/wam/fts/fts_states': 'geometry_msgs/Wrench',
-    # '/wam/joint_states': 'sensor_msgs/JointState',
-    # '/wam/move_is_done': 'std_msgs/Bool',
-    # '/wam/pose': 'geometry_msgs/PoseStamped'}
+    # [SYSTEM: voltage]: to analyze the battery performance @ `waterloo_steel/waterloo_steel_demo/waterloo_steel_analyzer/jupyter/battery_test.ipynb`
+    # '/uwarl/robotnik_base_hw/voltage' : lambda data,topic,msg: BagParser.parse_voltage(data,topic,msg),
     
     ### [UNUSED]:
     # /cam_EE/accel/imu_info

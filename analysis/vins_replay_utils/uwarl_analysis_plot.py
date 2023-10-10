@@ -219,7 +219,8 @@ def plot_data_sets_subplots(data_sets_xys, xlabel="", figsize=(5, 5)):
 # %% 
 # -------------------------------- Plot Time Functions -------------------------------- %% #
 
-def plot_time_series(bag_plot, data_sets_y, title=None, if_label_bags=True, figsize=DEFAULT_FIGSIZE):
+def plot_time_series(
+    bag_plot:MultiBagsDataManager, data_sets_y, title=None, if_label_bags=True, figsize=DEFAULT_FIGSIZE):
     """
     data_sets_y = {
         "Voltage (V)"       : battery_v,
@@ -269,7 +270,7 @@ def plot_time_series(bag_plot, data_sets_y, title=None, if_label_bags=True, figs
         
     return fig, ax, f"{title}_time_series"
 
-def plot_time_parallel(bag_plot, data_sets_y, title=None, figsize=DEFAULT_FIGSIZE):
+def plot_time_parallel(bag_plot:MultiBagsDataManager, data_sets_y, title=None, figsize=DEFAULT_FIGSIZE):
     """
     data_sets_y = {
         "Voltage (V)"       : battery_v,
@@ -296,12 +297,13 @@ def plot_time_parallel(bag_plot, data_sets_y, title=None, figsize=DEFAULT_FIGSIZ
 # -------------------------------- Plot: 3D trajectories -------------------------------- %% #
 # 4. Plot:
 from scipy.spatial.transform import Rotation as R
-def plot_spatial(bag_plot, 
+def plot_spatial(bag_plot:MultiBagsDataManager, 
         data_sets_3d, title=None, 
         figsize=DEFAULT_FIGSIZE, projection='3d', proj_type='ortho',
         N_sample=1, show_grid=True, view_angles=[(30,10),(70,45),(10,10)],
         show_orientations=False, N_orientations_sample=20, zero_orienting=False,
-        scatter_or_line="line", bag_subset=None, camera=None, zero_position=True,
+        scatter_or_line="line", bag_subset=None, cameras=None, zero_position=True,
+        fixed_view=False,
 ):
     """ Plot is 3D Spatial Coordinates per data bag
         - muxing data from multiple topics
@@ -321,13 +323,6 @@ def plot_spatial(bag_plot,
         for i, (label, data) in enumerate(data_sets_3d.items()):
             # copy data:
             is_data_valid = len(data['t'][j]) > 1
-     
-            if "Vicon Base" in label or "Vicon Cam Base" in label and bag_subset is not None:
-                if "base" not in bag_subset[j]:
-                    continue
-            if "Vicon EE" in label or "Vicon Cam EE" in label and bag_subset is not None:
-                if "EE" not in bag_subset[j]:
-                    continue
                 
             if is_data_valid:
                 N_sample_ = N_sample
@@ -384,13 +379,14 @@ def plot_spatial(bag_plot,
                         axs[view_idx].plot3D(x_[:,0], x_[:,1], x_[:,2], color=CWheel[i], label=label_list[-1])
                         axs[view_idx].legend(bbox_to_anchor=(0.3, 0.9), fontsize=10)
                     if show_orientations:
-                        if camera and "VINS" in label:
+                        if cameras and "VINS" in label:
                             for r, x in zip(r_.as_dcm(), xu_):
                                 T_rbt = np.eye(4)
                                 T_rbt[0:3,0:3] = r # 3x3
                                 T_rbt[0:3, 3] = x
                                 # ic(r, x, T_rbt)
-                                camera.plot_camera(ax=axs[view_idx], RBT_SE3=T_rbt, verbose=False)
+                                cam_id = 0 if "base" in label else 1
+                                cameras[cam_id].plot_camera(ax=axs[view_idx], RBT_SE3=T_rbt, verbose=False)
                         else:
                             ex_ = r_.apply([1,0,0])
                             ey_ = r_.apply([0,1,0])
@@ -399,10 +395,11 @@ def plot_spatial(bag_plot,
                             axs[view_idx].quiver(xu_[:,0], xu_[:,1], xu_[:,2], ey_[:,0], ey_[:,1], ey_[:,2], length=0.1, normalize=True, color="green")
                             axs[view_idx].quiver(xu_[:,0], xu_[:,1], xu_[:,2], ez_[:,0], ez_[:,1], ez_[:,2], length=0.1, normalize=True, color="blue")
                     
-                    a_ = np.max(np.abs([np.max(x_, axis=0), np.min(x_, axis=0)]))
-                    axs[view_idx].set_xlim3d(-a_, a_)
-                    axs[view_idx].set_ylim3d(-a_, a_)
-                    axs[view_idx].set_zlim3d(-a_, a_)
+                    if fixed_view:
+                        a_ = np.max(np.abs([np.max(x_, axis=0), np.min(x_, axis=0)]))*2
+                        axs[view_idx].set_xlim3d(-a_, a_)
+                        axs[view_idx].set_ylim3d(-a_, a_)
+                        axs[view_idx].set_zlim3d(-a_, a_)
                 
         axs[j].set_title(f"{bag_plot.list_of_bag_labels[j]}")
         for k in range(N_views): 
