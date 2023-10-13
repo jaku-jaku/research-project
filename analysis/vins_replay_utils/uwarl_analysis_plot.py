@@ -239,7 +239,8 @@ def plot_time_series(
         try:
             data_sets_xy[label]["y"] = np.concatenate(data['y'])
         except:
-            print(data)
+            print("[Error] Could not concatenate~", data)
+            # print(data)
             exit(1)
         ### cumulative time:
         prev_t0 = 0
@@ -334,24 +335,24 @@ def plot_spatial(bag_plot:MultiBagsDataManager,
                 label_list.append(label)
             
 
-            if "Vicon" in label and is_data_valid and (zero_orienting is True or True):
+            if ("Vicon" in label) and is_data_valid and zero_orienting:
                 # ic(label, j, u_[1:5])
                 # rr_ = R.from_quat(u_[1:5])
                 # ic(rr_.as_euler('zyx', degrees=True))
                 # r2_ = R.from_quat(np.mean(uu_,axis=0)) # pick means orientation
-                ic(label, u_[0:10])
+                # ic(label, u_[0:10])
                 r2_ = R.from_quat(u_[0]) # pick means orientation
                 r2_deg = r2_.as_euler('zyx', degrees=True)
-                ic(label, r2_deg)
+                # ic(label, r2_deg)
                 r2_ = R.from_euler('z', -r2_deg[2], degrees=True)
-                ic(label, r2_.as_euler('zyx', degrees=True))
+                # ic(label, r2_.as_euler('zyx', degrees=True))
                 x_=r2_.apply(x_)
                 label_list[-1] += " (re-oriented)"
                 # TODO: reorient vicon with first index
                 
             if zero_position is True:
                 x_ = np.subtract(x_, x_[0])
-                print(x_[0])
+                # print(x_[0])
        
             if is_data_valid:
                 # orientation correction:
@@ -360,7 +361,7 @@ def plot_spatial(bag_plot:MultiBagsDataManager,
                 uu_ = u_[::N_sample_rate]
                 if show_orientations:
                     uu_[0] = uu_[1] # u_ may be 0 quaternion
-                    ic(np.shape(uu_), np.shape(xu_), uu_[0])
+                    # ic(np.shape(uu_), np.shape(xu_), uu_[0])
                     r_ = R.from_quat(uu_)
 
             for k in range(N_views):

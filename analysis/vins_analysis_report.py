@@ -34,7 +34,9 @@ from configs.uwarl_test_set_d455 import (
     # TEST_SET_STEREO_ACC_0612,
     # TEST_SET_STEREO_IMU_ACC_0612,
     # TEST_SET_MONO_RGB_IMU_ACC_0612_0922,
-    TEST_SET_DUAL_MONO_IMU_0612_1010
+    TEST_SET_DUAL_MONO_IMU_0612_1010,
+    TEST_SET_DUAL_MONO_IMU_0612_1011,
+    TEST_SET_DUAL_MONO_IMU_0612_1012,
 )
 
 from vins_replay_utils.uwarl_replay_decoder import auto_generate_labels_from_bag_file_name_with_json_config, ProcessedData
@@ -47,7 +49,7 @@ from vins_replay_utils.uwarl_camera import MultiSensor_Camera_Node
 FIG_OUT_DIR = f"{Path.home()}/UWARL_catkin_ws/src/vins-research-pkg/research-project/output/vins_analysis"
 FEATURE_LOCAL_DEVELOPMENT  = True
 
-FEATURE_ONLY_LAST                   = True
+FEATURE_ONLY_LAST                   = 0.5 #seconds
 
 FEATURE_AUTO_SAVE                   = True
 FEATURE_AUTO_CLOSE_FIGS             = True
@@ -125,7 +127,7 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
     if FEATURE_PROCESS_BAGS:    
         pData={}
         for label, path in AM._bag_dict.items():
-            pData[label] = ProcessedData(BP, AM._bag_directory, path, if_only_last=FEATURE_ONLY_LAST)
+            pData[label] = ProcessedData(BP, AM._bag_directory, path, T_LAST_S=FEATURE_ONLY_LAST)
     toc = time.perf_counter()
     print(f"[tic-toc] Bag Processed: {(toc - tic)/60:.0f} minutes {(toc - tic)%60:.2f} seconds")
     
@@ -182,26 +184,17 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
         data_sets_3d["Vicon Cam EE"]            = DM.extract_data(
             bag_topic="/vins_estimator/EE/vicon/path", dict_var_type=POSE_VARS,
         )
-
-        vins_pre_process_funcs = None
-        if "vins_pre_process_functions" in bag_test_case_config:
-            vins_pre_process_funcs = bag_test_case_config["vins_pre_process_functions"]
-            
         data_sets_3d["VINS Est Base"]                = DM.extract_data(
             bag_topic="/vins_estimator/base/path", dict_var_type=POSE_VARS,
-            # pre_process_funcs=vins_pre_process_funcs,
-        )
-        data_sets_3d["VINS Loop Base"]                = DM.extract_data(
-            bag_topic="/loop_fusion/base/pose_graph_path", dict_var_type=POSE_VARS,
-            # pre_process_funcs=vins_pre_process_funcs,
         )
         data_sets_3d["VINS Est EE"]                = DM.extract_data(
             bag_topic="/vins_estimator/EE/path", dict_var_type=POSE_VARS,
-            # pre_process_funcs=vins_pre_process_funcs,
+        )
+        data_sets_3d["VINS Loop Base"]                = DM.extract_data(
+            bag_topic="/loop_fusion/base/pose_graph_path", dict_var_type=POSE_VARS,
         )
         data_sets_3d["VINS Loop EE"]                = DM.extract_data(
             bag_topic="/loop_fusion/EE/pose_graph_path", dict_var_type=POSE_VARS,
-            # pre_process_funcs=vins_pre_process_funcs,
         )
         # debug print:
         for label,data in data_sets_3d.items():
@@ -263,7 +256,9 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
 # -------------------------------- bag_test_set -------------------------------- #
 # go through each test set:
 for bag_test_case in [
-        TEST_SET_DUAL_MONO_IMU_0612_1010,
+        # TEST_SET_DUAL_MONO_IMU_0612_1010,
+        # TEST_SET_DUAL_MONO_IMU_0612_1011,
+        TEST_SET_DUAL_MONO_IMU_0612_1012,
     ]:
     #TEST_SET_MONO_RGB_IMU_ACC_TIC, TEST_SET_MONO_RGB_IMU_INIT_GUESS_TIC]:
     #[TEST_SET_MONO_RGB_IMU, TEST_SET_MONO_IMU, TEST_SET_STEREO_IMU, TEST_SET_STEREO]:
@@ -282,7 +277,7 @@ for bag_test_case in [
             print(f"WARNING, test subset is empty, skipping tests {bag_subset.name}")
         
         # [DEV]:
-        if FEATURE_LOCAL_DEVELOPMENT:
-            break
+        # if FEATURE_LOCAL_DEVELOPMENT:
+        #     break
             
 # %%

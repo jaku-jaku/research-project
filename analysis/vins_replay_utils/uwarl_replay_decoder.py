@@ -77,7 +77,7 @@ class ProcessedData:
     dT: float = 0.0
     description: Dict[str, Union[str, float]]
 
-    def __init__(self, BP:BagParser, directory, bag_path, if_only_last=False):
+    def __init__(self, BP:BagParser, directory, bag_path, T_LAST_S=-1):
         self._reset_cache()
         self._bag_path = bag_path
         # load bag file:
@@ -85,8 +85,8 @@ class ProcessedData:
         BP.load_bag_topics()
         self.bag_info = BP.get_bag_info_safe()
         self.bag_topics = BP.get_bag_topics_lut_safe()
-        if if_only_last:
-            BP.process_only_last_bag_msgs() # TODO: very time consuming!!
+        if T_LAST_S > 0:
+            BP.process_only_last_bag_msgs(T_SPAN_SECONDS=T_LAST_S) # TODO: very time consuming!!
         else:    
             BP.process_all_bag_msgs() # TODO: very time consuming!!
         self.bag_data = BP.get_processed_bag_safe()

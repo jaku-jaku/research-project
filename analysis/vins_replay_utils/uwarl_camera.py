@@ -116,7 +116,6 @@ class MultiSensor_Camera_Node:
             self.plot_wireframe_camera(ax, extrinsic, RBT_SE3=RBT_SE3, aspect_ratio=aspect_ratio, f_length=axis_length,
                 show_axis=show_axis, facecolors=facecolors, linewidths=linewidths, edgecolors=edgecolors, alpha=alpha, 
                 auto_adjust_frame=auto_adjust_frame, cam_name=self.get_cam_topic(i), verbose=verbose)
-            ic(extrinsic)
 
         if (self._if_imu and show_axis) or show_body_origin:
             self.plot_axis(ax, RBT_SE3=RBT_SE3, q_length=axis_length, node_label="imu", verbose=verbose)
@@ -178,7 +177,6 @@ class MultiSensor_Camera_Node:
         :params:
         @RBT_SE3 Rigid Body Transformation Matrix in \SE(3)
         """
-        ic(RBT_SE3)
         R = RBT_SE3[:3,:3]
         T = RBT_SE3[:3,3]
         x,y,z = T
