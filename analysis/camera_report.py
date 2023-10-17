@@ -58,6 +58,7 @@ CONFIGS = {
     # "euroc-mono-imu":f"{CONFIG_DIR}/euroc/euroc_mono_imu_config.yaml",
     "d455-mono-imu-color-EE": f"{CONFIG_DIR}/uwarl_d455/mono_rgb_imu_config_EE.yaml",
     "d455-mono-imu-color-base": f"{CONFIG_DIR}/uwarl_d455/mono_rgb_imu_config_base.yaml",
+    "d435i-stereo-imu": f"{CONFIG_DIR}/realsense_d435i/realsense_stereo_imu_config.yaml",
     # "d455-stereo-imu-test":f"{CONFIG_DIR}/uwarl_d455/stereo_imu_config_test.yaml",
     # "d455-base-manufacture-Tic":f"{CONFIG_DIR}/uwarl_d455/eval_config_base_manufacture_Tic_c2i.yaml",
     # "d455-EE-manufacture-Tic":f"{CONFIG_DIR}/uwarl_d455/eval_config_EE_manufacture_Tic_c2i.yaml",
@@ -94,7 +95,7 @@ if COMBINED_OVERLAY:
 from spatialmath import SE3
 ENABLE_TRANSFORM = False
 if ENABLE_TRANSFORM:
-    cam_E = cams["d455-mono-imu-color-EE"]
+    cam_E = cams["d455-mono-imu-color-base"]
     # cam_b = cams["d455-stereo-imu-base"]
 
 def vins_d455_extrinsic_transformation(cam):

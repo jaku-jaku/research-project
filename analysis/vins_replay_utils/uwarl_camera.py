@@ -120,6 +120,7 @@ class MultiSensor_Camera_Node:
         if (self._if_imu and show_axis) or show_body_origin:
             self.plot_axis(ax, RBT_SE3=RBT_SE3, q_length=axis_length, node_label="imu", verbose=verbose)
         
+        
     def plot_wireframe_camera(self, 
             ax, extrinsic, RBT_SE3=np.eye(4,4), 
             f_length=0.15, aspect_ratio=0.1,
