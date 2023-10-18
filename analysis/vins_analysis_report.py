@@ -19,24 +19,9 @@ from utils.uwarl_bag_parser import BagParser, TYPES_VAR
 from configs.uwarl_common import PARSER_CALLBACKS
 # from configs.uwarl_test_set import TEST_SET_STEREO_IMU, TEST_SET_MONO_IMU, TEST_SET_STEREO, TEST_SET_SINGLE
 from configs.uwarl_test_set_d455 import (
-    TEST_SET_TITLE, TEST_SET_MONO_RGB_IMU, 
-    # TEST_SET_MONO_RGB_IMU_ACC_TIC, 
-    # TEST_SET_MONO_RGB_IMU_INIT_GUESS_TIC,
-    # TEST_SET_MONO_RGB_IMU_ACC_TCI,
-    # TEST_SET_MONO_RGB_IMU_ACC_TIC_MANUFACTURED,
-    # TEST_SET_MONO_RGB_IMU_ACC_TIC_V2,
-    # TEST_SET_MONO_RGB_IMU_ACC_TIC_V5,
-    # TEST_SET_MONO_RGB_IMU_ACC_0511,
-    # TEST_SET_MONO_RGB_IMU_ACC_0511_MAF,
-    # TEST_SET_MONO_RGB_IMU_ACC_0518,
-    # TEST_SET_MONO_RGB_IMU_ACC_0519,
-    # TEST_SET_MONO_RGB_IMU_ACC_0612,
-    # TEST_SET_STEREO_ACC_0612,
-    # TEST_SET_STEREO_IMU_ACC_0612,
-    # TEST_SET_MONO_RGB_IMU_ACC_0612_0922,
-    TEST_SET_DUAL_MONO_IMU_0612_1010,
-    TEST_SET_DUAL_MONO_IMU_0612_1011,
-    TEST_SET_DUAL_MONO_IMU_0612_1012,
+    TEST_SET_TITLE, 
+    TEST_SET_DUAL_MONO_IMU_0612_1017_v4,
+    TEST_SET_DUAL_MONO_IMU_0612_1017_v5,
 )
 
 from vins_replay_utils.uwarl_replay_decoder import auto_generate_labels_from_bag_file_name_with_json_config, ProcessedData
@@ -57,6 +42,7 @@ FEATURE_OUTPUT_BAG_META             = False
 
 FEATURE_PLOT_VOLTAGE_JOINT_EFFORTS  = False
 FEATURE_PLOT_3D_TRAJECTORIES        = True
+FEATURE_PLOT_CAMERAS                = True
 FEATURE_PLOT_CAM_CONFIGS            = True
 
 PLOT_FEATURE_ORIENTING              = False # TODO: orientation correction needed to be implemented
@@ -106,7 +92,7 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
     # 0. Process Config File
     # 0.1 generate camera pose:
     cameras = []
-    if FEATURE_PLOT_CAM_CONFIGS:
+    if FEATURE_PLOT_CAMERAS:
         # TODO: add camera plot functions
         if "camera_config_file_dual" in bag_test_case_config:
             print("Process dual configuration file")
@@ -117,6 +103,7 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
             config_file = bag_test_case_config["camera_config_file_EE"]
             cameras.append(MultiSensor_Camera_Node(_config_file=config_file))
             
+    if FEATURE_PLOT_CAM_CONFIGS:    
         for cam in cameras:
             fig, ax = cam.create_3d_figure()
             cam.plot_camera(ax=ax)
@@ -256,9 +243,8 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
 # -------------------------------- bag_test_set -------------------------------- #
 # go through each test set:
 for bag_test_case in [
-        # TEST_SET_DUAL_MONO_IMU_0612_1010,
-        # TEST_SET_DUAL_MONO_IMU_0612_1011,
-        TEST_SET_DUAL_MONO_IMU_0612_1012,
+        # TEST_SET_DUAL_MONO_IMU_0612_1017_v4,
+        TEST_SET_DUAL_MONO_IMU_0612_1017_v5,
     ]:
     #TEST_SET_MONO_RGB_IMU_ACC_TIC, TEST_SET_MONO_RGB_IMU_INIT_GUESS_TIC]:
     #[TEST_SET_MONO_RGB_IMU, TEST_SET_MONO_IMU, TEST_SET_STEREO_IMU, TEST_SET_STEREO]:
