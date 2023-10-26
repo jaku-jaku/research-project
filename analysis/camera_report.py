@@ -93,7 +93,7 @@ if COMBINED_OVERLAY:
 # %% 
 # NOW, LET'S ROTATE THE CAMERA, AND SEE THE CONFIGURATION:
 from spatialmath import SE3
-ENABLE_TRANSFORM = False
+ENABLE_TRANSFORM = True
 if ENABLE_TRANSFORM:
     cam_E = cams["d455-mono-imu-color-base"]
     # cam_b = cams["d455-stereo-imu-base"]
@@ -111,7 +111,7 @@ def vins_d455_extrinsic_transformation(cam):
     # its equivalent to inverse:
     a = SE3.EulerVec([0,0,-np.pi/2]).A
     a = a @ SE3.EulerVec([-np.pi/2,0,0]).A 
-
+    ic(a)
     A = a @ A 
     # B = a @ B 
     # ic(A,a, A2);
@@ -120,11 +120,11 @@ def vins_d455_extrinsic_transformation(cam):
     ic(Ainv.reshape(16));
     # ic(Binv.reshape(16));
     return a, A, 0 #, B
-
 if ENABLE_TRANSFORM:
     T_E, L_E, R_E= vins_d455_extrinsic_transformation(cam_E)
     ic(L_E, R_E);
     fig, ax = cam_E.create_3d_figure()
+    # cam_E.plot_camera(ax=ax)
     cam_E.plot_camera(ax=ax, RBT_SE3=T_E)
     
     # T_b, L_b, R_b= vins_d455_extrinsic_transformation(cam_b)

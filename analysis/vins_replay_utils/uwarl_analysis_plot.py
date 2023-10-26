@@ -304,110 +304,120 @@ def plot_spatial(bag_plot:MultiBagsDataManager,
         N_sample=1, show_grid=True, view_angles=[(30,10),(70,45),(10,10)],
         show_orientations=False, N_orientations_sample=20, zero_orienting=False,
         scatter_or_line="line", bag_subset=None, cameras=None, zero_position=True,
-        fixed_view=False,
+        fixed_view=False, split_map=None,
 ):
     """ Plot is 3D Spatial Coordinates per data bag
         - muxing data from multiple topics
+        - @split_map: {1:"Base", 0:"EE"}
     """
     
     N_bags = bag_plot.N_bags
     N_views = len(view_angles)
-    fig = plt.figure(figsize=(figsize[0]*N_bags, figsize[1]*N_views))
+    N_split =  len(split_map) if split_map else 1 
+    fig = plt.figure(figsize=(figsize[0]*N_bags*N_split, figsize[1]*N_views))
     fig.subplots_adjust(wspace=0, hspace=0)
-    axs = [fig.add_subplot(N_views,N_bags,i+1, projection=projection, proj_type=proj_type) for i in range(N_bags*N_views)]
+    axs = [fig.add_subplot(N_views,N_bags*N_split,i+1, projection=projection, proj_type=proj_type) for i in range(N_bags*N_views*N_split)]
     
     CMAP = CMAP_Selector("Seq2")
     cmap_handles, handler_map = CMAP.get_cmap_handles(N_color=len(data_sets_3d.keys()))  
     if_scatter = scatter_or_line == "scatter"
     for j in range(N_bags):
-        label_list = []
-        for i, (label, data) in enumerate(data_sets_3d.items()):
-            # copy data:
-            is_data_valid = len(data['t'][j]) > 1
-                
-            if is_data_valid:
-                N_sample_ = N_sample
-                if "Vicon" in label: # reduce vicon sampling rate
-                    N_sample_ = int(N_sample*10)
-                t_ = np.array(data['t'][j][::N_sample_].copy())
-                x_ = np.array(data['y'][j][::N_sample_].copy())
-                u_ = np.array(data['r'][j][::N_sample_].copy())
-                label_list.append(label)
-            
-
-            if ("Vicon" in label) and is_data_valid and zero_orienting:
-                # ic(label, j, u_[1:5])
-                # rr_ = R.from_quat(u_[1:5])
-                # ic(rr_.as_euler('zyx', degrees=True))
-                # r2_ = R.from_quat(np.mean(uu_,axis=0)) # pick means orientation
-                # ic(label, u_[0:10])
-                r2_ = R.from_quat(u_[0]) # pick means orientation
-                r2_deg = r2_.as_euler('zyx', degrees=True)
-                # ic(label, r2_deg)
-                r2_ = R.from_euler('z', -r2_deg[2], degrees=True)
-                # ic(label, r2_.as_euler('zyx', degrees=True))
-                x_=r2_.apply(x_)
-                label_list[-1] += " (re-oriented)"
-                # TODO: reorient vicon with first index
-                
-            if zero_position is True:
-                x_ = np.subtract(x_, x_[0])
-                # print(x_[0])
-       
-            if is_data_valid:
-                # orientation correction:
-                N_sample_rate = max(int(len(x_) / N_orientations_sample), 1)
-                xu_ = x_[::N_sample_rate]
-                uu_ = u_[::N_sample_rate]
-                if show_orientations:
-                    uu_[0] = uu_[1] # u_ may be 0 quaternion
-                    # ic(np.shape(uu_), np.shape(xu_), uu_[0])
-                    r_ = R.from_quat(uu_)
-
-            for k in range(N_views):
-                view_idx = j+k*N_bags
-                axs[view_idx].view_init(*view_angles[k])
-                axs[view_idx].set_aspect('equal')
-                axs[view_idx].grid(show_grid)
-                axs[view_idx].set_xlabel("x")
-                axs[view_idx].set_ylabel("y")
-                axs[view_idx].set_zlabel("z")
-                # plot points:
-                if is_data_valid:
-                    if if_scatter:
-                        axs[view_idx].scatter3D(x_[:,0], x_[:,1], x_[:,2], c=t_, cmap=CMAP[i], depthshade=True, label=label_list[-1], alpha=0.2, marker=".")
-                    else:
-                        axs[view_idx].plot3D(x_[:,0], x_[:,1], x_[:,2], color=CWheel[i], label=label_list[-1])
-                        axs[view_idx].legend(bbox_to_anchor=(0.3, 0.9), fontsize=10)
-                    if show_orientations:
-                        if cameras and "VINS" in label:
-                            for r, x in zip(r_.as_dcm(), xu_):
-                                T_rbt = np.eye(4)
-                                T_rbt[0:3,0:3] = r # 3x3
-                                T_rbt[0:3, 3] = x
-                                # ic(r, x, T_rbt)
-                                cam_id = 0 if "base" in label else 1
-                                cameras[cam_id].plot_camera(ax=axs[view_idx], RBT_SE3=T_rbt, verbose=False)
-                        else:
-                            ex_ = r_.apply([1,0,0])
-                            ey_ = r_.apply([0,1,0])
-                            ez_ = r_.apply([0,0,1])
-                            axs[view_idx].quiver(xu_[:,0], xu_[:,1], xu_[:,2], ex_[:,0], ex_[:,1], ex_[:,2], length=0.1, normalize=True, color="red")
-                            axs[view_idx].quiver(xu_[:,0], xu_[:,1], xu_[:,2], ey_[:,0], ey_[:,1], ey_[:,2], length=0.1, normalize=True, color="green")
-                            axs[view_idx].quiver(xu_[:,0], xu_[:,1], xu_[:,2], ez_[:,0], ez_[:,1], ez_[:,2], length=0.1, normalize=True, color="blue")
+        for m in range(N_split):
+            label_list = []
+            for i, (label, data) in enumerate(data_sets_3d.items()):
+                if split_map:
+                    sub_device = split_map[m]
+                    if sub_device not in label:
+                        continue # skip
+                    # else:
+                    #     print("plotting %s", sub_device)
                     
-                    if fixed_view:
-                        a_ = np.max(np.abs([np.max(x_, axis=0), np.min(x_, axis=0)]))*2
-                        axs[view_idx].set_xlim3d(-a_, a_)
-                        axs[view_idx].set_ylim3d(-a_, a_)
-                        axs[view_idx].set_zlim3d(-a_, a_)
+                # copy data:
+                is_data_valid = len(data['t'][j]) > 1
+                    
+                if is_data_valid:
+                    N_sample_ = N_sample
+                    if "Vicon" in label: # reduce vicon sampling rate
+                        N_sample_ = int(N_sample*10)
+                    t_ = np.array(data['t'][j][::N_sample_].copy())
+                    x_ = np.array(data['y'][j][::N_sample_].copy())
+                    u_ = np.array(data['r'][j][::N_sample_].copy())
+                    label_list.append(label)
                 
-        axs[j].set_title(f"{bag_plot.list_of_bag_labels[j]}")
-        for k in range(N_views): 
-            if if_scatter:
-                axs[j+k*N_bags].legend(
-                    handles=cmap_handles, labels=label_list, handler_map=handler_map, 
-                    bbox_to_anchor=(0.3, 0.9), fontsize=10)
+
+                if ("Vicon" in label) and is_data_valid and zero_orienting:
+                    # ic(label, j, u_[1:5])
+                    # rr_ = R.from_quat(u_[1:5])
+                    # ic(rr_.as_euler('zyx', degrees=True))
+                    # r2_ = R.from_quat(np.mean(uu_,axis=0)) # pick means orientation
+                    # ic(label, u_[0:10])
+                    r2_ = R.from_quat(u_[0]) # pick means orientation
+                    r2_deg = r2_.as_euler('zyx', degrees=True)
+                    # ic(label, r2_deg)
+                    r2_ = R.from_euler('z', -r2_deg[2], degrees=True)
+                    # ic(label, r2_.as_euler('zyx', degrees=True))
+                    x_=r2_.apply(x_)
+                    label_list[-1] += " (re-oriented)"
+                    # TODO: reorient vicon with first index
+                    
+                if zero_position is True:
+                    x_ = np.subtract(x_, x_[0])
+                    # print(x_[0])
+        
+                if is_data_valid:
+                    # orientation correction:
+                    N_sample_rate = max(int(len(x_) / N_orientations_sample), 1)
+                    xu_ = x_[::N_sample_rate]
+                    uu_ = u_[::N_sample_rate]
+                    if show_orientations:
+                        uu_[0] = uu_[1] # u_ may be 0 quaternion
+                        # ic(np.shape(uu_), np.shape(xu_), uu_[0])
+                        r_ = R.from_quat(uu_)
+
+                for k in range(N_views):
+                    view_idx = m+j+k*N_bags*N_split
+                    axs[view_idx].view_init(*view_angles[k])
+                    axs[view_idx].set_aspect('equal')
+                    axs[view_idx].grid(show_grid)
+                    axs[view_idx].set_xlabel("x")
+                    axs[view_idx].set_ylabel("y")
+                    axs[view_idx].set_zlabel("z")
+                    # plot points:
+                    if is_data_valid:
+                        if if_scatter:
+                            axs[view_idx].scatter3D(x_[:,0], x_[:,1], x_[:,2], c=t_, cmap=CMAP[i], depthshade=True, label=label_list[-1], alpha=0.2, marker=".")
+                        else:
+                            axs[view_idx].plot3D(x_[:,0], x_[:,1], x_[:,2], color=CWheel[i], label=label_list[-1])
+                            axs[view_idx].legend(bbox_to_anchor=(0.3, 0.9), fontsize=10)
+                        if show_orientations:
+                            if cameras and "VINS" in label:
+                                for r, x in zip(r_.as_matrix(), xu_):
+                                    T_rbt = np.eye(4)
+                                    T_rbt[0:3,0:3] = r # 3x3
+                                    T_rbt[0:3, 3] = x
+                                    # ic(r, x, T_rbt)
+                                    cam_id = 0 if "Base" in label else 1
+                                    cameras[cam_id].plot_camera(ax=axs[view_idx], RBT_SE3=T_rbt, verbose=False)
+                            else:
+                                ex_ = r_.apply([1,0,0])
+                                ey_ = r_.apply([0,1,0])
+                                ez_ = r_.apply([0,0,1])
+                                axs[view_idx].quiver(xu_[:,0], xu_[:,1], xu_[:,2], ex_[:,0], ex_[:,1], ex_[:,2], length=0.1, normalize=True, color="red")
+                                axs[view_idx].quiver(xu_[:,0], xu_[:,1], xu_[:,2], ey_[:,0], ey_[:,1], ey_[:,2], length=0.1, normalize=True, color="green")
+                                axs[view_idx].quiver(xu_[:,0], xu_[:,1], xu_[:,2], ez_[:,0], ez_[:,1], ez_[:,2], length=0.1, normalize=True, color="blue")
+                        
+                        if fixed_view:
+                            a_ = np.max(np.abs([np.max(x_, axis=0), np.min(x_, axis=0)]))*2
+                            axs[view_idx].set_xlim3d(-a_, a_)
+                            axs[view_idx].set_ylim3d(-a_, a_)
+                            axs[view_idx].set_zlim3d(-a_, a_)
+                    
+            axs[j].set_title(f"{bag_plot.list_of_bag_labels[j]}")
+            for k in range(N_views): 
+                if if_scatter:
+                    axs[j+k*N_bags*N_split+m].legend(
+                        handles=cmap_handles, labels=label_list, handler_map=handler_map, 
+                        bbox_to_anchor=(0.3, 0.9), fontsize=10)
     
     # save file:
     if title is None:
@@ -416,6 +426,7 @@ def plot_spatial(bag_plot:MultiBagsDataManager,
     attr=f"{scatter_or_line}"
     attr+= "_oriented" if zero_orienting else ""
     attr+= "_pose" if show_orientations else ""
+    attr+= "_split" if split_map else ""
     title = f"{title}_spatial_{attr}"
 
     return fig, axs, title

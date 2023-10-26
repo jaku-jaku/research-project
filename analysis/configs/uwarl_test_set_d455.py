@@ -82,10 +82,39 @@ class TEST_SET_DUAL_MONO_IMU_0612_1017_v4(Enum):
         "demo_map": f"{Path.home()}/.ros/bagfiles/waterloo_steel_demo_0612/session_1/demo_map.json",
     }
     TESTSET = DATASET_DEMO_0612_MONO_RGB_DUAL_ALL
-class TEST_SET_DUAL_MONO_IMU_0612_1017_v5(Enum):
+class TEST_SET_DUAL_MONO_IMU_0612_1018_v6(Enum):
     CONFIG = {
-        "directory": f"{Path.home()}/.ros/bag_replay_recorder_files/waterloo_steel_demo_0612/mono_rgb_imu/S-1_E-1_dual_v5/2023-10-17",
-        "camera_config_file_dual": f"{Path.home()}/.ros/bag_replay_recorder_files/waterloo_steel_demo_0612/mono_rgb_imu/S-1_E-1_dual_v5/mono_rgb_imu_config_dual.yaml",
+        "directory": f"{Path.home()}/.ros/bag_replay_recorder_files/waterloo_steel_demo_0612/mono_rgb_imu/S-1_E-1_dual_v6/2023-10-18",
+        "camera_config_file_dual": f"{Path.home()}/.ros/bag_replay_recorder_files/waterloo_steel_demo_0612/mono_rgb_imu/S-1_E-1_dual_v6/mono_rgb_imu_config_dual.yaml",
+        "demo_map": f"{Path.home()}/.ros/bagfiles/waterloo_steel_demo_0612/session_1/demo_map.json",
+    }
+    TESTSET = DATASET_DEMO_0612_MONO_RGB_DUAL_ALL
+class TEST_SET_DUAL_MONO_IMU_0612_1019_v7(Enum):
+    CONFIG = {
+        "directory": f"{Path.home()}/.ros/bag_replay_recorder_files/waterloo_steel_demo_0612/mono_rgb_imu/S-1_E-1_dual_v7/2023-10-19",
+        "camera_config_file_dual": f"{Path.home()}/.ros/bag_replay_recorder_files/waterloo_steel_demo_0612/mono_rgb_imu/S-1_E-1_dual_v7/mono_rgb_imu_config_dual.yaml",
+        "demo_map": f"{Path.home()}/.ros/bagfiles/waterloo_steel_demo_0612/session_1/demo_map.json",
+    }
+    TESTSET = DATASET_DEMO_0612_MONO_RGB_DUAL_ALL
+
+class TEST_SET_DUAL_MONO_IMU_0612_1019_v9(Enum):
+    CONFIG = {
+        "directory": f"{Path.home()}/.ros/bag_replay_recorder_files/waterloo_steel_demo_0612/mono_rgb_imu/S-1_E-1_dual_v9/2023-10-19",
+        "camera_config_file_dual": f"{Path.home()}/.ros/bag_replay_recorder_files/waterloo_steel_demo_0612/mono_rgb_imu/S-1_E-1_dual_v9/mono_rgb_imu_config_dual.yaml",
+        "demo_map": f"{Path.home()}/.ros/bagfiles/waterloo_steel_demo_0612/session_1/demo_map.json",
+    }
+    TESTSET = DATASET_DEMO_0612_MONO_RGB_DUAL_ALL
+class TEST_SET_DUAL_MONO_IMU_0612_1022_v10(Enum):
+    CONFIG = {
+        "directory": f"{Path.home()}/.ros/bag_replay_recorder_files/waterloo_steel_demo_0612/mono_rgb_imu/S-1_E-1_dual_v10/2023-10-22",
+        "camera_config_file_dual": f"{Path.home()}/.ros/bag_replay_recorder_files/waterloo_steel_demo_0612/mono_rgb_imu/S-1_E-1_dual_v10/mono_rgb_imu_config_dual.yaml",
+        "demo_map": f"{Path.home()}/.ros/bagfiles/waterloo_steel_demo_0612/session_1/demo_map.json",
+    }
+    TESTSET = DATASET_DEMO_0612_MONO_RGB_DUAL_ALL
+class TEST_SET_DUAL_MONO_IMU_0612_1022_v11(Enum):
+    CONFIG = {
+        "directory": f"{Path.home()}/.ros/bag_replay_recorder_files/waterloo_steel_demo_0612/mono_rgb_imu/S-1_E-1_dual_v11/2023-10-22",
+        "camera_config_file_dual": f"{Path.home()}/.ros/bag_replay_recorder_files/waterloo_steel_demo_0612/mono_rgb_imu/S-1_E-1_dual_v11/mono_rgb_imu_config_dual.yaml",
         "demo_map": f"{Path.home()}/.ros/bagfiles/waterloo_steel_demo_0612/session_1/demo_map.json",
     }
     TESTSET = DATASET_DEMO_0612_MONO_RGB_DUAL_ALL

@@ -21,7 +21,10 @@ from configs.uwarl_common import PARSER_CALLBACKS
 from configs.uwarl_test_set_d455 import (
     TEST_SET_TITLE, 
     TEST_SET_DUAL_MONO_IMU_0612_1017_v4,
-    TEST_SET_DUAL_MONO_IMU_0612_1017_v5,
+    TEST_SET_DUAL_MONO_IMU_0612_1019_v7,
+    TEST_SET_DUAL_MONO_IMU_0612_1019_v9,
+    TEST_SET_DUAL_MONO_IMU_0612_1022_v10,
+    TEST_SET_DUAL_MONO_IMU_0612_1022_v11,
 )
 
 from vins_replay_utils.uwarl_replay_decoder import auto_generate_labels_from_bag_file_name_with_json_config, ProcessedData
@@ -34,7 +37,10 @@ from vins_replay_utils.uwarl_camera import MultiSensor_Camera_Node
 FIG_OUT_DIR = f"{Path.home()}/UWARL_catkin_ws/src/vins-research-pkg/research-project/output/vins_analysis"
 FEATURE_LOCAL_DEVELOPMENT  = True
 
-FEATURE_ONLY_LAST                   = 0.5 #seconds
+FEATURE_ONLY_LAST                   = 10 #seconds
+
+SPLIT_MAP = None
+SPLIT_MAP = {1:"Base", 0:"EE"}
 
 FEATURE_AUTO_SAVE                   = True
 FEATURE_AUTO_CLOSE_FIGS             = True
@@ -43,7 +49,7 @@ FEATURE_OUTPUT_BAG_META             = False
 FEATURE_PLOT_VOLTAGE_JOINT_EFFORTS  = False
 FEATURE_PLOT_3D_TRAJECTORIES        = True
 FEATURE_PLOT_CAMERAS                = True
-FEATURE_PLOT_CAM_CONFIGS            = True
+FEATURE_PLOT_CAM_CONFIGS            = False
 
 PLOT_FEATURE_ORIENTING              = False # TODO: orientation correction needed to be implemented
 PLOT_FEATURE_SHOW_ORIENTATIONS      = True
@@ -171,16 +177,16 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
         data_sets_3d["Vicon Cam EE"]            = DM.extract_data(
             bag_topic="/vins_estimator/EE/vicon/path", dict_var_type=POSE_VARS,
         )
-        data_sets_3d["VINS Est Base"]                = DM.extract_data(
+        data_sets_3d["VINS Est Base"]           = DM.extract_data(
             bag_topic="/vins_estimator/base/path", dict_var_type=POSE_VARS,
         )
-        data_sets_3d["VINS Est EE"]                = DM.extract_data(
+        data_sets_3d["VINS Est EE"]             = DM.extract_data(
             bag_topic="/vins_estimator/EE/path", dict_var_type=POSE_VARS,
         )
-        data_sets_3d["VINS Loop Base"]                = DM.extract_data(
+        data_sets_3d["VINS Loop Base"]          = DM.extract_data(
             bag_topic="/loop_fusion/base/pose_graph_path", dict_var_type=POSE_VARS,
         )
-        data_sets_3d["VINS Loop EE"]                = DM.extract_data(
+        data_sets_3d["VINS Loop EE"]            = DM.extract_data(
             bag_topic="/loop_fusion/EE/pose_graph_path", dict_var_type=POSE_VARS,
         )
         # debug print:
@@ -201,6 +207,7 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
                         bag_subset=bag_subset.value,
                         title=RUN_NAME,
                         cameras=cameras,
+                        split_map=SPLIT_MAP,
                     ) # default 3 views
                     AM.save_fig(fig, f"{title}_{j}")
                 if PLOT_FEATURE_LINE_PLOT:
@@ -211,6 +218,7 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
                         view_angles=[angle],
                         bag_subset=bag_subset.value,
                         title=RUN_NAME,
+                        split_map=SPLIT_MAP,
                     ) # default 3 views
                     AM.save_fig(fig, f"{title}_{j}")
         else:
@@ -222,6 +230,7 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
                     view_angles=PLOT_FEATURE_VIEW_ANGLES,
                     bag_subset=bag_subset.value,
                     title=RUN_NAME,
+                    split_map=SPLIT_MAP,
                 ) # default 3 views
                 AM.save_fig(fig, title)
             if PLOT_FEATURE_LINE_PLOT:
@@ -232,6 +241,7 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
                     view_angles=PLOT_FEATURE_VIEW_ANGLES,
                     bag_subset=bag_subset.value,
                     title=RUN_NAME,
+                    split_map=SPLIT_MAP,
                 ) # default 3 views
                 AM.save_fig(fig, title)
     
@@ -244,7 +254,8 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
 # go through each test set:
 for bag_test_case in [
         # TEST_SET_DUAL_MONO_IMU_0612_1017_v4,
-        TEST_SET_DUAL_MONO_IMU_0612_1017_v5,
+        # TEST_SET_DUAL_MONO_IMU_0612_1022_v10,
+        TEST_SET_DUAL_MONO_IMU_0612_1022_v11,
     ]:
     #TEST_SET_MONO_RGB_IMU_ACC_TIC, TEST_SET_MONO_RGB_IMU_INIT_GUESS_TIC]:
     #[TEST_SET_MONO_RGB_IMU, TEST_SET_MONO_IMU, TEST_SET_STEREO_IMU, TEST_SET_STEREO]:
@@ -262,7 +273,7 @@ for bag_test_case in [
         else:
             print(f"WARNING, test subset is empty, skipping tests {bag_subset.name}")
         
-        # [DEV]:
+        # # [DEV]:
         # if FEATURE_LOCAL_DEVELOPMENT:
         #     break
             
