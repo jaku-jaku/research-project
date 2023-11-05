@@ -96,9 +96,12 @@ class BagParser:
         assert self._bag_data is not None, "Load Bag Data Before Processing!"
         with self._bag_data_lock:
             self._info_dict = yaml.load(self._bag_data._get_yaml_info())
-            for x in self._info_dict['topics']:
-                self._topic_types_lut[x['topic']] = x['type']
-                self._bag_samples[x['topic']] = None
+            if 'topics' in self._info_dict:
+                for x in self._info_dict['topics']:
+                    self._topic_types_lut[x['topic']] = x['type']
+                    self._bag_samples[x['topic']] = None
+            else:
+                print("[WARN] No topic")
 
     def get_bag_msgs(self, topics):
         payload = {}
@@ -124,17 +127,23 @@ class BagParser:
     def process_only_last_bag_msgs(self, T_SPAN_SECONDS=1):
         list_of_topics = self._bag_parser_reg_map.keys()
         
-        start_time = self._bag_data.get_start_time()
-        end_time = self._bag_data.get_end_time()
-        start_time_1s_before_end = end_time - T_SPAN_SECONDS if (end_time - start_time) > T_SPAN_SECONDS else start_time
-        
-        with self._bag_data_lock:
-            for topic, msg, ros_time in self._bag_data.read_messages(topics=list_of_topics, start_time=rospy.Time.from_sec(start_time_1s_before_end)):
-                if self._bag_samples[topic] is None:
-                    self._bag_samples[topic] = msg
-                # topic based parsing:
-                payload_ = self._bag_parser_reg_map[topic](self._all_processed_bag, topic, msg)
-                self._all_processed_bag.update(payload_)
+        try:
+            start_time = self._bag_data.get_start_time()
+            end_time = self._bag_data.get_end_time()
+            start_time_1s_before_end = end_time - T_SPAN_SECONDS if (end_time - start_time) > T_SPAN_SECONDS else start_time
+            
+            with self._bag_data_lock:
+                for topic, msg, ros_time in self._bag_data.read_messages(topics=list_of_topics, start_time=rospy.Time.from_sec(start_time_1s_before_end)):
+                    if self._bag_samples[topic] is None:
+                        self._bag_samples[topic] = msg
+                    # topic based parsing:
+                    payload_ = self._bag_parser_reg_map[topic](self._all_processed_bag, topic, msg)
+                    self._all_processed_bag.update(payload_)
+        except Exception as e:
+            print(f"ROS Bag Parsing Error: {e}")
+            return False
+    
+        return True
 
     def get_bag_samples_safe(self):
         payload = {}

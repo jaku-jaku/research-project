@@ -24,30 +24,21 @@ class AnalysisManager:
     _auto_save  :bool 
     _auto_close :bool 
     _output_dir :str 
-    _bag_dict   :Dict[str, str]
     _prefix     :str 
-    _bag_directory:str
     
     def __init__(self, 
-            bag_dict, 
             output_dir: str="", 
             run_name: str="vins_analysis", 
             test_set_name: str="default",
             prefix: str="",
             auto_save: bool=True,
             auto_close: bool=False,
-            bag_directory: str="",
         ):
-        self._bag_directory = bag_directory
         self._auto_close = auto_close
         self._auto_save = auto_save
         self._prefix = prefix
         # create output folder
         self._create_dir(output_dir, run_name, test_set_name)
-        # save info
-        self._bag_dict = bag_dict
-        if not bag_dict: # only if exists
-            print(" [WARNING] Empty bag_dict!")
     
     def _create_dir(self, output_dir: str, run_name: str, test_set_name):
         self._output_dir = f"{output_dir}/{run_name}/{test_set_name}"#/{self._prefix}"
@@ -90,7 +81,7 @@ class MultiBagsDataManager:
         """
         self.clear_cache()
         for label, data in bags.items():
-            if label not in self.list_of_bag_labels: # unique only
+            if label not in self.list_of_bag_labels and data.bag_exist: # unique only
                 self.N_bags += 1
                 self.list_of_bags.append(data)
                 self.list_of_bag_labels.append(label)
@@ -127,8 +118,11 @@ class MultiBagsDataManager:
                 if(TYPES_VAR.TIME_STAMP_SEC in topic_msg):
                     # grab time stamps from the bag file:
                     _time = topic_msg[TYPES_VAR.TIME_STAMP_SEC] 
-                    _payload['t0'].append(_time[0]) # record time zero
-                    _time = np.subtract(_time, _time[0]) # reset to zero start time
+                    if len(_time) > 0:
+                        _payload['t0'].append(_time[0]) # record time zero
+                        _time = np.subtract(_time, _time[0]) # reset to zero start time
+                    else:
+                        _payload["t0"].append(-1) # record time invalid
                 else:
                     _payload["t0"].append(-1) # record time invalid
                 
@@ -174,7 +168,7 @@ class MultiBagsDataManager:
 # %% 
 # -------------------------------- 2D Plot Functions -------------------------------- %% #
 ## Generic Handy Multi-Segments Multi-Topical Plotting Functions:
-CWheel = Color_Wheel(get_color_table("tab10", 10))
+CWheel = Color_Wheel(get_color_table("tab10", 20))
 
 def plot_data_sets_along_xaxis(data_sets_xy, xlabel="", PAD_WIDTH=0.1, figsize=(10,5)):
     fig, ax = plt.subplots(figsize=figsize)
@@ -303,8 +297,8 @@ def plot_spatial(bag_plot:MultiBagsDataManager,
         figsize=DEFAULT_FIGSIZE, projection='3d', proj_type='ortho',
         N_sample=1, show_grid=True, view_angles=[(30,10),(70,45),(10,10)],
         show_orientations=False, N_orientations_sample=20, zero_orienting=False,
-        scatter_or_line="line", bag_subset=None, cameras=None, zero_position=True,
-        fixed_view=False, split_map=None,
+        scatter_or_line="line", bag_subset=None, cameras=None, zero_position=False,
+        fixed_view=False, split_map=None, AXIS_BOUNDARY=[5,5,2]
 ):
     """ Plot is 3D Spatial Coordinates per data bag
         - muxing data from multiple topics
@@ -333,6 +327,8 @@ def plot_spatial(bag_plot:MultiBagsDataManager,
                     #     print("plotting %s", sub_device)
                     
                 # copy data:
+                if len(data['t']) == 0:
+                    continue # skip if no bags
                 is_data_valid = len(data['t'][j]) > 1
                     
                 if is_data_valid:
@@ -406,11 +402,19 @@ def plot_spatial(bag_plot:MultiBagsDataManager,
                                 axs[view_idx].quiver(xu_[:,0], xu_[:,1], xu_[:,2], ey_[:,0], ey_[:,1], ey_[:,2], length=0.1, normalize=True, color="green")
                                 axs[view_idx].quiver(xu_[:,0], xu_[:,1], xu_[:,2], ez_[:,0], ez_[:,1], ez_[:,2], length=0.1, normalize=True, color="blue")
                         
-                        if fixed_view:
-                            a_ = np.max(np.abs([np.max(x_, axis=0), np.min(x_, axis=0)]))*2
-                            axs[view_idx].set_xlim3d(-a_, a_)
-                            axs[view_idx].set_ylim3d(-a_, a_)
-                            axs[view_idx].set_zlim3d(-a_, a_)
+                        # set min max boundary for the axis:
+                        x_min, x_max = axs[view_idx].get_xlim()
+                        y_min, y_max = axs[view_idx].get_ylim()
+                        z_min, z_max = axs[view_idx].get_zlim()
+                        x_min = max(x_min, -AXIS_BOUNDARY[0])
+                        x_max = min(x_max,  AXIS_BOUNDARY[0])
+                        y_min = max(y_min, -AXIS_BOUNDARY[1])
+                        y_max = min(y_max,  AXIS_BOUNDARY[1])
+                        z_min = max(z_min, -AXIS_BOUNDARY[2])
+                        z_max = min(z_max,  AXIS_BOUNDARY[2])
+                        axs[view_idx].set_xlim3d(x_min, x_max)
+                        axs[view_idx].set_ylim3d(y_min, y_max)
+                        axs[view_idx].set_zlim3d(z_min, z_max)
                     
             axs[j].set_title(f"{bag_plot.list_of_bag_labels[j]}")
             for k in range(N_views): 

@@ -76,6 +76,7 @@ class ProcessedData:
     T1: float = 0.0
     dT: float = 0.0
     description: Dict[str, Union[str, float]]
+    bag_exist:bool = False
 
     def __init__(self, BP:BagParser, directory, bag_path, T_LAST_S=-1):
         self._reset_cache()
@@ -86,15 +87,17 @@ class ProcessedData:
         self.bag_info = BP.get_bag_info_safe()
         self.bag_topics = BP.get_bag_topics_lut_safe()
         if T_LAST_S > 0:
-            BP.process_only_last_bag_msgs(T_SPAN_SECONDS=T_LAST_S) # TODO: very time consuming!!
+            self.bag_exist = BP.process_only_last_bag_msgs(T_SPAN_SECONDS=T_LAST_S) # TODO: very time consuming!!
         else:    
             BP.process_all_bag_msgs() # TODO: very time consuming!!
-        self.bag_data = BP.get_processed_bag_safe()
-        self.bag_samples = BP.get_bag_samples_safe()
-        # self._bag = BP._bag_data # DEBUG: debug purpose
-        # unbind toolchain
-        BP.unbind_bagfile()
-        self._init_process()
+
+        if self.bag_exist:
+            self.bag_data = BP.get_processed_bag_safe()
+            self.bag_samples = BP.get_bag_samples_safe()
+            # self._bag = BP._bag_data # DEBUG: debug purpose
+            # unbind toolchain
+            BP.unbind_bagfile()
+            self._init_process()
     
     def _reset_cache(self):
         self.bag_info = dict()
