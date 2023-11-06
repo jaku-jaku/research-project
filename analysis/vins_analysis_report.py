@@ -21,9 +21,7 @@ from configs.uwarl_common import PARSER_CALLBACKS
 # from configs.uwarl_test_set import TEST_SET_STEREO_IMU, TEST_SET_MONO_IMU, TEST_SET_STEREO, TEST_SET_SINGLE
 from configs.uwarl_test_set_d455 import (
     TEST_SET_TITLE, 
-    DUAL_MONO_IMU_1101_1104_baseline,
-    DUAL_MONO_IMU_1101_1104_armOdom,
-    DUAL_MONO_IMU_1101_1104_comparison_v3,
+    DUAL_MONO_IMU_1101_1106_comparison,
 )
 
 from vins_replay_utils.uwarl_replay_decoder import auto_generate_labels_from_bag_file_name_with_json_config, ProcessedData
@@ -245,7 +243,7 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
 for bag_test_case in [
         # TEST_SET_DUAL_MONO_IMU_0612_1017_v4,
         # TEST_SET_DUAL_MONO_IMU_0612_1022_v10,
-        DUAL_MONO_IMU_1101_1104_comparison_v3,
+        DUAL_MONO_IMU_1101_1106_comparison,
     ]:
     N_args = len(sys.argv)
     if (N_args == 3):

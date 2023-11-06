@@ -61,52 +61,12 @@ class DATASET_DEMO_1101_MONO_RGB_DUAL_ALL(Enum):
     SQR_H  = ["dual-1-1_DEMO-37_vins-replay.bag"]
     SQR_E  = ["dual-1-2_DEMO-38_vins-replay.bag"]
 
-class DUAL_MONO_IMU_1101_1104_baseline(Enum):
-    CONFIG = {
-        "folder": ".ros/bag_replay_recorder_files/waterloo_steel_demo_1101/mono_rgb_imu",
-        "rungs": "S-1_E-1_dual_baseline/2023-11-04",
-        "camera_config_file_dual": "mono_rgb_imu_config_dual.yaml",
-        "demo_map": ".ros/bagfiles/waterloo_steel_demo_1101/session_1/demo_map.json",
-    }
-    TEST_SET = DATASET_DEMO_1101_MONO_RGB_DUAL_ALL
-class DUAL_MONO_IMU_1101_1104_armOdom(Enum):
-    CONFIG = {
-        "folder": ".ros/bag_replay_recorder_files/waterloo_steel_demo_1101/mono_rgb_imu",
-        "rungs": "S-1_E-1_dual_arm_odom/2023-11-04",
-        "camera_config_file_dual": "mono_rgb_imu_config_dual.yaml",
-        "demo_map": ".ros/bagfiles/waterloo_steel_demo_1101/session_1/demo_map.json",
-    }
-    TEST_SET = DATASET_DEMO_1101_MONO_RGB_DUAL_ALL
-
-class DUAL_MONO_IMU_1101_1104_comparison(Enum):
+class DUAL_MONO_IMU_1101_1106_comparison(Enum):
     CONFIG = {
         "folder": ".ros/bag_replay_recorder_files/waterloo_steel_demo_1101/mono_rgb_imu",
         "rungs": {
-            "baseline": "S-1_E-1_dual_baseline/2023-11-04", 
-            "arm_odom": "S-1_E-1_dual_arm_odom/2023-11-04"
-        },
-        "camera_config_file_dual": "mono_rgb_imu_config_dual.yaml",
-        "demo_map": ".ros/bagfiles/waterloo_steel_demo_1101/session_1/demo_map.json",
-    }
-    TEST_SET = DATASET_DEMO_1101_MONO_RGB_DUAL_ALL
-class DUAL_MONO_IMU_1101_1104_comparison_v2(Enum):
-    CONFIG = {
-        "folder": ".ros/bag_replay_recorder_files/waterloo_steel_demo_1101/mono_rgb_imu",
-        "rungs": {
-            "baseline": "S-1_E-1_dual_baseline/2023-11-04", 
-            "arm_odom": "S-1_E-1_dual_arm_odom_v2/2023-11-05"
-        },
-        "camera_config_file_dual": "mono_rgb_imu_config_dual.yaml",
-        "demo_map": ".ros/bagfiles/waterloo_steel_demo_1101/session_1/demo_map.json",
-    }
-    TEST_SET = DATASET_DEMO_1101_MONO_RGB_DUAL_ALL
-
-class DUAL_MONO_IMU_1101_1104_comparison_v3(Enum):
-    CONFIG = {
-        "folder": ".ros/bag_replay_recorder_files/waterloo_steel_demo_1101/mono_rgb_imu",
-        "rungs": {
-            "baseline": "S-1_E-1_dual_baseline/2023-11-04", 
-            "arm_odom": "S-1_E-1_dual_arm_odom_v3/2023-11-06"
+            "baseline": "S-1_E-1_dual_arm_baseline/2023-11-06", 
+            "arm_odom": "S-1_E-1_dual_arm_odometry/2023-11-06"
         },
         "camera_config_file_dual": "mono_rgb_imu_config_dual.yaml",
         "demo_map": ".ros/bagfiles/waterloo_steel_demo_1101/session_1/demo_map.json",

@@ -298,7 +298,7 @@ def plot_spatial(bag_plot:MultiBagsDataManager,
         N_sample=1, show_grid=True, view_angles=[(30,10),(70,45),(10,10)],
         show_orientations=False, N_orientations_sample=20, zero_orienting=False,
         scatter_or_line="line", bag_subset=None, cameras=None, zero_position=False,
-        fixed_view=False, split_map=None, AXIS_BOUNDARY=[5,5,2]
+        fixed_view=False, split_map=None, AXIS_BOUNDARY_MAX=[5,5,2], AXIS_BOUNDARY_MIN=[0.5,0.5,0.2]
 ):
     """ Plot is 3D Spatial Coordinates per data bag
         - muxing data from multiple topics
@@ -311,20 +311,19 @@ def plot_spatial(bag_plot:MultiBagsDataManager,
     fig = plt.figure(figsize=(figsize[0]*N_bags*N_split, figsize[1]*N_views))
     fig.subplots_adjust(wspace=0, hspace=0)
     axs = [fig.add_subplot(N_views,N_bags*N_split,i+1, projection=projection, proj_type=proj_type) for i in range(N_bags*N_views*N_split)]
+    N_entries = len(data_sets_3d.keys())
+    ADAPTIVE_FONT_SIZE = figsize[1] / N_views * 1.5
     
     CMAP = CMAP_Selector("Seq2")
-    cmap_handles, handler_map = CMAP.get_cmap_handles(N_color=len(data_sets_3d.keys()))  
+    cmap_handles, handler_map = CMAP.get_cmap_handles(N_color=N_entries)  
     if_scatter = scatter_or_line == "scatter"
     for j in range(N_bags):
         for m in range(N_split):
             label_list = []
+            sub_device = split_map[m] if split_map else None
             for i, (label, data) in enumerate(data_sets_3d.items()):
-                if split_map:
-                    sub_device = split_map[m]
-                    if sub_device not in label:
-                        continue # skip
-                    # else:
-                    #     print("plotting %s", sub_device)
+                if sub_device and sub_device not in label:
+                    continue # skip
                     
                 # copy data:
                 if len(data['t']) == 0:
@@ -333,8 +332,8 @@ def plot_spatial(bag_plot:MultiBagsDataManager,
                     
                 if is_data_valid:
                     N_sample_ = N_sample
-                    if "Vicon" in label: # reduce vicon sampling rate
-                        N_sample_ = int(N_sample*10)
+                    # if "Vicon" in label: # reduce vicon sampling rate
+                    #     N_sample_ = int(N_sample*10)
                     t_ = np.array(data['t'][j][::N_sample_].copy())
                     x_ = np.array(data['y'][j][::N_sample_].copy())
                     u_ = np.array(data['r'][j][::N_sample_].copy())
@@ -369,6 +368,9 @@ def plot_spatial(bag_plot:MultiBagsDataManager,
                         uu_[0] = uu_[1] # u_ may be 0 quaternion
                         # ic(np.shape(uu_), np.shape(xu_), uu_[0])
                         r_ = R.from_quat(uu_)
+                
+                _linestyle = "dashed" if ("Vicon" in label) else "solid" # dashed line for vicon
+                _scatterMarker = "x" if ("Vicon" in label) else "."
 
                 for k in range(N_views):
                     view_idx = m+j+k*N_bags*N_split
@@ -381,19 +383,18 @@ def plot_spatial(bag_plot:MultiBagsDataManager,
                     # plot points:
                     if is_data_valid:
                         if if_scatter:
-                            axs[view_idx].scatter3D(x_[:,0], x_[:,1], x_[:,2], c=t_, cmap=CMAP[i], depthshade=True, label=label_list[-1], alpha=0.2, marker=".")
+                            axs[view_idx].scatter3D(x_[:,0], x_[:,1], x_[:,2], s=2, c=t_, cmap=CMAP[i], depthshade=True, label=label_list[-1], alpha=0.2, marker=_scatterMarker)
                         else:
-                            axs[view_idx].plot3D(x_[:,0], x_[:,1], x_[:,2], color=CWheel[i], label=label_list[-1])
-                            axs[view_idx].legend(bbox_to_anchor=(0.3, 0.9), fontsize=10)
+                            axs[view_idx].plot3D(x_[:,0], x_[:,1], x_[:,2], color=CWheel[i], label=label_list[-1], linestyle=_linestyle)
                         if show_orientations:
-                            if cameras and "VINS" in label:
+                            if cameras and "Est" in label:
                                 for r, x in zip(r_.as_matrix(), xu_):
                                     T_rbt = np.eye(4)
                                     T_rbt[0:3,0:3] = r # 3x3
                                     T_rbt[0:3, 3] = x
                                     # ic(r, x, T_rbt)
                                     cam_id = 0 if "Base" in label else 1
-                                    cameras[cam_id].plot_camera(ax=axs[view_idx], RBT_SE3=T_rbt, verbose=False)
+                                    cameras[cam_id].plot_camera(ax=axs[view_idx], RBT_SE3=T_rbt, verbose=False, auto_adjust_frame=False)
                             else:
                                 ex_ = r_.apply([1,0,0])
                                 ey_ = r_.apply([0,1,0])
@@ -402,27 +403,41 @@ def plot_spatial(bag_plot:MultiBagsDataManager,
                                 axs[view_idx].quiver(xu_[:,0], xu_[:,1], xu_[:,2], ey_[:,0], ey_[:,1], ey_[:,2], length=0.1, normalize=True, color="green")
                                 axs[view_idx].quiver(xu_[:,0], xu_[:,1], xu_[:,2], ez_[:,0], ez_[:,1], ez_[:,2], length=0.1, normalize=True, color="blue")
                         
-                        # set min max boundary for the axis:
-                        x_min, x_max = axs[view_idx].get_xlim()
-                        y_min, y_max = axs[view_idx].get_ylim()
-                        z_min, z_max = axs[view_idx].get_zlim()
-                        x_min = max(x_min, -AXIS_BOUNDARY[0])
-                        x_max = min(x_max,  AXIS_BOUNDARY[0])
-                        y_min = max(y_min, -AXIS_BOUNDARY[1])
-                        y_max = min(y_max,  AXIS_BOUNDARY[1])
-                        z_min = max(z_min, -AXIS_BOUNDARY[2])
-                        z_max = min(z_max,  AXIS_BOUNDARY[2])
-                        axs[view_idx].set_xlim3d(x_min, x_max)
-                        axs[view_idx].set_ylim3d(y_min, y_max)
-                        axs[view_idx].set_zlim3d(z_min, z_max)
-                    
-            axs[j].set_title(f"{bag_plot.list_of_bag_labels[j]}")
-            for k in range(N_views): 
+                    # set min max boundary for the axis:
+                    x_min, x_max = axs[view_idx].get_xlim()
+                    y_min, y_max = axs[view_idx].get_ylim()
+                    z_min, z_max = axs[view_idx].get_zlim()
+                    x_min = min(max(x_min, -AXIS_BOUNDARY_MAX[0]), -AXIS_BOUNDARY_MIN[0])
+                    x_max = max(min(x_max,  AXIS_BOUNDARY_MAX[0]),  AXIS_BOUNDARY_MIN[0])
+                    y_min = min(max(y_min, -AXIS_BOUNDARY_MAX[1]), -AXIS_BOUNDARY_MIN[1])
+                    y_max = max(min(y_max,  AXIS_BOUNDARY_MAX[1]),  AXIS_BOUNDARY_MIN[1])
+                    z_min = min(max(z_min, -AXIS_BOUNDARY_MAX[2]), -AXIS_BOUNDARY_MIN[2])
+                    z_max = max(min(z_max,  AXIS_BOUNDARY_MAX[2]),  AXIS_BOUNDARY_MIN[2])
+                    axs[view_idx].set_xlim3d(x_min, x_max)
+                    axs[view_idx].set_ylim3d(y_min, y_max)
+                    axs[view_idx].set_zlim3d(z_min, z_max)
+           
+            
+            # subtitles:
+            if sub_device:
+                axs[m+j].set_title(f"{bag_plot.list_of_bag_labels[j]} ({sub_device})")
+            else:
+                axs[j].set_title(f"{bag_plot.list_of_bag_labels[j]}")
+            # apply custom legends:
+            for k in range(N_views):
+                view_idx = j+k*N_bags*N_split+m 
                 if if_scatter:
-                    axs[j+k*N_bags*N_split+m].legend(
+                    # gradient:
+                    axs[view_idx].legend(
                         handles=cmap_handles, labels=label_list, handler_map=handler_map, 
-                        bbox_to_anchor=(0.3, 0.9), fontsize=10)
-    
+                        fontsize=ADAPTIVE_FONT_SIZE, bbox_to_anchor=(0.5,-0.3), loc='lower center')
+                    plt.tight_layout()
+                else:
+                    # regular:
+                    axs[view_idx].legend(fontsize=ADAPTIVE_FONT_SIZE, 
+                                         bbox_to_anchor=(0.5,-0.3), loc='lower center')
+                    plt.tight_layout()
+                
     # save file:
     if title is None:
         title = " and ".join(data_sets_3d.keys())
