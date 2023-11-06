@@ -1,6 +1,7 @@
 # %% -------------------------------- Import Lib -------------------------------- %% #
 # built-in
 import os
+import sys
 from datetime import datetime
 from pathlib import Path
 import time
@@ -22,7 +23,7 @@ from configs.uwarl_test_set_d455 import (
     TEST_SET_TITLE, 
     DUAL_MONO_IMU_1101_1104_baseline,
     DUAL_MONO_IMU_1101_1104_armOdom,
-    DUAL_MONO_IMU_1101_1104_comparison_v2,
+    DUAL_MONO_IMU_1101_1104_comparison_v3,
 )
 
 from vins_replay_utils.uwarl_replay_decoder import auto_generate_labels_from_bag_file_name_with_json_config, ProcessedData
@@ -244,8 +245,13 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
 for bag_test_case in [
         # TEST_SET_DUAL_MONO_IMU_0612_1017_v4,
         # TEST_SET_DUAL_MONO_IMU_0612_1022_v10,
-        DUAL_MONO_IMU_1101_1104_comparison_v2,
+        DUAL_MONO_IMU_1101_1104_comparison_v3,
     ]:
+    N_args = len(sys.argv)
+    if (N_args == 3):
+        folder_id = sys.argv[1]
+        bag_id = sys.argv[2]
+        print(f"Giving index @ {folder_id}:{bag_id}")
     #TEST_SET_MONO_RGB_IMU_ACC_TIC, TEST_SET_MONO_RGB_IMU_INIT_GUESS_TIC]:
     #[TEST_SET_MONO_RGB_IMU, TEST_SET_MONO_IMU, TEST_SET_STEREO_IMU, TEST_SET_STEREO]:
     # go through all the bags set in each test set
@@ -257,9 +263,17 @@ for bag_test_case in [
         #     continue
         
         # [MAIN]:
-        ic(bag_subset.value)
         if_exist = len(bag_subset.value) > 0
         if if_exist:
+            # filter for the right bag
+            if (N_args == 3):
+                attr = bag_subset.value[0].split('_')[0].split('-')
+                if attr[1] == folder_id and attr[2] == bag_id:
+                    print(f"Found index @ {folder_id}:{bag_id}")
+                else:
+                    continue # skip this rung
+            # generate report here:
+            ic(bag_subset.value)
             generate_report(bag_test_case.__name__, bag_test_case.CONFIG.value, bag_subset)
         else:
             print(f"WARNING, test subset is empty, skipping tests {bag_subset.name}")

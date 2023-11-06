@@ -32,14 +32,12 @@ FEATURE_AUTO_SAVE                   = True
 FEATURE_AUTO_CLOSE_FIGS             = True
 
 AM = AnalysisManager(
-    bag_dict=None,
     output_dir=FIG_OUT_DIR,
     run_name="run_{}".format(datetime.now().strftime("%Y-%m-%d")), 
     test_set_name="MANUAL_TEST",
     prefix="camera",
     auto_save=FEATURE_AUTO_SAVE,
     auto_close=FEATURE_AUTO_CLOSE_FIGS,
-    bag_directory=None,
 )
 
 # 
@@ -110,8 +108,9 @@ def vins_d455_extrinsic_transformation(cam):
     # B = np.array(B).reshape((4,4))
     # its equivalent to inverse:
     a = SE3.EulerVec([0,0,-np.pi/2]).A
+    ic(SE3(a))
     a = a @ SE3.EulerVec([-np.pi/2,0,0]).A 
-    ic(a)
+    ic(SE3(a))
     A = a @ A 
     # B = a @ B 
     # ic(A,a, A2);
