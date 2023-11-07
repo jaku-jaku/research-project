@@ -66,7 +66,7 @@ class DUAL_MONO_IMU_1101_1106_comparison(Enum):
         "folder": ".ros/bag_replay_recorder_files/waterloo_steel_demo_1101/mono_rgb_imu",
         "rungs": {
             "baseline": "S-1_E-1_dual_arm_baseline/2023-11-06", 
-            "arm_odom(EE)": "S-1_E-1_dual_arm_odometry/2023-11-06"
+            "arm_odom(B2E)": "S-1_E-1_dual_arm_odometry/2023-11-06"
         },
         "camera_config_file_dual": "mono_rgb_imu_config_dual.yaml",
         "demo_map": ".ros/bagfiles/waterloo_steel_demo_1101/session_1/demo_map.json",
@@ -89,7 +89,7 @@ class DUAL_MONO_IMU_1101_1106_arm_vs_both(Enum):
     CONFIG = {
         "folder": ".ros/bag_replay_recorder_files/waterloo_steel_demo_1101/mono_rgb_imu",
         "rungs": {
-            "arm_odom(EE)": "S-1_E-1_dual_arm_odometry/2023-11-06", 
+            "arm_odom(B2E)": "S-1_E-1_dual_arm_odometry/2023-11-06", 
             "arm_odom(both)": "S-1_E-1_dual_arm_odometry_both/2023-11-06"
         },
         "camera_config_file_dual": "mono_rgb_imu_config_dual.yaml",
@@ -102,8 +102,20 @@ class DUAL_MONO_IMU_1101_1106_arm_vs_all(Enum):
         "folder": ".ros/bag_replay_recorder_files/waterloo_steel_demo_1101/mono_rgb_imu",
         "rungs": {
             "baseline": "S-1_E-1_dual_arm_baseline/2023-11-06", 
-            "arm_odom(EE)": "S-1_E-1_dual_arm_odometry/2023-11-06", 
+            "arm_odom(B2E)": "S-1_E-1_dual_arm_odometry/2023-11-06", 
             "arm_odom(both)": "S-1_E-1_dual_arm_odometry_both/2023-11-06"
+        },
+        "camera_config_file_dual": "mono_rgb_imu_config_dual.yaml",
+        "demo_map": ".ros/bagfiles/waterloo_steel_demo_1101/session_1/demo_map.json",
+    }
+    TEST_SET = DATASET_DEMO_1101_MONO_RGB_DUAL_ALL
+
+class DUAL_MONO_IMU_1101_1107_base_vs_both(Enum):
+    CONFIG = {
+        "folder": ".ros/bag_replay_recorder_files/waterloo_steel_demo_1101/mono_rgb_imu",
+        "rungs": {
+            "baseline": "S-1_E-1_dual_arm_baseline/2023-11-07", 
+            "arm_odom(both)": "S-1_E-1_dual_arm_odometry_both/2023-11-07"
         },
         "camera_config_file_dual": "mono_rgb_imu_config_dual.yaml",
         "demo_map": ".ros/bagfiles/waterloo_steel_demo_1101/session_1/demo_map.json",

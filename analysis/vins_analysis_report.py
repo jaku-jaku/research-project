@@ -25,6 +25,7 @@ from configs.uwarl_test_set_d455 import (
     DUAL_MONO_IMU_1101_1106_base_vs_both,
     DUAL_MONO_IMU_1101_1106_arm_vs_both,
     DUAL_MONO_IMU_1101_1106_arm_vs_all,
+    DUAL_MONO_IMU_1101_1107_base_vs_both,
 )
 
 from vins_replay_utils.uwarl_replay_decoder import auto_generate_labels_from_bag_file_name_with_json_config, ProcessedData
@@ -55,7 +56,7 @@ PLOT_FEATURE_ORIENTING              = False # TODO: orientation correction neede
 PLOT_FEATURE_SHOW_ORIENTATIONS      = True
 PLOT_FEATURE_VIEW_ANGLES            = [(30,10),(70,45),(10,10)]#[(30,10),(70,45),(10,10)]
 PLOT_FEATURE_VIEW_ANGLES_SEPARATED  = True
-PLOT_FEATURE_SCATTER_PLOT           = True
+PLOT_FEATURE_SCATTER_PLOT           = False
 PLOT_FEATURE_FIG_SIZE_SCATTER       = (8,8)
 PLOT_FEATURE_LINE_PLOT              = True
 PLOT_FEATURE_FIG_SIZE_LINE          = (4,4)
@@ -249,7 +250,8 @@ for bag_test_case in [
         # DUAL_MONO_IMU_1101_1106_comparison,
         # DUAL_MONO_IMU_1101_1106_base_vs_both,
         # DUAL_MONO_IMU_1101_1106_arm_vs_both,
-        DUAL_MONO_IMU_1101_1106_arm_vs_all,
+        # DUAL_MONO_IMU_1101_1106_arm_vs_all,
+        DUAL_MONO_IMU_1101_1107_base_vs_both,
     ]:
     N_args = len(sys.argv)
     if (N_args == 3):
