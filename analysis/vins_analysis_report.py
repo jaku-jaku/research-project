@@ -22,6 +22,9 @@ from configs.uwarl_common import PARSER_CALLBACKS
 from configs.uwarl_test_set_d455 import (
     TEST_SET_TITLE, 
     DUAL_MONO_IMU_1101_1106_comparison,
+    DUAL_MONO_IMU_1101_1106_base_vs_both,
+    DUAL_MONO_IMU_1101_1106_arm_vs_both,
+    DUAL_MONO_IMU_1101_1106_arm_vs_all,
 )
 
 from vins_replay_utils.uwarl_replay_decoder import auto_generate_labels_from_bag_file_name_with_json_config, ProcessedData
@@ -243,7 +246,10 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
 for bag_test_case in [
         # TEST_SET_DUAL_MONO_IMU_0612_1017_v4,
         # TEST_SET_DUAL_MONO_IMU_0612_1022_v10,
-        DUAL_MONO_IMU_1101_1106_comparison,
+        # DUAL_MONO_IMU_1101_1106_comparison,
+        # DUAL_MONO_IMU_1101_1106_base_vs_both,
+        # DUAL_MONO_IMU_1101_1106_arm_vs_both,
+        DUAL_MONO_IMU_1101_1106_arm_vs_all,
     ]:
     N_args = len(sys.argv)
     if (N_args == 3):
@@ -270,11 +276,11 @@ for bag_test_case in [
                     print(f"Found index @ {folder_id}:{bag_id}")
                 else:
                     continue # skip this rung
-            # generate report here:
-            ic(bag_subset.value)
+            # [REPORT]:
+            print(f"> Generating report for {bag_subset.name}:{bag_subset.value}")
             generate_report(bag_test_case.__name__, bag_test_case.CONFIG.value, bag_subset)
         else:
-            print(f"WARNING, test subset is empty, skipping tests {bag_subset.name}")
+            print(f"> WARNING, test subset is empty, skipping tests {bag_subset.name}")
         
         # # [DEV]: uncomment to only run the first one
         # break
