@@ -12,10 +12,47 @@ from utils.uwarl_util import create_all_folders
 from typing import Dict, List, Tuple, Union, Callable, Optional
 
 from icecream import ic
-
+from datetime import datetime
+import os
 
 DEFAULT_FIGSIZE = (5, 5)
-
+class ReportGenerator:
+    _generated_figs_name:dict()={}
+    _tag:str=""
+    _output_dir=None
+    
+    def __init__(self, tag) -> None:
+        self._tag = tag
+        
+    def append_figname(self, file_name):
+        file_dir_, file_name_ = os.path.split(file_name) 
+        tags_ = file_name_.split('_')
+        if self._output_dir is None:
+            self._output_dir = file_dir_
+            
+        if tags_[0] in self._generated_figs_name and tags_[1] in self._generated_figs_name[tags_[0]]:
+            self._generated_figs_name[tags_[0]][tags_[1]].append(file_name_) # overrides
+        else: # init entries:
+            self._generated_figs_name[tags_[0]] = {tags_[1]: [file_name_]}
+            
+    def save_report_as_md(self):
+        output_path=self._output_dir
+        if output_path:
+            file_name=f"{output_path}/APPENDIX_{self._tag.replace(' ', '_')}.md"
+            with open(file_name, "w") as f:
+                date_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                f.write(f"# Reprot \n[Auto-gen on {date_time}] \n")
+                
+                for section, fig_names in self._generated_figs_name.items():
+                    f.write(f"## Base Motion: {section} \n")
+                    N_len = len(fig_names)
+                    ic(fig_names)
+                    f.write("|{}|\n".format(" | ".join(fig_names.keys())))
+                    f.write("|{}|\n".format("|".join(["---" for i in range(N_len)])))
+                    f.write("|{}|\n".format(" | ".join(["![{0}]({0})".format(val[0]) for val in fig_names.values()])))
+                    f.write("\n\n")
+            print(f"[x]---> md report generated @ {file_name}")
+            
 class AnalysisManager:
     """ Analysis Manager 
         - handle global settings and keep consistency
@@ -23,6 +60,7 @@ class AnalysisManager:
     """
     _auto_save  :bool 
     _auto_close :bool 
+    _verbose    :bool 
     _output_dir :str 
     _prefix     :str 
     
@@ -33,10 +71,12 @@ class AnalysisManager:
             prefix: str="",
             auto_save: bool=True,
             auto_close: bool=False,
+            verbose: bool = False,
         ):
         self._auto_close = auto_close
         self._auto_save = auto_save
         self._prefix = prefix
+        self._verbose = verbose
         # create output folder
         self._create_dir(output_dir, run_name, test_set_name)
     
@@ -45,18 +85,21 @@ class AnalysisManager:
         create_all_folders(self._output_dir)
 
     def save_fig(self, fig, tag, title=None, dpi=600):
+        file_name = None
         if title:
             plt.title(title)
         if self._auto_save:
             output_path=self.output_path()
             file_name=f"{output_path}plot_{tag.replace(' ', '_')}.png"
             fig.savefig(file_name, bbox_inches = 'tight', dpi=dpi)
-            print(f"Saved figure to {file_name}")
+            if self._verbose:
+                print(f"Saved figure to {file_name}")
         if self._auto_close:
             plt.show(block=False)
             plt.close(fig)
         else:
             plt.show(block=True)
+        return file_name
     
     def save_dict(self, data, file_name):
         if self._auto_save:
@@ -214,19 +257,19 @@ def plot_data_sets_subplots(data_sets_xys, xlabel="", figsize=(5, 5)):
 # -------------------------------- Plot Time Functions -------------------------------- %% #
 
 def plot_time_series(
-    bag_plot:MultiBagsDataManager, data_sets_y, title=None, if_label_bags=True, figsize=DEFAULT_FIGSIZE):
+    bag_manager:MultiBagsDataManager, data_sets_y, title=None, if_label_bags=True, figsize=DEFAULT_FIGSIZE):
     """
     data_sets_y = {
         "Voltage (V)"       : battery_v,
         "Joint Effort (N.m)": joint_eff,
     }
     """
-    N_bags = bag_plot.N_bags
+    N_bags = bag_manager.N_bags
     if title is None:
         title = " and ".join(data_sets_y.keys())
     
     # concatenate all the data:
-    dT_s = np.sum(bag_plot.list_of_dT_s)
+    dT_s = np.sum(bag_manager.list_of_dT_s)
     data_sets_xy = dict()
     for label, data in data_sets_y.items():
         data_sets_xy[label] = dict()
@@ -258,14 +301,14 @@ def plot_time_series(
         plt.axvline(x=0, color = 'r', ls='--', alpha=0.5)
         for i in range(N_bags):
             # segment bag_files
-            t_end += bag_plot.list_of_dT_s[i]
-            label = bag_plot.list_of_bag_labels[i]
+            t_end += bag_manager.list_of_dT_s[i]
+            label = bag_manager.list_of_bag_labels[i]
             plt.axvline(x=t_end, color = 'r', ls='--', alpha=0.5)
             plt.text(t_end, y_range[1], f" [{label}]", color='r', verticalalignment='top', horizontalalignment='right')
         
     return fig, ax, f"{title}_time_series"
 
-def plot_time_parallel(bag_plot:MultiBagsDataManager, data_sets_y, title=None, figsize=DEFAULT_FIGSIZE):
+def plot_time_parallel(bag_manager:MultiBagsDataManager, data_sets_y, title=None, figsize=DEFAULT_FIGSIZE):
     """
     data_sets_y = {
         "Voltage (V)"       : battery_v,
@@ -281,10 +324,10 @@ def plot_time_parallel(bag_plot:MultiBagsDataManager, data_sets_y, title=None, f
         data_sets_xys[label] = dict()
         data_sets_xys[label]["y"] = data['y']
         data_sets_xys[label]["x"] = data['t']
-        data_sets_xys[label]["label"] = bag_plot.list_of_bag_labels
+        data_sets_xys[label]["label"] = bag_manager.list_of_bag_labels
         
     fig, ax = plot_data_sets_subplots(data_sets_xys, xlabel="Time (s)", figsize=figsize)
-    ax[0].set_title(f"{title} ({bag_plot.N_bags} bags)")
+    ax[0].set_title(f"{title} ({bag_manager.N_bags} bags)")
 
     return fig, ax, f"{title}_time_parallel"
     
@@ -292,20 +335,21 @@ def plot_time_parallel(bag_plot:MultiBagsDataManager, data_sets_y, title=None, f
 # -------------------------------- Plot: 3D trajectories -------------------------------- %% #
 # 4. Plot:
 from scipy.spatial.transform import Rotation as R
-def plot_spatial(bag_plot:MultiBagsDataManager, 
+def plot_spatial(bag_manager:MultiBagsDataManager, 
         data_sets_3d, title=None, 
         figsize=DEFAULT_FIGSIZE, projection='3d', proj_type='ortho',
         N_sample=1, show_grid=True, view_angles=[(30,10),(70,45),(10,10)],
-        show_orientations=False, N_orientations_sample=20, zero_orienting=False,
-        scatter_or_line="line", bag_subset=None, cameras=None, zero_position=False,
-        fixed_view=False, split_map=None, AXIS_BOUNDARY_MAX=[5,5,2], AXIS_BOUNDARY_MIN=[0.5,0.5,0.2]
+        show_orientations=False, show_cameras=False, N_orientations_sample=20, zero_orienting=False,
+        orientation_group=["Est"], label_filter=["Vicon", "VINS"],
+        scatter_or_line="line", cameras=None, zero_position=False,
+        split_map=None, AXIS_BOUNDARY_MAX=[5,5,2], AXIS_BOUNDARY_MIN=[0.5,0.5,0.2],
 ):
     """ Plot is 3D Spatial Coordinates per data bag
         - muxing data from multiple topics
         - @split_map: {1:"Base", 0:"EE"}
     """
     
-    N_bags = bag_plot.N_bags
+    N_bags = bag_manager.N_bags
     N_views = len(view_angles)
     N_split =  len(split_map) if split_map else 1 
     fig = plt.figure(figsize=(figsize[0]*N_bags*N_split, figsize[1]*N_views))
@@ -313,7 +357,6 @@ def plot_spatial(bag_plot:MultiBagsDataManager,
     axs = [fig.add_subplot(N_views,N_bags*N_split,i+1, projection=projection, proj_type=proj_type) for i in range(N_bags*N_views*N_split)]
     N_entries = len(data_sets_3d.keys())
     ADAPTIVE_FONT_SIZE = figsize[1] / N_views * 1.5
-    
     CMAP = CMAP_Selector("Seq2")
     cmap_handles, handler_map = CMAP.get_cmap_handles(N_color=N_entries)  
     if_scatter = scatter_or_line == "scatter"
@@ -324,7 +367,9 @@ def plot_spatial(bag_plot:MultiBagsDataManager,
             for i, (label, data) in enumerate(data_sets_3d.items()):
                 if sub_device and sub_device not in label:
                     continue # skip
-                    
+                if_label_in_blocklist = np.sum([block in label for block in label_filter])
+                if label_filter and if_label_in_blocklist > 0:
+                    continue # skip
                 # copy data:
                 if len(data['t']) == 0:
                     continue # skip if no bags
@@ -387,14 +432,16 @@ def plot_spatial(bag_plot:MultiBagsDataManager,
                         else:
                             axs[view_idx].plot3D(x_[:,0], x_[:,1], x_[:,2], color=CWheel[i], label=label_list[-1], linestyle=_linestyle)
                         if show_orientations:
-                            if cameras and "Est" in label:
+                            if_key_in_label = np.sum([key in label for key in orientation_group]) 
+                            if cameras and if_key_in_label:
                                 for r, x in zip(r_.as_matrix(), xu_):
                                     T_rbt = np.eye(4)
                                     T_rbt[0:3,0:3] = r # 3x3
                                     T_rbt[0:3, 3] = x
                                     # ic(r, x, T_rbt)
                                     cam_id = 0 if "Base" in label else 1
-                                    cameras[cam_id].plot_camera(ax=axs[view_idx], RBT_SE3=T_rbt, verbose=False, auto_adjust_frame=False)
+                                    cameras[cam_id].plot_camera(ax=axs[view_idx], RBT_SE3=T_rbt, facecolors=CWheel[i],
+                                                                verbose=False, auto_adjust_frame=False, show_cameras=show_cameras)
                             else:
                                 ex_ = r_.apply([1,0,0])
                                 ey_ = r_.apply([0,1,0])
@@ -403,26 +450,26 @@ def plot_spatial(bag_plot:MultiBagsDataManager,
                                 axs[view_idx].quiver(xu_[:,0], xu_[:,1], xu_[:,2], ey_[:,0], ey_[:,1], ey_[:,2], length=0.1, normalize=True, color="green")
                                 axs[view_idx].quiver(xu_[:,0], xu_[:,1], xu_[:,2], ez_[:,0], ez_[:,1], ez_[:,2], length=0.1, normalize=True, color="blue")
                         
-                    # set min max boundary for the axis:
-                    x_min, x_max = axs[view_idx].get_xlim()
-                    y_min, y_max = axs[view_idx].get_ylim()
-                    z_min, z_max = axs[view_idx].get_zlim()
-                    x_min = min(max(x_min, -AXIS_BOUNDARY_MAX[0]), -AXIS_BOUNDARY_MIN[0])
-                    x_max = max(min(x_max,  AXIS_BOUNDARY_MAX[0]),  AXIS_BOUNDARY_MIN[0])
-                    y_min = min(max(y_min, -AXIS_BOUNDARY_MAX[1]), -AXIS_BOUNDARY_MIN[1])
-                    y_max = max(min(y_max,  AXIS_BOUNDARY_MAX[1]),  AXIS_BOUNDARY_MIN[1])
-                    z_min = min(max(z_min, -AXIS_BOUNDARY_MAX[2]), -AXIS_BOUNDARY_MIN[2])
-                    z_max = max(min(z_max,  AXIS_BOUNDARY_MAX[2]),  AXIS_BOUNDARY_MIN[2])
-                    axs[view_idx].set_xlim3d(x_min, x_max)
-                    axs[view_idx].set_ylim3d(y_min, y_max)
-                    axs[view_idx].set_zlim3d(z_min, z_max)
+                        # set min max boundary for the axis:
+                        x_min, x_max = axs[view_idx].get_xlim()
+                        y_min, y_max = axs[view_idx].get_ylim()
+                        z_min, z_max = axs[view_idx].get_zlim()
+                        x_min = min(max(x_min, -AXIS_BOUNDARY_MAX[0]), -AXIS_BOUNDARY_MIN[0])
+                        x_max = max(min(x_max,  AXIS_BOUNDARY_MAX[0]),  AXIS_BOUNDARY_MIN[0])
+                        y_min = min(max(y_min, -AXIS_BOUNDARY_MAX[1]), -AXIS_BOUNDARY_MIN[1])
+                        y_max = max(min(y_max,  AXIS_BOUNDARY_MAX[1]),  AXIS_BOUNDARY_MIN[1])
+                        z_min = min(max(z_min, -AXIS_BOUNDARY_MAX[2]), -AXIS_BOUNDARY_MIN[2])
+                        z_max = max(min(z_max,  AXIS_BOUNDARY_MAX[2]),  AXIS_BOUNDARY_MIN[2])
+                        axs[view_idx].set_xlim3d(x_min, x_max)
+                        axs[view_idx].set_ylim3d(y_min, y_max)
+                        axs[view_idx].set_zlim3d(z_min, z_max)
            
             
             # subtitles:
             if sub_device:
-                axs[m+j].set_title(f"{bag_plot.list_of_bag_labels[j]} ({sub_device})")
+                axs[m+j].set_title(f"{bag_manager.list_of_bag_labels[j]} ({sub_device})")
             else:
-                axs[j].set_title(f"{bag_plot.list_of_bag_labels[j]}")
+                axs[j].set_title(f"{bag_manager.list_of_bag_labels[j]}")
             # apply custom legends:
             for k in range(N_views):
                 view_idx = j+k*N_bags*N_split+m 

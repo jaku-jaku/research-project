@@ -19,17 +19,21 @@ from icecream import ic
 from utils.uwarl_bag_parser import BagParser, TYPES_VAR
 from configs.uwarl_common import PARSER_CALLBACKS
 # from configs.uwarl_test_set import TEST_SET_STEREO_IMU, TEST_SET_MONO_IMU, TEST_SET_STEREO, TEST_SET_SINGLE
-from configs.uwarl_test_set_d455 import (
+# from configs.uwarl_test_set_d455 import (
+#     TEST_SET_TITLE, 
+#     DUAL_1108_BASICS_baseline_vs_decoupled,
+#     DUAL_1108_DYNAMICS_baseline_vs_decoupled,
+#     DUAL_1108_LONG_AM_baseline_vs_decoupled,
+#     DUAL_1108_LONG_PM_baseline_vs_decoupled,
+# )
+from configs.uwarl_test_set_d455_640 import (
     TEST_SET_TITLE, 
-    DUAL_MONO_IMU_1101_1106_comparison,
-    DUAL_MONO_IMU_1101_1106_base_vs_both,
-    DUAL_MONO_IMU_1101_1106_arm_vs_both,
-    DUAL_MONO_IMU_1101_1106_arm_vs_all,
-    DUAL_MONO_IMU_1101_1107_base_vs_both,
+    DUAL_1115_BASICS_baseline_vs_decoupled,
+    DUAL_1115_DYNAMICS_baseline_vs_decoupled,
 )
 
 from vins_replay_utils.uwarl_replay_decoder import auto_generate_labels_from_bag_file_name_with_json_config, ProcessedData
-from vins_replay_utils.uwarl_analysis_plot import AnalysisManager, MultiBagsDataManager, plot_time_parallel, plot_time_series, plot_spatial
+from vins_replay_utils.uwarl_analysis_plot import ReportGenerator, AnalysisManager, MultiBagsDataManager, plot_time_parallel, plot_time_series, plot_spatial
 
 from vins_replay_utils.uwarl_camera import MultiSensor_Camera_Node
 
@@ -52,14 +56,22 @@ FEATURE_PLOT_3D_TRAJECTORIES        = True
 FEATURE_PLOT_CAMERAS                = True
 FEATURE_PLOT_CAM_CONFIGS            = False
 
-PLOT_FEATURE_ORIENTING              = False # TODO: orientation correction needed to be implemented
-PLOT_FEATURE_SHOW_ORIENTATIONS      = True
 PLOT_FEATURE_VIEW_ANGLES            = [(30,10),(70,45),(10,10)]#[(30,10),(70,45),(10,10)]
 PLOT_FEATURE_VIEW_ANGLES_SEPARATED  = True
-PLOT_FEATURE_SCATTER_PLOT           = False
-PLOT_FEATURE_FIG_SIZE_SCATTER       = (8,8)
-PLOT_FEATURE_LINE_PLOT              = True
-PLOT_FEATURE_FIG_SIZE_LINE          = (4,4)
+PLOT_FEATURE_ODOM_ONLY              = True
+PLOT_FEATURE_AXIS_BOUNDARY_MAX      = [5,5,2] # <--- for whole floor rungs, we need to change this
+PLOT_CONFIGS = {
+    "line" : {
+        "figsize":(4,4),
+        "scatter_or_line":"line",
+        "orientation_group": [],
+    },
+    "scatter" : {
+        "figsize": (8,8),
+        "scatter_or_line": "scatter",
+        "orientation_group": ["Est"],
+    },
+}
 RUN_NAME = ""
 RUN_TAG = ""
 if FEATURE_AUTO_CLOSE_FIGS:
@@ -67,7 +79,7 @@ if FEATURE_AUTO_CLOSE_FIGS:
     
 FEATURE_PROCESS_BAGS = (FEATURE_PLOT_VOLTAGE_JOINT_EFFORTS or FEATURE_PLOT_3D_TRAJECTORIES)
 # -------------------------------- REPORT -------------------------------- %% #
-def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
+def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report_generator=None):
     print(f"Generating Report for {bag_subset.name}")
     
     # -------------------------------- Manager & Configs -------------------------------- %% #
@@ -209,33 +221,39 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
 
         # # 4. Plot:
         ### pip install ipympl
-        # fig, axs = plot_spatial(BagPlot, data_sets_3d, figsize=(10,8), view_angles=[(30,45)], show_orientations=False)
+        # prep:
         angle_v = [[x] for x in PLOT_FEATURE_VIEW_ANGLES] if PLOT_FEATURE_VIEW_ANGLES_SEPARATED else [PLOT_FEATURE_VIEW_ANGLES]
+        label_filters = {"unified":[]} if not PLOT_FEATURE_ODOM_ONLY else {"odom":["Loop"], "loop":["Est"]}
+        plot_boundary_max = bag_test_case_config["AXIS_BOUNDARY_MAX"] if "AXIS_BOUNDARY_MAX" in bag_test_case_config else PLOT_FEATURE_AXIS_BOUNDARY_MAX
         # plot:
-        for j, angles in enumerate(angle_v):
-            if PLOT_FEATURE_SCATTER_PLOT:
-                fig, axs, title = plot_spatial(DM, data_sets_3d, scatter_or_line='scatter',
-                    figsize=PLOT_FEATURE_FIG_SIZE_SCATTER, 
-                    zero_orienting=PLOT_FEATURE_ORIENTING, 
-                    show_orientations=PLOT_FEATURE_SHOW_ORIENTATIONS,
-                    view_angles=angles,
-                    bag_subset=bag_subset.value,
-                    title=RUN_NAME,
-                    cameras=cameras,
-                    split_map=SPLIT_MAP,
-                ) # default 3 views
-                AM.save_fig(fig, f"{title}_{j}")
-            if PLOT_FEATURE_LINE_PLOT:
-                fig, axs, title = plot_spatial(DM, data_sets_3d, scatter_or_line='line',
-                    figsize=PLOT_FEATURE_FIG_SIZE_LINE, 
-                    zero_orienting=PLOT_FEATURE_ORIENTING,
-                    show_orientations=False,
-                    view_angles=angles,
-                    bag_subset=bag_subset.value,
-                    title=RUN_NAME,
-                    split_map=SPLIT_MAP,
-                ) # default 3 views
-                AM.save_fig(fig, f"{title}_{j}")
+        for name_lf, label_filter in label_filters.items():
+            for j, angles in enumerate(angle_v):
+                for config_name, config in PLOT_CONFIGS.items():
+                    fig, axs, title = plot_spatial(
+                        bag_manager         =DM, 
+                        data_sets_3d        =data_sets_3d, 
+                        title               =RUN_NAME, 
+                        figsize             =config["figsize"], 
+                        view_angles         =angles,
+                        show_orientations   =(bool)(len(config["orientation_group"]) > 0), 
+                        zero_orienting      =False,
+                        scatter_or_line     =config["scatter_or_line"],
+                        cameras             =cameras, 
+                        split_map           =SPLIT_MAP,
+                        show_cameras        =(bool)(len(cameras) > 0),
+                        orientation_group   =config["orientation_group"],
+                        label_filter        =label_filter,
+                        AXIS_BOUNDARY_MAX   =plot_boundary_max,
+                        # default params:
+                        # N_sample=1, 
+                        # N_orientations_sample=20, zero_position=False,
+                        # projection='3d', proj_type='ortho',
+                        # show_grid=True, AXIS_BOUNDARY_MAX=[5,5,2], AXIS_BOUNDARY_MIN=[0.5,0.5,0.2]
+                    )
+                    file_name = AM.save_fig(fig, f"{title}_{name_lf}_{j}")
+                    # append to report
+                    if report_generator and file_name:
+                        report_generator.append_figname(file_name)
     
 
 # %% MAIN --------------------------------:
@@ -244,14 +262,9 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset):
 
 # -------------------------------- bag_test_set -------------------------------- #
 # go through each test set:
-for bag_test_case in [
-        # TEST_SET_DUAL_MONO_IMU_0612_1017_v4,
-        # TEST_SET_DUAL_MONO_IMU_0612_1022_v10,
-        # DUAL_MONO_IMU_1101_1106_comparison,
-        # DUAL_MONO_IMU_1101_1106_base_vs_both,
-        # DUAL_MONO_IMU_1101_1106_arm_vs_both,
-        # DUAL_MONO_IMU_1101_1106_arm_vs_all,
-        DUAL_MONO_IMU_1101_1107_base_vs_both,
+for bag_test_case in [ 
+        DUAL_1115_BASICS_baseline_vs_decoupled,
+        DUAL_1115_DYNAMICS_baseline_vs_decoupled,
     ]:
     N_args = len(sys.argv)
     if (N_args == 3):
@@ -269,6 +282,7 @@ for bag_test_case in [
         #     continue
         
         # [MAIN]:
+        RG = ReportGenerator("temp" if N_args == 3 else "Overall")
         if_exist = len(bag_subset.value) > 0
         if if_exist:
             # filter for the right bag
@@ -280,7 +294,8 @@ for bag_test_case in [
                     continue # skip this rung
             # [REPORT]:
             print(f"> Generating report for {bag_subset.name}:{bag_subset.value}")
-            generate_report(bag_test_case.__name__, bag_test_case.CONFIG.value, bag_subset)
+            generate_report(bag_test_case.__name__, bag_test_case.CONFIG.value, bag_subset, report_generator=RG)
+            RG.save_report_as_md()
         else:
             print(f"> WARNING, test subset is empty, skipping tests {bag_subset.name}")
         

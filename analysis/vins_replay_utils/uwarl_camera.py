@@ -100,8 +100,9 @@ class MultiSensor_Camera_Node:
         
     def plot_camera(self, 
             ax, RBT_SE3=np.eye(4), 
-            show_body_origin=True, show_axis=True, auto_adjust_frame=True,
-            axis_length=0.15,
+            show_body_origin=True, show_axis=True, show_cameras=True,
+            auto_adjust_frame=True,
+            axis_length=0.15, 
             alpha=0.35, linewidths=0.3,
             facecolors='g', edgecolors='r',
             verbose=True,
@@ -110,12 +111,13 @@ class MultiSensor_Camera_Node:
         :params:
         @RBT_SE3 Rigid Body Transformation Matrix in \SE(3)
         """
-        for i in range(self._n_cams): 
-            extrinsic = self.get_cam_extrinsic(index=i)
-            aspect_ratio = self.get_cam_aspect_ratio(index=i)
-            self.plot_wireframe_camera(ax, extrinsic, RBT_SE3=RBT_SE3, aspect_ratio=aspect_ratio, f_length=axis_length,
-                show_axis=show_axis, facecolors=facecolors, linewidths=linewidths, edgecolors=edgecolors, alpha=alpha, 
-                auto_adjust_frame=auto_adjust_frame, cam_name=self.get_cam_topic(i), verbose=verbose)
+        if show_cameras:
+            for i in range(self._n_cams): 
+                extrinsic = self.get_cam_extrinsic(index=i)
+                aspect_ratio = self.get_cam_aspect_ratio(index=i)
+                self.plot_wireframe_camera(ax, extrinsic, RBT_SE3=RBT_SE3, aspect_ratio=aspect_ratio, f_length=axis_length,
+                    show_axis=show_axis, facecolors=facecolors, linewidths=linewidths, edgecolors=edgecolors, alpha=alpha, 
+                    auto_adjust_frame=auto_adjust_frame, cam_name=self.get_cam_topic(i), verbose=verbose)
 
         if (self._if_imu and show_axis) or show_body_origin:
             self.plot_axis(ax, RBT_SE3=RBT_SE3, q_length=axis_length, node_label="imu", verbose=verbose)

@@ -7,7 +7,8 @@ from icecream import ic # DEBUG ONLY
 
 def decode_replayed_vins_bag_file_name(_bag_path:str):
     prefix = _bag_path.split("_vins-replay")[0]
-    unique_id, demo_id = prefix.split("_")
+    codes = prefix.split("_")
+    unique_id, demo_id = codes[-2], codes[-1]
     tag, session_id, run_id = unique_id.split("-")
     _, demo_id_int = demo_id.split("-")
     description = {
