@@ -90,6 +90,7 @@ class ProcessedData:
         if T_LAST_S > 0:
             self.bag_exist = BP.process_only_last_bag_msgs(T_SPAN_SECONDS=T_LAST_S) # TODO: very time consuming!!
         else:    
+            self.bag_exist = True
             BP.process_all_bag_msgs() # TODO: very time consuming!!
 
         if self.bag_exist:

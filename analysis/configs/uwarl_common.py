@@ -1,4 +1,8 @@
-from uwarl_bag_utils.bag_parser import BagParser
+from utils.uwarl_bag_parser import BagParser
+'''
+    original: waterloo_steel/waterloo_steel_demo/waterloo_steel_analyzer/src/uwarl_bag_utils/uwarl_common.py
+    NOTE: we can merge back to waterloo_steel later on
+'''
 ### common ###
 PARSER_TYPE_GROUP = {
     # 'accel'     : ['/cam_EE/accel/sample', '/cam_base/accel/sample'],
@@ -37,17 +41,17 @@ PARSER_CALLBACKS ={
     '/wam/pose'                              : lambda data,topic,msg: BagParser.parse_wam(data,topic,msg),
     
     # [VIO: Vins-Mono]:
-    '/vins_estimator/base/vicon/path'      : lambda data,topic,msg: BagParser.parse_vio(data,topic,msg),
-    '/vins_estimator/EE/vicon/path'        : lambda data,topic,msg: BagParser.parse_vio(data,topic,msg),
+    '/vins_estimator/base/vicon/path'      : lambda data,topic,msg: BagParser.parse_overall_path(data,topic,msg),
+    '/vins_estimator/EE/vicon/path'        : lambda data,topic,msg: BagParser.parse_overall_path(data,topic,msg),
     
-    '/vins_estimator/base/path'            : lambda data,topic,msg: BagParser.parse_vio(data,topic,msg),
-    '/vins_estimator/EE/path'              : lambda data,topic,msg: BagParser.parse_vio(data,topic,msg),
+    '/vins_estimator/base/path'            : lambda data,topic,msg: BagParser.parse_overall_path(data,topic,msg),
+    '/vins_estimator/EE/path'              : lambda data,topic,msg: BagParser.parse_overall_path(data,topic,msg),
     
-    '/loop_fusion/base/pose_graph_path'    : lambda data,topic,msg: BagParser.parse_vio(data,topic,msg),
-    '/loop_fusion/EE/pose_graph_path'      : lambda data,topic,msg: BagParser.parse_vio(data,topic,msg),
+    '/loop_fusion/base/pose_graph_path'    : lambda data,topic,msg: BagParser.parse_overall_path(data,topic,msg),
+    '/loop_fusion/EE/pose_graph_path'      : lambda data,topic,msg: BagParser.parse_overall_path(data,topic,msg),
     
     # [SYSTEM: voltage]: to analyze the battery performance @ `waterloo_steel/waterloo_steel_demo/waterloo_steel_analyzer/jupyter/battery_test.ipynb`
-    # '/uwarl/robotnik_base_hw/voltage' : lambda data,topic,msg: BagParser.parse_voltage(data,topic,msg),
+    '/uwarl/robotnik_base_hw/voltage'      : lambda data,topic,msg: BagParser.parse_voltage(data,topic,msg),
     
     ### [UNUSED]:
     # /cam_EE/accel/imu_info

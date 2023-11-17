@@ -4,6 +4,9 @@
     This script will provide parsing support for custom messages.
     This work is based on the work of @sikang, see https://github.com/sikang/bag_plot
     
+    Original: waterloo_steel/waterloo_steel_demo/waterloo_steel_analyzer/src/uwarl_bag_utils/bag_parser.py
+    NOTE: we can merge back to waterloo_steel later on
+    
     @author: 
 """
 #===================================#
@@ -118,8 +121,7 @@ class BagParser:
         list_of_topics = self._bag_parser_reg_map.keys()
         with self._bag_data_lock:
             for topic, msg, ros_time in self._bag_data.read_messages(topics=list_of_topics):
-                if self._bag_samples[topic] is None:
-                    self._bag_samples[topic] = msg
+                self._bag_samples[topic] = msg
                 # topic based parsing:
                 payload_ = self._bag_parser_reg_map[topic](self._all_processed_bag, topic, msg)
                 self._all_processed_bag.update(payload_)
@@ -134,8 +136,7 @@ class BagParser:
             
             with self._bag_data_lock:
                 for topic, msg, ros_time in self._bag_data.read_messages(topics=list_of_topics, start_time=rospy.Time.from_sec(start_time_1s_before_end)):
-                    if self._bag_samples[topic] is None:
-                        self._bag_samples[topic] = msg
+                    self._bag_samples[topic] = msg
                     # topic based parsing:
                     payload_ = self._bag_parser_reg_map[topic](self._all_processed_bag, topic, msg)
                     self._all_processed_bag.update(payload_)
@@ -419,14 +420,22 @@ class BagParser:
             # ---
             pass
         return payload
-    
+
     @staticmethod
     def parse_vio(payload, topic, msg):
-        if topic in [
-            '/vins_estimator/path',
-            '/loop_fusion/pose_graph_path', 
-        ]:
+        if 'path' in topic: # Usually it is named with path
             data = BagParser._parse_poses_at_index(payload, topic, msg)
+            payload.update(data)
+            pass
+        else:
+            rospy.logwarn('Topic {} not implemented'.format(topic))
+            payload[topic] = {}
+        return payload
+    
+    @staticmethod
+    def parse_overall_path(payload, topic, msg):
+        if 'path' in topic: # Usually it is named with path
+            data = BagParser._parse_poses_at_index(payload, topic, msg, seq_indices=[-1])
             payload.update(data)
             pass
         else:

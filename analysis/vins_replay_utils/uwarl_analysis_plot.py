@@ -53,6 +53,9 @@ class ReportGenerator:
                     f.write("\n\n")
             print(f"[x]---> md report generated @ {file_name}")
             
+    # def append_errors(self, error_list):
+        
+            
 class AnalysisManager:
     """ Analysis Manager 
         - handle global settings and keep consistency
@@ -211,12 +214,13 @@ class MultiBagsDataManager:
 # %% 
 # -------------------------------- 2D Plot Functions -------------------------------- %% #
 ## Generic Handy Multi-Segments Multi-Topical Plotting Functions:
-CWheel = Color_Wheel(get_color_table("tab10", 20))
 
-def plot_data_sets_along_xaxis(data_sets_xy, xlabel="", PAD_WIDTH=0.1, figsize=(10,5)):
+def plot_data_sets_along_xaxis(data_sets_xy, xlabel="", PAD_WIDTH=0.1, figsize=(10,5), align_y=False, if_mu=False):
     fig, ax = plt.subplots(figsize=figsize)
     
     N_size = len(data_sets_xy)
+    CWheel = Color_Wheel(get_color_table("tab10", N=N_size))
+    
     axes = [ax if i==0 else ax.twinx() for i in range(N_size)] # twin x-axis 
     fig.subplots_adjust(right=(1-N_size*PAD_WIDTH)) 
     
@@ -228,12 +232,25 @@ def plot_data_sets_along_xaxis(data_sets_xy, xlabel="", PAD_WIDTH=0.1, figsize=(
         axes[-1].patch.set_visible(False)
 
     # plotting:
+    ylimit = []
+    mu = []
     for i, (label, data) in enumerate(data_sets_xy.items()):
         axes[i].plot(data["x"], data["y"], color=CWheel[i], label=label)
         axes[i].set_ylabel(label, color=CWheel[i])
-        # axes[i].set_ylim(bottom=np.min(data["y"]), top=np.max(data["y"]))
         axes[i].tick_params(axis='y', labelcolor=CWheel[i], colors=CWheel[i])
+        # extra:
+        ylimit.append(list(axes[i].get_ylim()))
+        if if_mu:
+            mu = np.mean(data["y"])
+            axes[i].set_ylabel(f"{label} (mu={mu:.3f})", color=CWheel[i])
+            axes[i].axhline(y=mu, color=CWheel[i], alpha=0.3, linestyle='--', label='$\mu$')
     
+    if align_y:
+        btm = np.max(np.array(ylimit)[:, 0])
+        top = np.min(np.array(ylimit)[:, 1])
+        for i in range(1,N_size):
+            axes[i].set_ylim(btm,top)
+            
     axes[0].set_xlabel(xlabel)
     return fig, ax
 
@@ -241,6 +258,7 @@ def plot_data_sets_subplots(data_sets_xys, xlabel="", figsize=(5, 5)):
     """ Plot multiple data sets on subplots, with different bag files on the same subplot.
     """
     N_sets = len(data_sets_xys)
+    CWheel = Color_Wheel(get_color_table("tab10", N=N_sets))
     fig = plt.figure(figsize=(figsize[0], figsize[1]*N_sets))
     gs = fig.add_gridspec(N_sets, hspace=0.0)
     axs = gs.subplots(sharex=True)
@@ -257,7 +275,8 @@ def plot_data_sets_subplots(data_sets_xys, xlabel="", figsize=(5, 5)):
 # -------------------------------- Plot Time Functions -------------------------------- %% #
 
 def plot_time_series(
-    bag_manager:MultiBagsDataManager, data_sets_y, title=None, if_label_bags=True, figsize=DEFAULT_FIGSIZE):
+    bag_manager:MultiBagsDataManager, data_sets_y, title=None, 
+        if_label_bags=True, figsize=DEFAULT_FIGSIZE, align_y=False, if_mu=False):
     """
     data_sets_y = {
         "Voltage (V)"       : battery_v,
@@ -289,7 +308,7 @@ def plot_time_series(
                 
     # figure:
     _fig_size =(figsize[0]*N_bags, figsize[1])
-    fig, ax = plot_data_sets_along_xaxis(data_sets_xy, xlabel="Time (s)", figsize=_fig_size)
+    fig, ax = plot_data_sets_along_xaxis(data_sets_xy, xlabel="Time (s)", figsize=_fig_size, align_y=align_y, if_mu=if_mu)
     # plot labels:
     plt.title(f"{title} ({N_bags} bags)")
     
@@ -360,6 +379,7 @@ def plot_spatial(bag_manager:MultiBagsDataManager,
     CMAP = CMAP_Selector("Seq2")
     cmap_handles, handler_map = CMAP.get_cmap_handles(N_color=N_entries)  
     if_scatter = scatter_or_line == "scatter"
+    CWheel = Color_Wheel(get_color_table("tab10", N=N_entries))
     for j in range(N_bags):
         for m in range(N_split):
             label_list = []
@@ -496,3 +516,4 @@ def plot_spatial(bag_manager:MultiBagsDataManager,
     title = f"{title}_spatial_{attr}"
 
     return fig, axs, title
+

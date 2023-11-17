@@ -9,6 +9,7 @@ import time
 # 3rd party lib
 import numpy as np
 from scipy.ndimage import gaussian_filter1d
+from scipy.spatial.transform import Rotation as SO3
 
 # 3rd party util
 from icecream import ic
@@ -19,18 +20,18 @@ from icecream import ic
 from utils.uwarl_bag_parser import BagParser, TYPES_VAR
 from configs.uwarl_common import PARSER_CALLBACKS
 # from configs.uwarl_test_set import TEST_SET_STEREO_IMU, TEST_SET_MONO_IMU, TEST_SET_STEREO, TEST_SET_SINGLE
-# from configs.uwarl_test_set_d455 import (
-#     TEST_SET_TITLE, 
-#     DUAL_1108_BASICS_baseline_vs_decoupled,
-#     DUAL_1108_DYNAMICS_baseline_vs_decoupled,
-#     DUAL_1108_LONG_AM_baseline_vs_decoupled,
-#     DUAL_1108_LONG_PM_baseline_vs_decoupled,
-# )
-from configs.uwarl_test_set_d455_640 import (
+from configs.uwarl_test_set_d455 import (
     TEST_SET_TITLE, 
-    DUAL_1115_BASICS_baseline_vs_decoupled,
-    DUAL_1115_DYNAMICS_baseline_vs_decoupled,
+    DUAL_1108_BASICS_baseline_vs_decoupled,
+    DUAL_1108_DYNAMICS_baseline_vs_decoupled,
+    DUAL_1108_LONG_AM_baseline_vs_decoupled,
+    DUAL_1108_LONG_PM_baseline_vs_decoupled,
 )
+# from configs.uwarl_test_set_d455_640 import (
+#     TEST_SET_TITLE, 
+#     DUAL_1115_BASICS_baseline_vs_decoupled,
+#     DUAL_1115_DYNAMICS_baseline_vs_decoupled,
+# )
 
 from vins_replay_utils.uwarl_replay_decoder import auto_generate_labels_from_bag_file_name_with_json_config, ProcessedData
 from vins_replay_utils.uwarl_analysis_plot import ReportGenerator, AnalysisManager, MultiBagsDataManager, plot_time_parallel, plot_time_series, plot_spatial
@@ -53,9 +54,11 @@ FEATURE_OUTPUT_BAG_META             = False
 
 FEATURE_PLOT_VOLTAGE_JOINT_EFFORTS  = False
 FEATURE_PLOT_3D_TRAJECTORIES        = True
+FEATURE_PLOT_ERROR_METRICS          = True
 FEATURE_PLOT_CAMERAS                = True
 FEATURE_PLOT_CAM_CONFIGS            = False
 
+FIGSIZE_ERR = (3,3)
 PLOT_FEATURE_VIEW_ANGLES            = [(30,10),(70,45),(10,10)]#[(30,10),(70,45),(10,10)]
 PLOT_FEATURE_VIEW_ANGLES_SEPARATED  = True
 PLOT_FEATURE_ODOM_ONLY              = True
@@ -78,6 +81,14 @@ if FEATURE_AUTO_CLOSE_FIGS:
     RUN_TAG = "[DEV]"
     
 FEATURE_PROCESS_BAGS = (FEATURE_PLOT_VOLTAGE_JOINT_EFFORTS or FEATURE_PLOT_3D_TRAJECTORIES)
+
+### Prepare parser callbacks: (remove unused callbacks to minimize runtime)
+parser_callbacks_ = PARSER_CALLBACKS
+if not FEATURE_PROCESS_BAGS:
+    parser_callbacks_.pop('/uwarl/robotnik_base_hw/voltage', None)
+    parser_callbacks_.pop('/wam/joint_states', None)
+    parser_callbacks_.pop('/wam/pose', None)
+
 # -------------------------------- REPORT -------------------------------- %% #
 def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report_generator=None):
     print(f"Generating Report for {bag_subset.name}")
@@ -116,8 +127,8 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
 
         # # 2. Data Pre-Processing
         # -------------------------------- Pre-Processing -------------------------------- %% #
-        # 0. Process Config File
-        BP = BagParser(PARSER_CALLBACKS)
+        # 0. Process Config File        
+        BP = BagParser(parser_callbacks_)
         # 0.1 generate camera pose:
         cameras = []
         if FEATURE_PLOT_CAMERAS:
@@ -226,9 +237,9 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
         label_filters = {"unified":[]} if not PLOT_FEATURE_ODOM_ONLY else {"odom":["Loop"], "loop":["Est"]}
         plot_boundary_max = bag_test_case_config["AXIS_BOUNDARY_MAX"] if "AXIS_BOUNDARY_MAX" in bag_test_case_config else PLOT_FEATURE_AXIS_BOUNDARY_MAX
         # plot:
-        for name_lf, label_filter in label_filters.items():
-            for j, angles in enumerate(angle_v):
-                for config_name, config in PLOT_CONFIGS.items():
+        for name_lf, label_filter in label_filters.items():         # (separate loop and odom)
+            for j, angles in enumerate(angle_v):                    # (separate view_angles)
+                for config_name, config in PLOT_CONFIGS.items():    # (different plots)
                     fig, axs, title = plot_spatial(
                         bag_manager         =DM, 
                         data_sets_3d        =data_sets_3d, 
@@ -255,6 +266,76 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
                     if report_generator and file_name:
                         report_generator.append_figname(file_name)
     
+    if FEATURE_PLOT_ERROR_METRICS and FEATURE_PLOT_3D_TRAJECTORIES:
+        # 1. compute error metrics and plot:
+        for device in ["Base", "EE"]:
+            data_sets_y1 = dict() 
+            data_sets_y2 = dict() 
+            for label, DM in DMs.items():
+                data_ref  = data_sets_3d[f"Vicon Cam {device} ({label})"]
+                data_est  = data_sets_3d[f"{label} VINS Est {device}"]
+                data_loop = data_sets_3d[f"{label} VINS Loop {device}"]
+                
+                N_sub = len(data_ref['r'])
+                t1 = []
+                x1 = []
+                x2 = []
+                for i in range(N_sub): # should be just one bag for this plot
+                    t_ref  = data_ref['t'][i]
+                    t0_ref = data_ref['t0'][i]
+                    q_ref  = data_ref['r'][i]
+                    p_ref  = data_ref['y'][i]
+                    
+                    def _get_delta(data):
+                        N_est = len(data['t'][i])
+                        t_  = np.array([])
+                        x1_ = np.array([])
+                        x2_ = np.array([])
+                        if (N_est > 0): # data exists
+                            t_est  = data['t'][i]
+                            t0_est = data['t0'][i]
+                            q_est  = data['r'][i]
+                            p_est  = data['y'][i]
+                            R_ref = np.array(SO3.from_quat(np.array(q_ref)[-N_est-1:-1, :]).inv().as_matrix())
+                            R_est = np.array(SO3.from_quat(np.array(q_est)).as_matrix())
+                            ic(np.shape(q_ref))
+                            ic(np.shape(p_ref))
+                            
+                            j_ref = len(t_ref) - len(t_est)
+                            delta_t = t_ref[j_ref] # used for time realignment
+                            
+                            temp = abs((t0_est - t0_ref) - delta_t)
+                            assert(temp < 1), f"ERROR: The time difference should be less than 1 s < {temp}"
+                    
+                            t_ = np.array(t_est) + delta_t
+                            delta_p = np.array(p_est) - np.array(p_ref)[-N_est-1:-1, :]
+                            x1_ = np.linalg.norm(delta_p, axis=1)
+                            delta_R = R_est @ R_ref - np.eye(3)
+                            ic(np.shape(delta_R))
+                            x2_ = np.linalg.norm(delta_R, axis=(1,2))
+                            ic(np.shape(x2_))
+
+                        return t_, x1_, x2_
+
+                    if len(t_ref) > 0:
+                        t_, x1_, x2_ = _get_delta(data_est)
+                        t1.append(t_.tolist())
+                        x1.append(x1_.tolist())
+                        x2.append(x2_.tolist())
+
+                data_sets_y1[f"VINS_Est {label}"] = {'t': t1, 'y': x1}
+                data_sets_y2[f"VINS_Est {label}"] = {'t': t1, 'y': x2}
+                
+                # data_sets_y[f"VINS_Loop-Vicon {device} ({label})"] = {'t': t, 'y': x}
+            fig,ax,title = plot_time_series(DM, data_sets_y1, title=f"Position Error ({device})", align_y=True, if_mu=True, figsize=FIGSIZE_ERR)
+            file_name = AM.save_fig(fig, title)
+            fig,ax,title = plot_time_series(DM, data_sets_y2, title=f"Rotation Error ({device})", align_y=True, if_mu=True, figsize=FIGSIZE_ERR)
+            file_name = AM.save_fig(fig, title)
+            ic(file_name)
+                
+                #TODO: compute rmse?
+                #TODO: plot x,y,z errors in parallel plot
+                
 
 # %% MAIN --------------------------------:
 # - organize your replayed vins dataset in `uwarl_test_set.py`
@@ -263,8 +344,12 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
 # -------------------------------- bag_test_set -------------------------------- #
 # go through each test set:
 for bag_test_case in [ 
-        DUAL_1115_BASICS_baseline_vs_decoupled,
-        DUAL_1115_DYNAMICS_baseline_vs_decoupled,
+        DUAL_1108_BASICS_baseline_vs_decoupled,
+        DUAL_1108_DYNAMICS_baseline_vs_decoupled,
+        DUAL_1108_LONG_AM_baseline_vs_decoupled,
+        DUAL_1108_LONG_PM_baseline_vs_decoupled,
+        # DUAL_1115_BASICS_baseline_vs_decoupled,
+        # DUAL_1115_DYNAMICS_baseline_vs_decoupled,
     ]:
     N_args = len(sys.argv)
     if (N_args == 3):
