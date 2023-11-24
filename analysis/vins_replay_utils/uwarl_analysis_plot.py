@@ -88,6 +88,8 @@ class AnalysisManager:
         create_all_folders(self._output_dir)
 
     def save_fig(self, fig, tag, title=None, dpi=600):
+        if fig is None:
+            return None
         file_name = None
         if title:
             plt.title(title)
@@ -235,20 +237,22 @@ def plot_data_sets_along_xaxis(data_sets_xy, xlabel="", PAD_WIDTH=0.1, figsize=(
     ylimit = []
     mu = []
     for i, (label, data) in enumerate(data_sets_xy.items()):
-        axes[i].plot(data["x"], data["y"], color=CWheel[i], label=label)
+        axes[i].plot(data["x"], data["y"], color=CWheel[i], label=label, alpha=0.9)
         axes[i].set_ylabel(label, color=CWheel[i])
         axes[i].tick_params(axis='y', labelcolor=CWheel[i], colors=CWheel[i])
         # extra:
         ylimit.append(list(axes[i].get_ylim()))
         if if_mu:
             mu = np.mean(data["y"])
-            axes[i].set_ylabel(f"{label} (mu={mu:.3f})", color=CWheel[i])
-            axes[i].axhline(y=mu, color=CWheel[i], alpha=0.3, linestyle='--', label='$\mu$')
+            axes[i].set_ylabel(f"{label} ($\mu$={mu:.3f})", color=CWheel[i])
+            axes[i].axhline(y=mu, color=CWheel[i], alpha=0.3, linestyle='--', label='$\mu$={mu:.3f}')
+            
     
     if align_y:
-        btm = np.max(np.array(ylimit)[:, 0])
-        top = np.min(np.array(ylimit)[:, 1])
-        for i in range(1,N_size):
+        btm = np.min(np.array(ylimit)[:, 0])
+        top = np.max(np.array(ylimit)[:, 1])
+        print(btm, top)
+        for i, (label, data) in enumerate(data_sets_xy.items()):    
             axes[i].set_ylim(btm,top)
             
     axes[0].set_xlabel(xlabel)
@@ -297,7 +301,8 @@ def plot_time_series(
         except:
             print("[Error] Could not concatenate~", data)
             # print(data)
-            exit(1)
+            # exit(1)
+            return None, None, None
         ### cumulative time:
         prev_t0 = 0
         data_sets_xy[label]["x"] = [data['t'][0]]

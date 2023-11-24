@@ -20,18 +20,26 @@ from icecream import ic
 from utils.uwarl_bag_parser import BagParser, TYPES_VAR
 from configs.uwarl_common import PARSER_CALLBACKS
 # from configs.uwarl_test_set import TEST_SET_STEREO_IMU, TEST_SET_MONO_IMU, TEST_SET_STEREO, TEST_SET_SINGLE
-from configs.uwarl_test_set_d455 import (
-    TEST_SET_TITLE, 
-    DUAL_1108_BASICS_baseline_vs_decoupled,
-    DUAL_1108_DYNAMICS_baseline_vs_decoupled,
-    DUAL_1108_LONG_AM_baseline_vs_decoupled,
-    DUAL_1108_LONG_PM_baseline_vs_decoupled,
-)
+# from configs.uwarl_test_set_d455 import (
+#     TEST_SET_TITLE, 
+#     DUAL_1108_BASICS_baseline_vs_decoupled,
+#     DUAL_1108_DYNAMICS_baseline_vs_decoupled,
+#     DUAL_1108_LONG_AM_baseline_vs_decoupled,
+#     DUAL_1108_LONG_PM_baseline_vs_decoupled,
+# )
 # from configs.uwarl_test_set_d455_640 import (
 #     TEST_SET_TITLE, 
 #     DUAL_1115_BASICS_baseline_vs_decoupled,
 #     DUAL_1115_DYNAMICS_baseline_vs_decoupled,
 # )
+from configs.uwarl_test_set_d455_Nov22 import (
+    TEST_SET_TITLE,
+    DUAL_1122_BASIC_1,
+    DUAL_1122_BASIC_2,
+    DUAL_1122_BASIC_ROG,
+    DUAL_1122_LONG,
+    DUAL_1122_LONG_ROG,
+)
 
 from vins_replay_utils.uwarl_replay_decoder import auto_generate_labels_from_bag_file_name_with_json_config, ProcessedData
 from vins_replay_utils.uwarl_analysis_plot import ReportGenerator, AnalysisManager, MultiBagsDataManager, plot_time_parallel, plot_time_series, plot_spatial
@@ -43,7 +51,7 @@ from vins_replay_utils.uwarl_camera import MultiSensor_Camera_Node
 FIG_OUT_DIR = f"{Path.home()}/UWARL_catkin_ws/src/vins-research-pkg/research-project/output/vins_analysis"
 FEATURE_LOCAL_DEVELOPMENT  = True
 
-FEATURE_ONLY_LAST                   = 10 #seconds
+FEATURE_ONLY_LAST                   = -1 #seconds
 
 SPLIT_MAP = None
 SPLIT_MAP = {1:"Base", 0:"EE"}
@@ -271,20 +279,36 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
         for device in ["Base", "EE"]:
             data_sets_y1 = dict() 
             data_sets_y2 = dict() 
+            data_sets_y3 = dict() 
+            data_sets_y4 = dict() 
             for label, DM in DMs.items():
                 data_ref  = data_sets_3d[f"Vicon Cam {device} ({label})"]
                 data_est  = data_sets_3d[f"{label} VINS Est {device}"]
                 data_loop = data_sets_3d[f"{label} VINS Loop {device}"]
                 
-                N_sub = len(data_ref['r'])
+                N_sub = len(data_ref['t'])
                 t1 = []
                 x1 = []
                 x2 = []
+                t2 = []
+                x3 = []
+                x4 = []
                 for i in range(N_sub): # should be just one bag for this plot
                     t_ref  = data_ref['t'][i]
                     t0_ref = data_ref['t0'][i]
-                    q_ref  = data_ref['r'][i]
-                    p_ref  = data_ref['y'][i]
+                    q_ref  = np.array(data_ref['r'][i])
+                    p_ref  = np.array(data_ref['y'][i])
+                    N_ref = len(data_ref['t'][i])
+                    q_corr_w2c = np.array([[1,0,0],[0,0,1],[0,-1,0]])
+                    print(q_corr_w2c)
+                    if device == 'Base':
+                        # convert to camera axis as base axis is not aligned with vicon
+                        R_ref = np.array(SO3.from_quat(q_ref).as_matrix() @ q_corr_w2c) 
+                    else:
+                        R_ref = np.array(SO3.from_quat(q_ref).as_matrix())
+    
+                    ic(np.shape(R_ref))
+                    
                     
                     def _get_delta(data):
                         N_est = len(data['t'][i])
@@ -294,42 +318,66 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
                         if (N_est > 0): # data exists
                             t_est  = data['t'][i]
                             t0_est = data['t0'][i]
-                            q_est  = data['r'][i]
+                            q_est  = np.array(data['r'][i])
                             p_est  = data['y'][i]
-                            R_ref = np.array(SO3.from_quat(np.array(q_ref)[-N_est-1:-1, :]).inv().as_matrix())
-                            R_est = np.array(SO3.from_quat(np.array(q_est)).as_matrix())
-                            ic(np.shape(q_ref))
-                            ic(np.shape(p_ref))
                             
-                            j_ref = len(t_ref) - len(t_est)
-                            delta_t = t_ref[j_ref] # used for time realignment
+                            R_est = np.array(SO3.from_quat(q_est).as_matrix())
+                           
+                            delta_t = t0_est - t0_ref # compute how late estimation is
+                            print(f">> T_est(0)):{t0_est}, T_ref(0): {t0_ref}, estimation is late for {delta_t}")
                             
-                            temp = abs((t0_est - t0_ref) - delta_t)
-                            assert(temp < 1), f"ERROR: The time difference should be less than 1 s < {temp}"
-                    
+                            # time alignment with tol 0.01s: 
+                            selected_k = 0
+                            if delta_t < 0:
+                                assert(delta_t < 0), "OOps, Estimation is earlier than reference"
+                            else:
+                                for k in range(N_ref):
+                                    if (delta_t - t_ref[k]) > 0.01:
+                                        break
+                                    selected_k = k # cache index
+
+                            d_t = t_est[-1]-t_ref[selected_k+N_est]
+                            k_max = min(selected_k+N_est, N_ref)
+                            print(f">> T_est(-1)={t_est[-1]}, T_ref(-1)={t_ref[k_max]}, delta: {d_t}")
+                            
                             t_ = np.array(t_est) + delta_t
-                            delta_p = np.array(p_est) - np.array(p_ref)[-N_est-1:-1, :]
+                            delta_p = np.array(p_est) - p_ref[selected_k:k_max, :]
                             x1_ = np.linalg.norm(delta_p, axis=1)
-                            delta_R = R_est @ R_ref - np.eye(3)
-                            ic(np.shape(delta_R))
-                            x2_ = np.linalg.norm(delta_R, axis=(1,2))
-                            ic(np.shape(x2_))
+                            # || q.T * q ||_2  : frobenius norm
+                            # err_R = [np.linalg.norm((SO3.from_quat(q_ref[z+selected_k, :]).inv() * SO3.from_quat(q_est[z,:])).as_quat()) - 1 for z in range(N_est)] 
+                            err_R = [np.linalg.norm(R_est[z, :].T @ R_ref[z+selected_k, :] - np.eye(3)) for z in range(N_est)]
+                            ic(np.shape(err_R))
+                            x2_ = np.array(err_R)
+                            # delta_RPY = RPY_est - RPY_ref[selected_k:k_max, :]
+                            # x2_ = delta_RPY[:, 2]
+                            # print("np.shape(delta_R):", np.shape(delta_R))
+                            # print("np.shape(x2_)", np.shape(x2_))
 
                         return t_, x1_, x2_
 
                     if len(t_ref) > 0:
                         t_, x1_, x2_ = _get_delta(data_est)
+                        t2_, x3_, x4_ = _get_delta(data_loop)
                         t1.append(t_.tolist())
                         x1.append(x1_.tolist())
                         x2.append(x2_.tolist())
+                        t2.append(t2_.tolist())
+                        x3.append(x3_.tolist())
+                        x4.append(x4_.tolist())
 
                 data_sets_y1[f"VINS_Est {label}"] = {'t': t1, 'y': x1}
                 data_sets_y2[f"VINS_Est {label}"] = {'t': t1, 'y': x2}
+                data_sets_y3[f"VINS_Loop {label}"] = {'t': t2, 'y': x3}
+                data_sets_y4[f"VINS_Loop {label}"] = {'t': t2, 'y': x4}
                 
                 # data_sets_y[f"VINS_Loop-Vicon {device} ({label})"] = {'t': t, 'y': x}
-            fig,ax,title = plot_time_series(DM, data_sets_y1, title=f"Position Error ({device})", align_y=True, if_mu=True, figsize=FIGSIZE_ERR)
+            fig,ax,title = plot_time_series(DM, data_sets_y1, title=f"Est Pos Err ({device})", align_y=True, if_mu=True, figsize=FIGSIZE_ERR)
             file_name = AM.save_fig(fig, title)
-            fig,ax,title = plot_time_series(DM, data_sets_y2, title=f"Rotation Error ({device})", align_y=True, if_mu=True, figsize=FIGSIZE_ERR)
+            fig,ax,title = plot_time_series(DM, data_sets_y2, title=f"Est Rot Err ({device})", align_y=True, if_mu=True, figsize=FIGSIZE_ERR)
+            file_name = AM.save_fig(fig, title)
+            fig,ax,title = plot_time_series(DM, data_sets_y3, title=f"Loop Pos Err ({device})", align_y=True, if_mu=True, figsize=FIGSIZE_ERR)
+            file_name = AM.save_fig(fig, title)
+            fig,ax,title = plot_time_series(DM, data_sets_y4, title=f"Loop Rot Err ({device})", align_y=True, if_mu=True, figsize=FIGSIZE_ERR)
             file_name = AM.save_fig(fig, title)
             ic(file_name)
                 
@@ -344,12 +392,17 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
 # -------------------------------- bag_test_set -------------------------------- #
 # go through each test set:
 for bag_test_case in [ 
-        DUAL_1108_BASICS_baseline_vs_decoupled,
-        DUAL_1108_DYNAMICS_baseline_vs_decoupled,
-        DUAL_1108_LONG_AM_baseline_vs_decoupled,
-        DUAL_1108_LONG_PM_baseline_vs_decoupled,
-        # DUAL_1115_BASICS_baseline_vs_decoupled,
-        # DUAL_1115_DYNAMICS_baseline_vs_decoupled,
+        # DUAL_1108_BASICS_baseline_vs_decoupled,
+        # DUAL_1108_DYNAMICS_baseline_vs_decoupled,
+        # DUAL_1108_LONG_AM_baseline_vs_decoupled,
+        # DUAL_1108_LONG_PM_baseline_vs_decoupled,
+        # # DUAL_1115_BASICS_baseline_vs_decoupled,
+        # # DUAL_1115_DYNAMICS_baseline_vs_decoupled,
+        DUAL_1122_BASIC_1,
+        DUAL_1122_BASIC_2,
+        DUAL_1122_BASIC_ROG,
+        DUAL_1122_LONG,
+        DUAL_1122_LONG_ROG,
     ]:
     N_args = len(sys.argv)
     if (N_args == 3):
