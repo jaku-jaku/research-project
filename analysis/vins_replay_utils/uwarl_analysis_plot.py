@@ -13,6 +13,7 @@ from typing import Dict, List, Tuple, Union, Callable, Optional
 
 from icecream import ic
 from datetime import datetime
+import pickle
 import os
 
 DEFAULT_FIGSIZE = (5, 5)
@@ -111,6 +112,12 @@ class AnalysisManager:
             output_path=self.output_path()
             with open(f"{output_path}{file_name}.yaml", "w") as f:
                 yaml.dump(data, f)
+
+    def save_dict_as_pickle(self, data, file_name="data"):
+        if self._auto_save:
+            output_path=self.output_path()
+            with open(f"{output_path}{file_name}.pickle", "wb") as f:
+                pickle.dump(data, f)
 
     def output_path(self):
         return f"{self._output_dir}/{self._prefix}_"

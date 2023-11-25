@@ -65,6 +65,7 @@ FEATURE_PLOT_3D_TRAJECTORIES        = True
 FEATURE_PLOT_ERROR_METRICS          = True
 FEATURE_PLOT_CAMERAS                = True
 FEATURE_PLOT_CAM_CONFIGS            = False
+FEATURE_OUTPUT_EXTRACTED_DATASET    = True
 
 FIGSIZE_ERR = (3,3)
 PLOT_FEATURE_VIEW_ANGLES            = [(30,10),(70,45),(10,10)]#[(30,10),(70,45),(10,10)]
@@ -274,6 +275,13 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
                     if report_generator and file_name:
                         report_generator.append_figname(file_name)
     
+    if FEATURE_OUTPUT_EXTRACTED_DATASET:
+        # df = pd.DataFrame(data_sets_3d)
+        print("> Data saving!")
+        AM.save_dict_as_pickle(data_sets_3d, "data_sets_3d")
+        # AM.save_dict(data_sets_3d, "data_sets_3d")
+        print("> Data saved!")
+        
     if FEATURE_PLOT_ERROR_METRICS and FEATURE_PLOT_3D_TRAJECTORIES:
         # 1. compute error metrics and plot:
         for device in ["Base", "EE"]:
@@ -295,6 +303,9 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
                 x4 = []
                 for i in range(N_sub): # should be just one bag for this plot
                     t_ref  = data_ref['t'][i]
+                    if len(t_ref) <= 0:
+                        print("> No data, skipping ...")
+                        continue # skip
                     t0_ref = data_ref['t0'][i]
                     q_ref  = np.array(data_ref['r'][i])
                     p_ref  = np.array(data_ref['y'][i])
@@ -308,7 +319,6 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
                         R_ref = np.array(SO3.from_quat(q_ref).as_matrix())
     
                     ic(np.shape(R_ref))
-                    
                     
                     def _get_delta(data):
                         N_est = len(data['t'][i])
@@ -355,15 +365,14 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
 
                         return t_, x1_, x2_
 
-                    if len(t_ref) > 0:
-                        t_, x1_, x2_ = _get_delta(data_est)
-                        t2_, x3_, x4_ = _get_delta(data_loop)
-                        t1.append(t_.tolist())
-                        x1.append(x1_.tolist())
-                        x2.append(x2_.tolist())
-                        t2.append(t2_.tolist())
-                        x3.append(x3_.tolist())
-                        x4.append(x4_.tolist())
+                    t_, x1_, x2_ = _get_delta(data_est)
+                    t2_, x3_, x4_ = _get_delta(data_loop)
+                    t1.append(t_.tolist())
+                    x1.append(x1_.tolist())
+                    x2.append(x2_.tolist())
+                    t2.append(t2_.tolist())
+                    x3.append(x3_.tolist())
+                    x4.append(x4_.tolist())
 
                 data_sets_y1[f"VINS_Est {label}"] = {'t': t1, 'y': x1}
                 data_sets_y2[f"VINS_Est {label}"] = {'t': t1, 'y': x2}
@@ -380,9 +389,6 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
             fig,ax,title = plot_time_series(DM, data_sets_y4, title=f"Loop Rot Err ({device})", align_y=True, if_mu=True, figsize=FIGSIZE_ERR)
             file_name = AM.save_fig(fig, title)
             ic(file_name)
-                
-                #TODO: compute rmse?
-                #TODO: plot x,y,z errors in parallel plot
                 
 
 # %% MAIN --------------------------------:
