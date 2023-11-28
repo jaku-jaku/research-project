@@ -329,7 +329,7 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
                             t_est  = data['t'][i]
                             t0_est = data['t0'][i]
                             q_est  = np.array(data['r'][i])
-                            p_est  = data['y'][i]
+                            p_est  = np.array(data['y'][i])
                             
                             R_est = np.array(SO3.from_quat(q_est).as_matrix())
                            
@@ -346,22 +346,24 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
                                         break
                                     selected_k = k # cache index
 
-                            d_t = t_est[-1]-t_ref[selected_k+N_est]
-                            k_max = min(selected_k+N_est, N_ref)
+                            k_max = min(selected_k+N_est, N_ref-1)
+                            k_max_est = min(k_max-selected_k, N_est) # in case estimator ran shorter
+                            d_t = t_est[-1]-t_ref[k_max]
                             print(f">> T_est(-1)={t_est[-1]}, T_ref(-1)={t_ref[k_max]}, delta: {d_t}")
                             
                             t_ = np.array(t_est) + delta_t
-                            delta_p = np.array(p_est) - p_ref[selected_k:k_max, :]
+                            delta_p = p_est[0:k_max_est, :] - p_ref[selected_k:k_max, :]
                             x1_ = np.linalg.norm(delta_p, axis=1)
                             # || q.T * q ||_2  : frobenius norm
                             # err_R = [np.linalg.norm((SO3.from_quat(q_ref[z+selected_k, :]).inv() * SO3.from_quat(q_est[z,:])).as_quat()) - 1 for z in range(N_est)] 
-                            err_R = [np.linalg.norm(R_est[z, :].T @ R_ref[z+selected_k, :] - np.eye(3)) for z in range(N_est)]
+                            err_R = [np.linalg.norm(R_est[z, :].T @ R_ref[z+selected_k, :] - np.eye(3)) for z in range(k_max_est)]
                             ic(np.shape(err_R))
                             x2_ = np.array(err_R)
                             # delta_RPY = RPY_est - RPY_ref[selected_k:k_max, :]
                             # x2_ = delta_RPY[:, 2]
                             # print("np.shape(delta_R):", np.shape(delta_R))
                             # print("np.shape(x2_)", np.shape(x2_))
+                            t_ = t_[0:k_max_est]
 
                         return t_, x1_, x2_
 
@@ -408,7 +410,7 @@ for bag_test_case in [
         DUAL_1122_BASIC_2,
         DUAL_1122_BASIC_ROG,
         DUAL_1122_LONG,
-        DUAL_1122_LONG_ROG,
+        # DUAL_1122_LONG_ROG,
     ]:
     N_args = len(sys.argv)
     if (N_args == 3):

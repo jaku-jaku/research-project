@@ -88,9 +88,9 @@ class DATASET_DEMO_1122_LONG_1(Enum):
 
 class DATASET_DEMO_1122_LONG_ROGUE(Enum):
     ROG_UD   = ["dual-2-1_DEMO-60_vins-replay.bag"]
+    # ROG_LR_2 = ["dual-2-2_DEMO-1_vins-replay.bag"]
     ROG_LR_1 = ["dual-2-3_DEMO-59_vins-replay.bag"]
-    ROG_LR_2 = ["dual-2-4_DEMO-59_vins-replay.bag"]
-    WILD     = ["dual-3-0_DEMO-59_vins-replay.bag"]
+    # WILD     = ["dual-3-0_DEMO-59_vins-replay.bag"]
 
 CONFIG_1122_BASIC = {
     "folder": ".ros/bag_replay_recorder_files/waterloo_steel_demo_1122_basic/mono_rgb_imu",
