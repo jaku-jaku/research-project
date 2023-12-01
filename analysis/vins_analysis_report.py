@@ -32,15 +32,22 @@ from configs.uwarl_common import PARSER_CALLBACKS
 #     DUAL_1115_BASICS_baseline_vs_decoupled,
 #     DUAL_1115_DYNAMICS_baseline_vs_decoupled,
 # )
-from configs.uwarl_test_set_d455_Nov22 import (
+# from configs.uwarl_test_set_d455_Nov22 import (
+#     TEST_SET_TITLE,
+#     DUAL_1122_BASIC_1,
+#     DUAL_1122_BASIC_2,
+#     DUAL_1122_BASIC_ROG,
+#     DUAL_1122_LONG,
+#     DUAL_1122_LONG_ROG,
+# )
+from configs.uwarl_test_set_d455_Nov27 import (
     TEST_SET_TITLE,
-    DUAL_1122_BASIC_1,
-    DUAL_1122_BASIC_2,
-    DUAL_1122_BASIC_ROG,
-    DUAL_1122_LONG,
-    DUAL_1122_LONG_ROG,
+    DUAL_1127_DEG_EVE,
+    DUAL_1127_DYN_EVE,
+    DUAL_1127_DEG_AM,
+    DUAL_1127_DYN_AM,
+    DUAL_1127_LONG_PM,
 )
-
 from vins_replay_utils.uwarl_replay_decoder import auto_generate_labels_from_bag_file_name_with_json_config, ProcessedData
 from vins_replay_utils.uwarl_analysis_plot import ReportGenerator, AnalysisManager, MultiBagsDataManager, plot_time_parallel, plot_time_series, plot_spatial
 
@@ -406,11 +413,13 @@ for bag_test_case in [
         # DUAL_1108_LONG_PM_baseline_vs_decoupled,
         # # DUAL_1115_BASICS_baseline_vs_decoupled,
         # # DUAL_1115_DYNAMICS_baseline_vs_decoupled,
-        DUAL_1122_BASIC_1,
-        DUAL_1122_BASIC_2,
-        DUAL_1122_BASIC_ROG,
-        DUAL_1122_LONG,
+        # DUAL_1122_BASIC_1,
+        # DUAL_1122_BASIC_2,
+        # DUAL_1122_BASIC_ROG,
+        # DUAL_1122_LONG,
         # DUAL_1122_LONG_ROG,
+        DUAL_1127_DEG_EVE, DUAL_1127_DYN_EVE,
+        # DUAL_1127_DEG_AM, DUAL_1127_DYN_AM, DUAL_1127_LONG_PM,
     ]:
     N_args = len(sys.argv)
     if (N_args == 3):
