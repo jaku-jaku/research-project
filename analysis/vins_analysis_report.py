@@ -419,7 +419,8 @@ for bag_test_case in [
         # DUAL_1122_LONG,
         # DUAL_1122_LONG_ROG,
         DUAL_1127_DEG_EVE, DUAL_1127_DYN_EVE,
-        # DUAL_1127_DEG_AM, DUAL_1127_DYN_AM, DUAL_1127_LONG_PM,
+        DUAL_1127_DEG_AM, DUAL_1127_LONG_PM,
+        DUAL_1127_DYN_AM, 
     ]:
     N_args = len(sys.argv)
     if (N_args == 3):
