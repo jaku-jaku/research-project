@@ -66,10 +66,10 @@ class DATASET_DEMO_1127_EVE_DYNAMIC(Enum):
     TRI_UD = ["dual-8-5_DEMO-48_vins-replay.bag"]
 
 CONFIG_1127_EVENING = {
-    "folder": ".ros/bag_replay_recorder_files/waterloo_steel_demo_1127_ev/mono_rgb_imu",
+    "folder": ".ros/bag_replay_recorder_files/waterloo_steel_demo_1127/mono_rgb_imu",
     "rungs": {
-        "baseline": "S-1_E-1_dual_baseline/2023-12-03", 
-        "coupled (ours)": "S-1_E-1_dual_arm_odom/2023-12-02"
+        "baseline": "S-1_E-1_dual_baseline/2023-12-04", 
+        "coupled (ours)": "S-1_E-1_dual_arm_odom/2023-12-04"
     },
     "camera_config_file_dual": "mono_rgb_imu_config_dual.yaml",
     "demo_map": ".ros/bagfiles/waterloo_steel_demo_1127_ev/session_0/demo_map.json",
@@ -101,7 +101,7 @@ class DATASET_DEMO_1127_PM_LONG(Enum):
     L_CIR_UD  =["dual-5-2_DEMO-72_vins-replay.bag"]
 
 CONFIG_1127_AFTERNOON = {
-    "folder": ".ros/bag_replay_recorder_files/waterloo_steel_demo_1127_pm/mono_rgb_imu",
+    "folder": ".ros/bag_replay_recorder_files/waterloo_steel_demo_1127/mono_rgb_imu",
     "rungs": {
         "baseline": "S-1_E-1_dual_baseline/2023-12-03", 
         "coupled (ours)": "S-1_E-1_dual_arm_odom/2023-12-02"
