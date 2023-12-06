@@ -162,6 +162,14 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
                 cam.plot_camera(ax=ax)
                 AM.save_fig(fig, tag=f"{cam._prefix}camera_config")
 
+        # 0.3 try to load pickle
+        if load_from_pickle:
+            print("> Data loading from pickle!")
+            try:
+                data_sets_3d = AM.load_dict_from_pickle(data_sets_3d, "data_sets_3d")
+            except Exception as e:
+                print(f"> Data loading from pickle failed due to {e}! Now, load process from bag files ...")
+                load_from_pickle = False # otherwise try to load all data
         # 1. Process and Aggregate data from multiple bags:
         tic = time.perf_counter()
         if FEATURE_PROCESS_BAGS:
@@ -230,10 +238,7 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
         }
         data_sets_3d = dict()
         
-        if load_from_pickle:
-            print("> Data loading from pickle!")
-            data_sets_3d = AM.load_dict_from_pickle(data_sets_3d, "data_sets_3d")
-        else:
+        if not load_from_pickle:
             for label, DM in DMs.items():
                 data_sets_3d[f"Vicon Cam Base ({label})"]          = DM.extract_data(
                     bag_topic="/vins_estimator/base/vicon/path", dict_var_type=POSE_VARS,
@@ -466,7 +471,7 @@ for bag_test_case in [
             if (attr[1] == folder_id or bag_id=="all") and (attr[2] == bag_id or bag_id == "all"): 
                 # process specific folder at a specific child or all children
                 print(f"Found index @ {folder_id}:{bag_id}")
-            elif (attr[1] > folder_id and option=="all" and bag_id == "all"): 
+            elif (attr[1] > folder_id and (option=="all" or option=="picke") and bag_id == "all"): 
                 # process any folder after given folder_id
                 print(f"Found index > {folder_id}:{bag_id}")
             else:
