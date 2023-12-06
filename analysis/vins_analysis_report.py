@@ -106,7 +106,7 @@ if not FEATURE_PROCESS_BAGS:
     parser_callbacks_.pop('/wam/pose', None)
 
 # -------------------------------- REPORT -------------------------------- %% #
-def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report_generator=None):
+def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report_generator=None, load_from_pickle=False):
     print(f"Generating Report for {bag_subset.name}")
     
     # -------------------------------- Manager & Configs -------------------------------- %% #
@@ -121,7 +121,9 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
     )
     DMs = {}
     # -------------------------------- Iterating each rung -------------------------------- %% #
+    bag_rung_label_end = None
     for bag_rung_label, bag_rung in bag_test_case_config["rungs"].items():
+        bag_rung_label_end = bag_rung_label
         bag_folder = bag_test_case_config["folder"]
         bag_directory = os.path.join(Path.home(), bag_folder, bag_rung)
         json_map = os.path.join(Path.home(), bag_test_case_config["demo_map"])
@@ -149,11 +151,12 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
         cameras = []
         if FEATURE_PLOT_CAMERAS:
             # TODO: add camera plot functions
-            print("Process dual configuration file")
+            print("> Process dual configuration file ...")
             cameras.append(MultiSensor_Camera_Node(_config_file=config_file, _prefix="d0_"))
             cameras.append(MultiSensor_Camera_Node(_config_file=config_file, _prefix="d1_"))
                 
-        if FEATURE_PLOT_CAM_CONFIGS:    
+        if FEATURE_PLOT_CAM_CONFIGS: 
+            print("> plot camera configs ...")
             for cam in cameras:
                 fig, ax = cam.create_3d_figure()
                 cam.plot_camera(ax=ax)
@@ -161,11 +164,14 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
 
         # 1. Process and Aggregate data from multiple bags:
         tic = time.perf_counter()
-        if FEATURE_PROCESS_BAGS:    
+        if FEATURE_PROCESS_BAGS:
+            print("> Pre-Processing Bags ...")
             pData={}
             for label, path in AUTO_BAG_DICT.items():
                 try:
-                    pData[label] = ProcessedData(BP, bag_directory, path, T_LAST_S=FEATURE_ONLY_LAST)
+                    # just need to load some metadata, 0.1s sufficient for load from pickle
+                    t_last_s = 0.1 if load_from_pickle else FEATURE_ONLY_LAST 
+                    pData[label] = ProcessedData(BP, bag_directory, path, T_LAST_S=t_last_s)
                 except Exception as e:
                     pass
                 
@@ -186,11 +192,13 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
         # # 3. Plotting Multiple datasets from multiple bagfiles
         # -------------------------------- Multi-Bag Data -------------------------------- %% #    
         # 2. Load into data plotter:
-        if FEATURE_PROCESS_BAGS:    
+        if FEATURE_PROCESS_BAGS:
+            print("> Creating Multi-Bag Data Manager ...")
             DMs[bag_rung_label] = MultiBagsDataManager(pData)
+            print(f"> [{len(DMs)}]:({bag_rung_label}) Multi-Bag Data Manager Created!")
 
     # -------------------------------- Plot: Voltage & Joint Efforts -------------------------------- #
-    if FEATURE_PLOT_VOLTAGE_JOINT_EFFORTS:
+    if FEATURE_PLOT_VOLTAGE_JOINT_EFFORTS and not load_from_pickle:
         # 3. assemble data sets:
         for label, DM in DMs.items():
             data_sets_y = {
@@ -221,30 +229,36 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
             TYPES_VAR.ORIENTATION_XYZW: 'r',
         }
         data_sets_3d = dict()
-        for label, DM in DMs.items():
-            data_sets_3d[f"Vicon Cam Base ({label})"]          = DM.extract_data(
-                bag_topic="/vins_estimator/base/vicon/path", dict_var_type=POSE_VARS,
-            )
-            data_sets_3d[f"Vicon Cam EE ({label})"]            = DM.extract_data(
-                bag_topic="/vins_estimator/EE/vicon/path", dict_var_type=POSE_VARS,
-            )
-            
-        for label, DM in DMs.items():
-            data_sets_3d[f"{label} VINS Est Base"]           = DM.extract_data(
-                bag_topic="/vins_estimator/base/path", dict_var_type=POSE_VARS,
-            )
-            data_sets_3d[f"{label} VINS Est EE"]             = DM.extract_data(
-                bag_topic="/vins_estimator/EE/path", dict_var_type=POSE_VARS,
-            )
-            data_sets_3d[f"{label} VINS Loop Base"]          = DM.extract_data(
-                bag_topic="/loop_fusion/base/pose_graph_path", dict_var_type=POSE_VARS,
-            )
-            data_sets_3d[f"{label} VINS Loop EE"]            = DM.extract_data(
-                bag_topic="/loop_fusion/EE/pose_graph_path", dict_var_type=POSE_VARS,
-            )
+        
+        if load_from_pickle:
+            print("> Data loading from pickle!")
+            data_sets_3d = AM.load_dict_from_pickle(data_sets_3d, "data_sets_3d")
+        else:
+            for label, DM in DMs.items():
+                data_sets_3d[f"Vicon Cam Base ({label})"]          = DM.extract_data(
+                    bag_topic="/vins_estimator/base/vicon/path", dict_var_type=POSE_VARS,
+                )
+                data_sets_3d[f"Vicon Cam EE ({label})"]            = DM.extract_data(
+                    bag_topic="/vins_estimator/EE/vicon/path", dict_var_type=POSE_VARS,
+                )
+                
+            for label, DM in DMs.items():
+                data_sets_3d[f"{label} VINS Est Base"]           = DM.extract_data(
+                    bag_topic="/vins_estimator/base/path", dict_var_type=POSE_VARS,
+                )
+                data_sets_3d[f"{label} VINS Est EE"]             = DM.extract_data(
+                    bag_topic="/vins_estimator/EE/path", dict_var_type=POSE_VARS,
+                )
+                data_sets_3d[f"{label} VINS Loop Base"]          = DM.extract_data(
+                    bag_topic="/loop_fusion/base/pose_graph_path", dict_var_type=POSE_VARS,
+                )
+                data_sets_3d[f"{label} VINS Loop EE"]            = DM.extract_data(
+                    bag_topic="/loop_fusion/EE/pose_graph_path", dict_var_type=POSE_VARS,
+                )
         # debug print:
-        for label,data in data_sets_3d.items():
+        for label, data in data_sets_3d.items():
             print(f"> [{label}] t0:{data['t0']}")
+            # print(data_sets_3d[label])
 
         # # 4. Plot:
         ### pip install ipympl
@@ -257,7 +271,7 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
             for j, angles in enumerate(angle_v):                    # (separate view_angles)
                 for config_name, config in PLOT_CONFIGS.items():    # (different plots)
                     fig, axs, title = plot_spatial(
-                        bag_manager         =DM, 
+                        bag_manager         =DMs[bag_rung_label_end], 
                         data_sets_3d        =data_sets_3d, 
                         title               =RUN_NAME, 
                         figsize             =config["figsize"], 
@@ -282,11 +296,10 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
                     if report_generator and file_name:
                         report_generator.append_figname(file_name)
     
-    if FEATURE_OUTPUT_EXTRACTED_DATASET:
+    if FEATURE_OUTPUT_EXTRACTED_DATASET and not load_from_pickle:
         # df = pd.DataFrame(data_sets_3d)
         print("> Data saving!")
         AM.save_dict_as_pickle(data_sets_3d, "data_sets_3d")
-        # AM.save_dict(data_sets_3d, "data_sets_3d")
         print("> Data saved!")
         
     if FEATURE_PLOT_ERROR_METRICS and FEATURE_PLOT_3D_TRAJECTORIES:
@@ -418,15 +431,22 @@ for bag_test_case in [
         # DUAL_1122_BASIC_ROG,
         # DUAL_1122_LONG,
         # DUAL_1122_LONG_ROG,
-        DUAL_1127_DEG_EVE, DUAL_1127_DYN_EVE,
-        DUAL_1127_DEG_AM, DUAL_1127_LONG_PM,
+        DUAL_1127_DEG_EVE, 
+        DUAL_1127_DYN_EVE,
+        DUAL_1127_DEG_AM, 
+        DUAL_1127_LONG_PM,
         DUAL_1127_DYN_AM, 
     ]:
     N_args = len(sys.argv)
-    if (N_args == 3):
+    folder_id = "all"
+    bag_id = "all"
+    option = ""
+    if (N_args >= 3):
         folder_id = sys.argv[1]
         bag_id = sys.argv[2]
-        print(f"Giving index @ {folder_id}:{bag_id}")
+        if (N_args == 4):
+            option = sys.argv[3]
+        print(f"Giving index @ {folder_id}:{bag_id} ~{option}")
     #TEST_SET_MONO_RGB_IMU_ACC_TIC, TEST_SET_MONO_RGB_IMU_INIT_GUESS_TIC]:
     #[TEST_SET_MONO_RGB_IMU, TEST_SET_MONO_IMU, TEST_SET_STEREO_IMU, TEST_SET_STEREO]:
     # go through all the bags set in each test set
@@ -442,15 +462,19 @@ for bag_test_case in [
         if_exist = len(bag_subset.value) > 0
         if if_exist:
             # filter for the right bag
-            if (N_args == 3):
-                attr = bag_subset.value[0].split('_')[0].split('-')
-                if attr[1] == folder_id and attr[2] == bag_id:
-                    print(f"Found index @ {folder_id}:{bag_id}")
-                else:
-                    continue # skip this rung
+            attr = bag_subset.value[0].split('_')[0].split('-')
+            if (attr[1] == folder_id or bag_id=="all") and (attr[2] == bag_id or bag_id == "all"): 
+                # process specific folder at a specific child or all children
+                print(f"Found index @ {folder_id}:{bag_id}")
+            elif (attr[1] > folder_id and option=="all" and bag_id == "all"): 
+                # process any folder after given folder_id
+                print(f"Found index > {folder_id}:{bag_id}")
+            else:
+                continue # skip this rung
             # [REPORT]:
             print(f"> Generating report for {bag_subset.name}:{bag_subset.value}")
-            generate_report(bag_test_case.__name__, bag_test_case.CONFIG.value, bag_subset, report_generator=RG)
+            generate_report(bag_test_case.__name__, bag_test_case.CONFIG.value, bag_subset, 
+                            report_generator=RG, load_from_pickle=(bool)(option=="pickle"))
             RG.save_report_as_md()
         else:
             print(f"> WARNING, test subset is empty, skipping tests {bag_subset.name}")

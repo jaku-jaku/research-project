@@ -108,16 +108,28 @@ class AnalysisManager:
         return file_name
     
     def save_dict(self, data, file_name):
-        if self._auto_save:
-            output_path=self.output_path()
-            with open(f"{output_path}{file_name}.yaml", "w") as f:
-                yaml.dump(data, f)
+        output_path=self.output_path()
+        with open(f"{output_path}{file_name}.yaml", "w") as f:
+            yaml.dump(data, f)
+    
+    def load_dict(self, data, file_name):
+        data = {}
+        output_path=self.output_path()
+        with open(f"{output_path}{file_name}.yaml", "r") as f:
+            data = yaml.load(f)
+        return data
 
     def save_dict_as_pickle(self, data, file_name="data"):
-        if self._auto_save:
-            output_path=self.output_path()
-            with open(f"{output_path}{file_name}.pickle", "wb") as f:
-                pickle.dump(data, f)
+        output_path=self.output_path()
+        with open(f"{output_path}{file_name}.pickle", "wb") as f:
+            pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
+    
+    def load_dict_from_pickle(self, data, file_name="data"):
+        data = {}
+        output_path=self.output_path()
+        with open(f"{output_path}{file_name}.pickle", "rb") as f:
+            data = pickle.load(f)
+        return data
 
     def output_path(self):
         return f"{self._output_dir}/{self._prefix}_"
@@ -374,6 +386,7 @@ def plot_spatial(bag_manager:MultiBagsDataManager,
         orientation_group=["Est"], label_filter=["Vicon", "VINS"],
         scatter_or_line="line", cameras=None, zero_position=False,
         split_map=None, AXIS_BOUNDARY_MAX=[5,5,2], AXIS_BOUNDARY_MIN=[0.5,0.5,0.2],
+        align_time_at=-1.0, if_scatter_gradient_by_time=False,
 ):
     """ Plot is 3D Spatial Coordinates per data bag
         - muxing data from multiple topics
@@ -388,14 +401,16 @@ def plot_spatial(bag_manager:MultiBagsDataManager,
     axs = [fig.add_subplot(N_views,N_bags*N_split,i+1, projection=projection, proj_type=proj_type) for i in range(N_bags*N_views*N_split)]
     N_entries = len(data_sets_3d.keys())
     ADAPTIVE_FONT_SIZE = figsize[1] / N_views * 1.5
-    CMAP = CMAP_Selector("Seq2")
-    cmap_handles, handler_map = CMAP.get_cmap_handles(N_color=N_entries)  
     if_scatter = scatter_or_line == "scatter"
     CWheel = Color_Wheel(get_color_table("tab10", N=N_entries))
+    CMAP = CMAP_Selector("Seq2")
+    
+    # plot:
     for j in range(N_bags):
         for m in range(N_split):
             label_list = []
             sub_device = split_map[m] if split_map else None
+            color_indices = []
             for i, (label, data) in enumerate(data_sets_3d.items()):
                 if sub_device and sub_device not in label:
                     continue # skip
@@ -411,6 +426,7 @@ def plot_spatial(bag_manager:MultiBagsDataManager,
                     N_sample_ = N_sample
                     # if "Vicon" in label: # reduce vicon sampling rate
                     #     N_sample_ = int(N_sample*10)
+                    t0_ = np.array(data['t0'][j]) # TODO: align time and window trim???
                     t_ = np.array(data['t'][j][::N_sample_].copy())
                     x_ = np.array(data['y'][j][::N_sample_].copy())
                     u_ = np.array(data['r'][j][::N_sample_].copy())
@@ -449,6 +465,7 @@ def plot_spatial(bag_manager:MultiBagsDataManager,
                 _linestyle = "dashed" if ("Vicon" in label) else "solid" # dashed line for vicon
                 _scatterMarker = "x" if ("Vicon" in label) else "."
 
+                color_indices.append(i)
                 for k in range(N_views):
                     view_idx = m+j+k*N_bags*N_split
                     axs[view_idx].view_init(*view_angles[k])
@@ -460,9 +477,12 @@ def plot_spatial(bag_manager:MultiBagsDataManager,
                     # plot points:
                     if is_data_valid:
                         if if_scatter:
-                            axs[view_idx].scatter3D(x_[:,0], x_[:,1], x_[:,2], s=2, c=t_, cmap=CMAP[i], depthshade=True, label=label_list[-1], alpha=0.2, marker=_scatterMarker)
+                            if if_scatter_gradient_by_time:
+                                axs[view_idx].scatter3D(x_[:,0], x_[:,1], x_[:,2], s=2, c=t_, cmap=CMAP[i], alpha=0.2, marker=_scatterMarker, depthshade=True)
+                            else:
+                                axs[view_idx].scatter3D(x_[:,0], x_[:,1], x_[:,2], s=2, c=CWheel[i], alpha=0.6, marker=_scatterMarker, depthshade=True)
                         else:
-                            axs[view_idx].plot3D(x_[:,0], x_[:,1], x_[:,2], color=CWheel[i], label=label_list[-1], linestyle=_linestyle)
+                            axs[view_idx].plot3D(x_[:,0], x_[:,1], x_[:,2], color=CWheel[i], label=label_list[-1], alpha=0.6, linestyle=_linestyle)
                         if show_orientations:
                             if_key_in_label = np.sum([key in label for key in orientation_group]) 
                             if cameras and if_key_in_label:
@@ -472,7 +492,7 @@ def plot_spatial(bag_manager:MultiBagsDataManager,
                                     T_rbt[0:3, 3] = x
                                     # ic(r, x, T_rbt)
                                     cam_id = 0 if "Base" in label else 1
-                                    cameras[cam_id].plot_camera(ax=axs[view_idx], RBT_SE3=T_rbt, facecolors=CWheel[i],
+                                    cameras[cam_id].plot_camera(ax=axs[view_idx], RBT_SE3=T_rbt, edgecolors=CWheel[i], facecolors=CWheel[i],
                                                                 verbose=False, auto_adjust_frame=False, show_cameras=show_cameras)
                             else:
                                 ex_ = r_.apply([1,0,0])
@@ -507,6 +527,10 @@ def plot_spatial(bag_manager:MultiBagsDataManager,
                 view_idx = j+k*N_bags*N_split+m 
                 if if_scatter:
                     # gradient:
+                    if if_scatter_gradient_by_time:
+                        cmap_handles, handler_map = CMAP.get_cmap_handles(N_color=N_entries)  
+                    else:
+                        cmap_handles, handler_map = CWheel.get_cwheel_handles(indices=color_indices)  
                     axs[view_idx].legend(
                         handles=cmap_handles, labels=label_list, handler_map=handler_map, 
                         fontsize=ADAPTIVE_FONT_SIZE, bbox_to_anchor=(0.5,-0.3), loc='lower center')
@@ -522,7 +546,8 @@ def plot_spatial(bag_manager:MultiBagsDataManager,
         title = " and ".join(data_sets_3d.keys())
     
     attr=f"{scatter_or_line}"
-    attr+= "_oriented" if zero_orienting else ""
+    attr+= "_zeroR" if zero_orienting else ""
+    attr+= "_zeroP" if zero_position else ""
     attr+= "_pose" if show_orientations else ""
     attr+= "_split" if split_map else ""
     title = f"{title}_spatial_{attr}"

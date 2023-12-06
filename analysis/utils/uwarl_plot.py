@@ -20,12 +20,26 @@ class Color_Wheel:
         color = self[self._i]
         self._i = (1+self._i)% self._N
         return color
-        
+    
+    def get_cwheel_handles(self, indices: list = None):
+        if not indices:
+            indices = list(range(self._N))
+        _clr_list = [self._color_table[i] for i in indices]
+        cmap_handles =  [Rectangle((0, 0), 1, 1) for _ in _clr_list]
+        handler_map = dict(zip(cmap_handles, [HandlerColorRect(clr) for clr in _clr_list]))
+        return cmap_handles, handler_map
 
 def get_color_table(cmap_name="viridis", N=10):
     cmap = mpl.cm.get_cmap(cmap_name)
     return [cmap(i) for i in np.linspace(0, 1, N)]
-    
+
+def get_color_table_handles(color_table):
+    N_color = len(color_table)
+    _clr_list = [color_table[i] for i in range(N_color)]
+    cmap_handles =  [Rectangle((0, 0), 1, 1) for _ in _clr_list]
+    handler_map = dict(zip(cmap_handles, [HandlerColorRect(clr) for clr in _clr_list]))
+    return cmap_handles, handler_map    
+
 class CMAP_Selector:
     LUT_CMAP = {
         "Uniform": ['viridis', 'plasma', 'inferno', 'magma', 'cividis'],
@@ -77,3 +91,13 @@ class HandlerColormap(HandlerBase):
                             transform=trans)
             stripes.append(s)
         return stripes
+
+class HandlerColorRect(HandlerBase):
+    def __init__(self, color, num_stripes=8, **kw):
+        HandlerBase.__init__(self, **kw)
+        self.color = color
+    def create_artists(self, legend, orig_handle, 
+        xdescent, ydescent, width, height, fontsize, trans):
+        s = Rectangle([xdescent, ydescent], width, height, 
+                        fc=self.color, transform=trans)
+        return [s]

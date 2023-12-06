@@ -87,6 +87,7 @@ class ProcessedData:
         BP.load_bag_topics()
         self.bag_info = BP.get_bag_info_safe()
         self.bag_topics = BP.get_bag_topics_lut_safe()
+        
         if T_LAST_S > 0:
             self.bag_exist = BP.process_only_last_bag_msgs(T_SPAN_SECONDS=T_LAST_S) # TODO: very time consuming!!
         else:    
