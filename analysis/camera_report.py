@@ -178,7 +178,7 @@ cam_EE        =np.array([21.241 , 34.269  ,  1683.52])/1000
 cam_base      =np.array([24.256 , 330.482 ,  389.265])/1000
 summit_base   =np.array([25.783	, -0.106  ,  -0.138])/1000
 wam_EE        =np.array([23.250 , 129.329 ,  1783.290])/1000
-Wam_base      =np.array([24.299 , 139.57  ,  746.148])/1000
+wam_base      =np.array([24.299 , 139.57  ,  746.148])/1000
 wam_elbow     =np.array([33.430 , 178.856 ,  1304.734])/1000
 # %%
 base_yaw_joint = np.array([0,0,0]) #ARM_MODEL_CONFIG_L_SHOULDER
@@ -186,8 +186,8 @@ base_yaw_joint = np.array([0,0,0]) #ARM_MODEL_CONFIG_L_SHOULDER
 dP_elbow = wam_elbow - wam_base
 dP_elbow[0]=0
 ic(dP_elbow)
-
-zero_config = np.array([0,0,dP_elbow[2]+0.32+0.06])
+# %%
+zero_config = np.array([0,0,0.55+0.3+0.0609])
 summit_dP_cam_base = cam_base - summit_base
 ic(summit_dP_cam_base)
 
@@ -196,7 +196,6 @@ ic(summit_dP_wam)
 
 dP_tip = wam_EE - wam_base - zero_config
 ic(dP_tip)
-# wam_dP_cam_ee = cam_EE - wam_EE + dP_tip
-wam_dP_cam_ee = cam_EE - wam_elbow - 0.32 - 0.06
+wam_dP_cam_ee = cam_EE - wam_EE + dP_tip
 ic(wam_dP_cam_ee);
 # %%

@@ -48,10 +48,16 @@ from configs.uwarl_common import PARSER_CALLBACKS
 #     DUAL_1127_DYN_AM,
 #     DUAL_1127_LONG_PM,
 # )
-from configs.uwarl_test_set_d455_Dec07 import (
+# from configs.uwarl_test_set_d455_Dec07 import (
+#     TEST_SET_TITLE,
+#     DEMO_1207_A, DEMO_1207_B, DEMO_1207_C, 
+#     DEMO_1207_A_v2, DEMO_1207_A_v3, DEMO_1207_B_v3, DEMO_1207_C_v3,
+# )
+from configs.uwarl_test_set_d455_Dec13 import (
     TEST_SET_TITLE,
-    DEMO_1207_A, DEMO_1207_B, DEMO_1207_C, 
-    DEMO_1207_A_v2, DEMO_1207_A_v3, DEMO_1207_B_v3, DEMO_1207_C_v3,
+    DEMO_1213_B_STA,DEMO_1213_B_SPI,DEMO_1213_B_FWD,DEMO_1213_B_RVR,DEMO_1213_B_CIR,DEMO_1213_B_BEE,DEMO_1213_B_SQR,DEMO_1213_B_TRI,
+    DEMO_1213_A_STA,DEMO_1213_A_SPI,DEMO_1213_A_FWD,DEMO_1213_A_RVR,DEMO_1213_A_CIR,DEMO_1213_A_BEE,DEMO_1213_A_SQR_A,DEMO_1213_A_SQR_B,DEMO_1213_A_TRI,
+    DEMO_1213_C_ROG_1, DEMO_1213_C_ROG_2, DEMO_1213_C_LONG_SQR, DEMO_1213_C_SQR, DEMO_1213_C_ROG_3,
 )
 from vins_replay_utils.uwarl_replay_decoder import auto_generate_labels_from_bag_file_name_with_json_config, ProcessedData
 from vins_replay_utils.uwarl_analysis_plot import ReportGenerator, AnalysisManager, MultiBagsDataManager, plot_time_parallel, plot_time_series, plot_spatial
@@ -451,7 +457,10 @@ for bag_test_case in [
         # DEMO_1207_A_v2,
         # DEMO_1207_A_v3,
         # DEMO_1207_B_v3, 
-        DEMO_1207_C_v3,
+        # DEMO_1207_C_v3,
+        DEMO_1213_A_STA,DEMO_1213_A_SPI,DEMO_1213_A_FWD,DEMO_1213_A_RVR,DEMO_1213_A_CIR,DEMO_1213_A_BEE,DEMO_1213_A_SQR_A,DEMO_1213_A_SQR_B,DEMO_1213_A_TRI,
+        # DEMO_1213_B_STA,DEMO_1213_B_SPI,DEMO_1213_B_FWD,DEMO_1213_B_RVR,DEMO_1213_B_CIR,DEMO_1213_B_BEE,DEMO_1213_B_SQR,DEMO_1213_B_TRI,
+        # DEMO_1213_C_ROG_1, DEMO_1213_C_ROG_2, DEMO_1213_C_LONG_SQR, DEMO_1213_C_SQR, DEMO_1213_C_ROG_3,
     ]:
     N_args = len(sys.argv)
     folder_id = "all"
