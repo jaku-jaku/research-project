@@ -40,13 +40,18 @@ from configs.uwarl_common import PARSER_CALLBACKS
 #     DUAL_1122_LONG,
 #     DUAL_1122_LONG_ROG,
 # )
-from configs.uwarl_test_set_d455_Nov27 import (
+# from configs.uwarl_test_set_d455_Nov27 import (
+#     TEST_SET_TITLE,
+#     DUAL_1127_DEG_EVE,
+#     DUAL_1127_DYN_EVE,
+#     DUAL_1127_DEG_AM,
+#     DUAL_1127_DYN_AM,
+#     DUAL_1127_LONG_PM,
+# )
+from configs.uwarl_test_set_d455_Dec07 import (
     TEST_SET_TITLE,
-    DUAL_1127_DEG_EVE,
-    DUAL_1127_DYN_EVE,
-    DUAL_1127_DEG_AM,
-    DUAL_1127_DYN_AM,
-    DUAL_1127_LONG_PM,
+    DEMO_1207_A, DEMO_1207_B, DEMO_1207_C, 
+    DEMO_1207_A_v2, DEMO_1207_A_v3, DEMO_1207_B_v3, DEMO_1207_C_v3,
 )
 from vins_replay_utils.uwarl_replay_decoder import auto_generate_labels_from_bag_file_name_with_json_config, ProcessedData
 from vins_replay_utils.uwarl_analysis_plot import ReportGenerator, AnalysisManager, MultiBagsDataManager, plot_time_parallel, plot_time_series, plot_spatial
@@ -58,7 +63,7 @@ from vins_replay_utils.uwarl_camera import MultiSensor_Camera_Node
 FIG_OUT_DIR = f"{Path.home()}/UWARL_catkin_ws/src/vins-research-pkg/research-project/output/vins_analysis"
 FEATURE_LOCAL_DEVELOPMENT  = True
 
-FEATURE_ONLY_LAST                   = -1 #seconds
+FEATURE_ONLY_LAST                   = -1 #seconds: negative to iterate through entire bag
 
 SPLIT_MAP = None
 SPLIT_MAP = {1:"Base", 0:"EE"}
@@ -86,7 +91,7 @@ PLOT_CONFIGS = {
         "orientation_group": [],
     },
     "scatter" : {
-        "figsize": (8,8),
+        "figsize": (4,4),
         "scatter_or_line": "scatter",
         "orientation_group": ["Est"],
     },
@@ -436,11 +441,17 @@ for bag_test_case in [
         # DUAL_1122_BASIC_ROG,
         # DUAL_1122_LONG,
         # DUAL_1122_LONG_ROG,
-        DUAL_1127_DEG_EVE, 
-        DUAL_1127_DYN_EVE,
-        DUAL_1127_DEG_AM, 
-        DUAL_1127_LONG_PM,
-        DUAL_1127_DYN_AM, 
+        # DUAL_1127_DEG_EVE, 
+        # DUAL_1127_DYN_EVE,
+        # DUAL_1127_DEG_AM, 
+        # DUAL_1127_LONG_PM,
+        # DUAL_1127_DYN_AM, 
+        # DEMO_1207_A, DEMO_1207_B, DEMO_1207_C, 
+        # DEMO_1207_C_Occ1, DEMO_1207_C_Occ2, DEMO_1207_C_Occ3
+        # DEMO_1207_A_v2,
+        # DEMO_1207_A_v3,
+        # DEMO_1207_B_v3, 
+        DEMO_1207_C_v3,
     ]:
     N_args = len(sys.argv)
     folder_id = "all"

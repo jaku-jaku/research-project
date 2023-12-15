@@ -478,9 +478,9 @@ def plot_spatial(bag_manager:MultiBagsDataManager,
                     if is_data_valid:
                         if if_scatter:
                             if if_scatter_gradient_by_time:
-                                axs[view_idx].scatter3D(x_[:,0], x_[:,1], x_[:,2], s=2, c=t_, cmap=CMAP[i], alpha=0.2, marker=_scatterMarker, depthshade=True)
+                                axs[view_idx].scatter3D(x_[:,0], x_[:,1], x_[:,2], s=1, c=t_, cmap=CMAP[i], alpha=0.2, marker=_scatterMarker, depthshade=True)
                             else:
-                                axs[view_idx].scatter3D(x_[:,0], x_[:,1], x_[:,2], s=2, c=CWheel[i], alpha=0.6, marker=_scatterMarker, depthshade=True)
+                                axs[view_idx].scatter3D(x_[:,0], x_[:,1], x_[:,2], s=1, c=CWheel[i], alpha=0.6, marker=_scatterMarker, depthshade=True)
                         else:
                             axs[view_idx].plot3D(x_[:,0], x_[:,1], x_[:,2], color=CWheel[i], label=label_list[-1], alpha=0.6, linestyle=_linestyle)
                         if show_orientations:

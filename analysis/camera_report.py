@@ -131,7 +131,7 @@ if ENABLE_TRANSFORM:
     # fig, ax = cam_b.create_3d_figure()
     # cam_b.plot_camera(ax=ax, RBT_SE3=T_b)
 
-# %%
+# %% [Nov 2023, 1127]
 # Nov 27 2023 - morning
 # cam_EE = [-17.541, -52.545,   1681.664]
 # cam_base = [-3.656,  238.662,  400.220]
@@ -143,6 +143,7 @@ cam_base    = np.array([-94.074, 339.690, 399.599])/1000
 summit_base = np.array([-94.074, 42.095, 0.000])/1000
 wam_EE      = np.array([-94.074, 142.996, 1780.406])/1000
 wam_base    = np.array([-94.074, 142.996, 709.702])/1000
+zero_config = np.array([0,0,0.55+0.3+0.06])
 # %%
 base_yaw_joint = np.array([0,0,0]) #ARM_MODEL_CONFIG_L_SHOULDER
 
@@ -152,7 +153,7 @@ ic(summit_dP_cam_base)
 summit_dP_wam = wam_base - summit_base - base_yaw_joint
 ic(summit_dP_wam)
 
-dP_tip = wam_EE - wam_base - np.array([0,0,0.55+0.3+0.06])
+dP_tip = wam_EE - wam_base - zero_config
 ic(dP_tip)
 wam_dP_cam_ee = cam_EE - wam_EE + dP_tip
 ic(wam_dP_cam_ee);
@@ -161,4 +162,41 @@ T_init = np.array([  [ 0.393731, -0.0930065,   0.914508, -0.0545874],
                     [-0.916825,  0.0321133,   0.397995, -0.0448067],
                     [-0.066384,  -0.995147, -0.0726267,   0.790944],
                     [        0,          0,          0,          1] ]);
+# %% [Dec 2023, 1207]
+cam_EE 		    =np.array([0.501, 38.924,   1685.896])/1000
+cam_base 		=np.array([0.000, 327.884,  400.620])/1000
+summit_base 	=np.array([0.000, 0.000,    0.000])/1000
+wam_EE 		    =np.array([0.501, 38.924 ,  1685.896])/1000
+wam_base 		=np.array([0.000, 142.425,  745.000])/1000
+wam_elbow		=np.array([0.000, 178.149,  1302.221])/1000
+
+
+
+# %%
+## Dec 13
+cam_EE        =np.array([21.241 , 34.269  ,  1683.52])/1000
+cam_base      =np.array([24.256 , 330.482 ,  389.265])/1000
+summit_base   =np.array([25.783	, -0.106  ,  -0.138])/1000
+wam_EE        =np.array([23.250 , 129.329 ,  1783.290])/1000
+Wam_base      =np.array([24.299 , 139.57  ,  746.148])/1000
+wam_elbow     =np.array([33.430 , 178.856 ,  1304.734])/1000
+# %%
+base_yaw_joint = np.array([0,0,0]) #ARM_MODEL_CONFIG_L_SHOULDER
+
+dP_elbow = wam_elbow - wam_base
+dP_elbow[0]=0
+ic(dP_elbow)
+
+zero_config = np.array([0,0,dP_elbow[2]+0.32+0.06])
+summit_dP_cam_base = cam_base - summit_base
+ic(summit_dP_cam_base)
+
+summit_dP_wam = wam_base - summit_base - base_yaw_joint
+ic(summit_dP_wam)
+
+dP_tip = wam_EE - wam_base - zero_config
+ic(dP_tip)
+# wam_dP_cam_ee = cam_EE - wam_EE + dP_tip
+wam_dP_cam_ee = cam_EE - wam_elbow - 0.32 - 0.06
+ic(wam_dP_cam_ee);
 # %%
