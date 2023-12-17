@@ -71,13 +71,16 @@ FEATURE_LOCAL_DEVELOPMENT  = True
 
 FEATURE_ONLY_LAST                   = -1 #seconds: negative to iterate through entire bag
 
+## OPTION:
 SPLIT_MAP = None
-SPLIT_MAP = {1:"Base", 0:"EE"}
+# SPLIT_MAP = {1:"Base", 0:"EE"}   # to split graphs by devices
 
+## OPTION:
 FEATURE_AUTO_SAVE                   = True
 FEATURE_AUTO_CLOSE_FIGS             = True
 FEATURE_OUTPUT_BAG_META             = False
 
+## OPTION:
 FEATURE_PLOT_VOLTAGE_JOINT_EFFORTS  = False
 FEATURE_PLOT_3D_TRAJECTORIES        = True
 FEATURE_PLOT_ERROR_METRICS          = True
@@ -85,10 +88,17 @@ FEATURE_PLOT_CAMERAS                = True
 FEATURE_PLOT_CAM_CONFIGS            = False
 FEATURE_OUTPUT_EXTRACTED_DATASET    = True
 
+## OPTION:
 FIGSIZE_ERR = (3,3)
 PLOT_FEATURE_VIEW_ANGLES            = [(30,10),(70,45),(10,10)]#[(30,10),(70,45),(10,10)]
 PLOT_FEATURE_VIEW_ANGLES_SEPARATED  = True
-PLOT_FEATURE_ODOM_ONLY              = True
+
+## OPTION:
+# label_filters = {"unified":[]}                                 # ALL IN ONE
+# label_filters = {"odom":["Loop"], "loop":["Est"]}              # SPLIT FOR ODOM VS LOOP
+label_filters = {"baseline":["baseline"], "coupled":["coupled"]} # SPLIT FOR BASELINE VS COUPLED
+
+## OPTION:
 PLOT_FEATURE_AXIS_BOUNDARY_MAX      = [5,5,2] # <--- for whole floor rungs, we need to change this
 PLOT_CONFIGS = {
     "line" : {
@@ -96,11 +106,11 @@ PLOT_CONFIGS = {
         "scatter_or_line":"line",
         "orientation_group": [],
     },
-    "scatter" : {
-        "figsize": (4,4),
-        "scatter_or_line": "scatter",
-        "orientation_group": ["Est"],
-    },
+    # "scatter" : {
+    #     "figsize": (4,4),
+    #     "scatter_or_line": "scatter",
+    #     "orientation_group": ["Est"],
+    # },
 }
 RUN_NAME = ""
 RUN_TAG = ""
@@ -177,7 +187,8 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
         if load_from_pickle:
             print("> Data loading from pickle!")
             try:
-                data_sets_3d = AM.load_dict_from_pickle(data_sets_3d, "data_sets_3d")
+                data_sets_3d = AM.load_dict_from_pickle("data_sets_3d")
+                print(data_sets_3d.keys())
             except Exception as e:
                 print(f"> Data loading from pickle failed due to {e}! Now, load process from bag files ...")
                 load_from_pickle = False # otherwise try to load all data
@@ -246,10 +257,9 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
         POSE_VARS = {
             TYPES_VAR.POSITION_XYZ: 'y',
             TYPES_VAR.ORIENTATION_XYZW: 'r',
-        }
-        data_sets_3d = dict()
-        
+        }        
         if not load_from_pickle:
+            data_sets_3d = dict()
             for label, DM in DMs.items():
                 data_sets_3d[f"Vicon Cam Base ({label})"]          = DM.extract_data(
                     bag_topic="/vins_estimator/base/vicon/path", dict_var_type=POSE_VARS,
@@ -280,7 +290,7 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
         ### pip install ipympl
         # prep:
         angle_v = [[x] for x in PLOT_FEATURE_VIEW_ANGLES] if PLOT_FEATURE_VIEW_ANGLES_SEPARATED else [PLOT_FEATURE_VIEW_ANGLES]
-        label_filters = {"unified":[]} if not PLOT_FEATURE_ODOM_ONLY else {"odom":["Loop"], "loop":["Est"]}
+        # label_filters = {"unified":[]} if not PLOT_FEATURE_ODOM_ONLY else {"odom":["Loop"], "loop":["Est"]}
         plot_boundary_max = bag_test_case_config["AXIS_BOUNDARY_MAX"] if "AXIS_BOUNDARY_MAX" in bag_test_case_config else PLOT_FEATURE_AXIS_BOUNDARY_MAX
         # plot:
         for name_lf, label_filter in label_filters.items():         # (separate loop and odom)
@@ -458,9 +468,9 @@ for bag_test_case in [
         # DEMO_1207_A_v3,
         # DEMO_1207_B_v3, 
         # DEMO_1207_C_v3,
-        DEMO_1213_A_STA,DEMO_1213_A_SPI,DEMO_1213_A_FWD,DEMO_1213_A_RVR,DEMO_1213_A_CIR,DEMO_1213_A_BEE,DEMO_1213_A_SQR_A,DEMO_1213_A_SQR_B,DEMO_1213_A_TRI,
+        # DEMO_1213_A_STA,DEMO_1213_A_SPI,DEMO_1213_A_FWD,DEMO_1213_A_RVR,DEMO_1213_A_CIR,DEMO_1213_A_BEE,DEMO_1213_A_SQR_A,DEMO_1213_A_SQR_B,DEMO_1213_A_TRI,
         # DEMO_1213_B_STA,DEMO_1213_B_SPI,DEMO_1213_B_FWD,DEMO_1213_B_RVR,DEMO_1213_B_CIR,DEMO_1213_B_BEE,DEMO_1213_B_SQR,DEMO_1213_B_TRI,
-        # DEMO_1213_C_ROG_1, DEMO_1213_C_ROG_2, DEMO_1213_C_LONG_SQR, DEMO_1213_C_SQR, DEMO_1213_C_ROG_3,
+        DEMO_1213_C_ROG_1, DEMO_1213_C_ROG_2, DEMO_1213_C_LONG_SQR, DEMO_1213_C_SQR, DEMO_1213_C_ROG_3,
     ]:
     N_args = len(sys.argv)
     folder_id = "all"

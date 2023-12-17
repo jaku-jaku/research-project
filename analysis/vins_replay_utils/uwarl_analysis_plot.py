@@ -124,7 +124,7 @@ class AnalysisManager:
         with open(f"{output_path}{file_name}.pickle", "wb") as f:
             pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
     
-    def load_dict_from_pickle(self, data, file_name="data"):
+    def load_dict_from_pickle(self, file_name="data"):
         data = {}
         output_path=self.output_path()
         with open(f"{output_path}{file_name}.pickle", "rb") as f:

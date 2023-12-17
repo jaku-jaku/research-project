@@ -94,8 +94,8 @@ class DATASET_DEMO_1213_A:
 CONFIG_1213A = {
     "folder": ".ros/bag_replay_recorder_files/waterloo_steel_demo_1213A/mono_rgb_imu",
     "rungs": {
-        "baseline": "S-1_E-1_dual_baaseline/2023-12-15", 
-        "coupled (ours)": "S-1_E-1_dual_arm_odom/2023-12-15"
+        "baseline": "S-1_E-1_dual_baseline_fin/2023-12-15", 
+        "coupled (ours)": "S-1_E-1_dual_arm_odom_fin/2023-12-15"
     },
     "camera_config_file_dual": "mono_rgb_imu_config_dual.yaml",
     "demo_map": ".ros/bagfiles/waterloo_steel_demo_1213A/session_1/demo_map.json",
@@ -200,8 +200,8 @@ class DATASET_DEMO_1213_B:
 CONFIG_1213B = {
     "folder": ".ros/bag_replay_recorder_files/waterloo_steel_demo_1213B/mono_rgb_imu",
     "rungs": {
-        "baseline": "S-1_E-1_dual_baseline/2023-12-15", 
-        "coupled (ours)": "S-1_E-1_dual_arm_odom/2023-12-15"
+        "baseline": "S-1_E-1_dual_baseline_fin/2023-12-15", 
+        "coupled (ours)": "S-1_E-1_dual_arm_odom_fin/2023-12-15"
     },
     "camera_config_file_dual": "mono_rgb_imu_config_dual.yaml",
     "demo_map": ".ros/bagfiles/waterloo_steel_demo_1213B/session_1/demo_map.json",
@@ -273,12 +273,12 @@ class DATASET_DEMO_1213_C:
 CONFIG_1213C = {
     "folder": ".ros/bag_replay_recorder_files/waterloo_steel_demo_1213C/mono_rgb_imu",
     "rungs": {
-        "baseline": "S-1_E-1_dual_baaseline/2023-12-15", 
-        "coupled (ours)": "S-1_E-1_dual_arm_odom/2023-12-15"
+        "baseline": "S-1_E-1_dual_baseline_fin/2023-12-15", 
+        "coupled (ours)": "S-1_E-1_dual_arm_odom_fin/2023-12-15"
     },
     "camera_config_file_dual": "mono_rgb_imu_config_dual.yaml",
     "demo_map": ".ros/bagfiles/waterloo_steel_demo_1213C/session_1/demo_map.json",
-    "AXIS_BOUNDARY_MAX": [10,10,5],# in meters world boundary
+    "AXIS_BOUNDARY_MAX": [50,50,5],# in meters world boundary
 }
 class DEMO_1213_C_ROG_1(Enum):
     CONFIG = CONFIG_1213C
