@@ -55,7 +55,7 @@ from configs.uwarl_common import PARSER_CALLBACKS
 # )
 from configs.uwarl_test_set_d455_Dec13_v2 import (
     TEST_SET_TITLE,
-    DEMO_1213_B_STA,DEMO_1213_B_SPI,DEMO_1213_B_FWD,DEMO_1213_B_RVR,DEMO_1213_B_CIR,DEMO_1213_B_BEE,DEMO_1213_B_SQR,DEMO_1213_B_TRI,
+    # DEMO_1213_B_STA,DEMO_1213_B_SPI,DEMO_1213_B_FWD,DEMO_1213_B_RVR,DEMO_1213_B_CIR,DEMO_1213_B_BEE,DEMO_1213_B_SQR,DEMO_1213_B_TRI,
     DEMO_1213_A_STA,DEMO_1213_A_SPI,DEMO_1213_A_FWD,DEMO_1213_A_RVR,DEMO_1213_A_CIR,DEMO_1213_A_BEE,DEMO_1213_A_SQR_A,DEMO_1213_A_SQR_B,DEMO_1213_A_TRI,
     DEMO_1213_C_ROG_1, DEMO_1213_C_ROG_2, DEMO_1213_C_LONG_SQR, DEMO_1213_C_SQR, DEMO_1213_C_ROG_3,
 )
@@ -78,6 +78,7 @@ SPLIT_MAP = {1:"Base", 0:"EE"}   # to split graphs by devices
 ## OPTION:
 # SPLIT_MATRICS = True           # split xyz and rpy
 SPLIT_MATRICS = False 
+RELATIVE_MATRICS = True
 
 ## OPTION:
 FEATURE_AUTO_SAVE                   = True
@@ -384,9 +385,8 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
                                 ic(np.shape(Re_est))
                             else:
                                 R_est = np.array(SO3.from_quat(q_est).as_matrix())
-                                
-                           
-                            delta_t = t0_est - t0_ref # compute how late estimation is
+                                                            
+                            delta_t = (t0_est)-(t0_ref+t_ref[0]) # compute how late estimation is
                             print(f">> T_est(0)):{t0_est}, T_ref(0): {t0_ref}, estimation is late for {delta_t}")
                             
                             # time alignment with tol 0.01s: 
@@ -395,17 +395,21 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
                                 assert(delta_t < 0), "OOps, Estimation is earlier than reference"
                             else:
                                 for k in range(N_ref):
-                                    if (delta_t - t_ref[k]) > 0.01:
+                                    if (t_ref[k]) > delta_t:
                                         break
                                     selected_k = k # cache index
-
-                            k_max = min(selected_k+N_est, N_ref-1)
-                            k_max_est = min(k_max-selected_k, N_est) # in case estimator ran shorter
                             
-                            d_t = t_est[-1]-t_ref[k_max]
-                            print(f">> T_est(-1)={t_est[-1]}, T_ref(-1)={t_ref[k_max]}, compensated for: {delta_t - t_ref[k]}, delta: {d_t}")
+                            k_max = min(selected_k + N_est, N_ref-1)
+                            k_max_est = min(N_est-1, (k_max - selected_k)) # in case estimator ran shorter
+                            k_max = selected_k + k_max_est
                             
-                            t_ = np.array(t_est) + delta_t
+                            ic(k_max_est, k_max)
+                            ic(np.shape(t_est), np.shape(t_ref))
+                            t_est = np.array(t_est) + delta_t
+                            d_t0 = t_est[0]-t_ref[selected_k]
+                            d_t1 = t_est[k_max_est]-t_ref[k_max]
+                            print(f">> compensated for: {delta_t}, start_delta: {d_t0}, end_delta: {d_t1}")
+                            
                             delta_p = p_est[0:k_max_est, :] - p_ref[selected_k:k_max, :]
                             if SPLIT_MATRICS:
                                 x1_ = np.array(delta_p)
@@ -423,7 +427,7 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
                             # x2_ = delta_RPY[:, 2]
                             # print("np.shape(delta_R):", np.shape(delta_R))
                             # print("np.shape(x2_)", np.shape(x2_))
-                            t_ = t_[0:k_max_est]
+                            t_ = t_est[0:k_max_est]
 
                         return t_, x1_, x2_
 
@@ -522,8 +526,8 @@ for bag_test_case in [
         # DEMO_1207_B_v3, 
         # DEMO_1207_C_v3,
         DEMO_1213_A_STA,DEMO_1213_A_SPI,DEMO_1213_A_FWD,DEMO_1213_A_RVR,DEMO_1213_A_CIR,DEMO_1213_A_BEE,DEMO_1213_A_SQR_A,DEMO_1213_A_SQR_B,DEMO_1213_A_TRI,
-        DEMO_1213_B_STA,DEMO_1213_B_SPI,DEMO_1213_B_FWD,DEMO_1213_B_RVR,DEMO_1213_B_CIR,DEMO_1213_B_BEE,DEMO_1213_B_SQR,DEMO_1213_B_TRI,
-        DEMO_1213_C_ROG_1, DEMO_1213_C_ROG_2, DEMO_1213_C_LONG_SQR, DEMO_1213_C_SQR, DEMO_1213_C_ROG_3,
+        # DEMO_1213_B_STA,DEMO_1213_B_SPI,DEMO_1213_B_FWD,DEMO_1213_B_RVR,DEMO_1213_B_CIR,DEMO_1213_B_BEE,DEMO_1213_B_SQR,DEMO_1213_B_TRI,
+        # DEMO_1213_C_ROG_1, DEMO_1213_C_ROG_2, DEMO_1213_C_LONG_SQR, DEMO_1213_C_SQR, DEMO_1213_C_ROG_3,
     ]:
     print("\n================================")
     print(f"\n==={bag_test_case}===")
@@ -543,7 +547,7 @@ for bag_test_case in [
     # go through all the bags set in each test set
     N = len(bag_test_case.TEST_SET.value)
     # [MAIN]:
-    RG = ReportGenerator("temp" if N_args == 3 else "Overall")
+    RG = ReportGenerator(bag_test_case, f"run_{folder_id}_{bag_id}_{option}")
     for test_index, bag_subset in enumerate(bag_test_case.TEST_SET.value):
         print("\n\n====== TEST [%d/%d] =====\n" % (test_index+1, N))
         # [DEV]: uncomment to skip n tests
