@@ -27,12 +27,14 @@ class ReportGenerator:
         self._tag = tag
         self._title = title
         self._table_of_var = {"mu":{}, "std":{}}
+    
+    def bind_output_dir(self, _output_dir):
+        self._output_dir = _output_dir
         
     def append_figname(self, case, key, file_name):
         file_dir_, file_name_ = os.path.split(file_name) 
-        if self._output_dir is None:
-            self._output_dir = file_dir_
-            
+        if self._output_dir:
+            self.bind_output_dir(file_dir_)
         if case in self._generated_figs_name:
             self._generated_figs_name[case][key] = file_name_
         else: # init entries:
@@ -49,13 +51,15 @@ class ReportGenerator:
                 self._table_of_var["mu"][token][case] = mu[entry] if mu else "N/A"
                 self._table_of_var["std"][token][case] = std[entry] if std else "N/A"
         else:
-            print("Not valid mu and std!")
+            print(">>> Not valid mu and std!")
             
     def save_report_as_md(self):
+        date_time_stub_hourly = datetime.now().strftime("%H")
         date_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         output_path=self._output_dir
         if output_path:
-            file_name=f"{output_path}/APPENDIX_{self._tag.replace(' ', '_')}.md"
+            file_name=f"{output_path}/APPENDIX_{self._tag.replace(' ', '_')}_[{date_time_stub_hourly}].md"
+            print(f">>> Generating report as markdown ... @ {file_name}")
             with open(file_name, "w") as f:
                 f.write(f"# Report {self._title} \n**[Auto-gen on {date_time}]** \n")
                 for ver in self._table_of_var:
@@ -79,6 +83,8 @@ class ReportGenerator:
                     f.write("|{}|\n".format(" | ".join(["![{0}]({0})".format(val) for val in fig_names.values()])))
                     f.write("\n\n")
             print(f"[x]---> md report generated @ {file_name}")
+        else:
+            print(">>> No output path specified! HINT: please bind with `bind_output_dir`")
             
     # def append_errors(self, error_list):
         

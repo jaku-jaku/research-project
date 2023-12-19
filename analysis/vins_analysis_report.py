@@ -87,7 +87,7 @@ FEATURE_OUTPUT_BAG_META             = False
 
 ## OPTION:
 FEATURE_PLOT_VOLTAGE_JOINT_EFFORTS  = False
-FEATURE_PLOT_3D_TRAJECTORIES        = True
+FEATURE_PLOT_3D_TRAJECTORIES        = True   # --> FALSE: to skip 3D trajectory plotting
 FEATURE_PLOT_ERROR_METRICS          = True
 FEATURE_PLOT_CAMERAS                = True
 FEATURE_PLOT_CAM_CONFIGS            = False
@@ -122,7 +122,7 @@ RUN_TAG = ""
 if FEATURE_AUTO_CLOSE_FIGS:
     RUN_TAG = "[DEV]"
     
-FEATURE_PROCESS_BAGS = (FEATURE_PLOT_VOLTAGE_JOINT_EFFORTS or FEATURE_PLOT_3D_TRAJECTORIES)
+FEATURE_PROCESS_BAGS = True
 
 ### Prepare parser callbacks: (remove unused callbacks to minimize runtime)
 parser_callbacks_ = PARSER_CALLBACKS
@@ -145,6 +145,8 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
         auto_save=FEATURE_AUTO_SAVE,
         auto_close=FEATURE_AUTO_CLOSE_FIGS,
     )
+    if report_generator:
+        report_generator.bind_output_dir(AM._output_dir)
     DMs = {}
     # -------------------------------- Iterating each rung -------------------------------- %% #
     bag_rung_label_end = None
@@ -334,7 +336,8 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
         AM.save_dict_as_pickle(data_sets_3d, "data_sets_3d")
         print("> Data saved!")
         
-    if FEATURE_PLOT_ERROR_METRICS and FEATURE_PLOT_3D_TRAJECTORIES:
+    if FEATURE_PLOT_ERROR_METRICS and data_sets_3d:
+        print("> Plotting Error Metrics ...")
         # 1. compute error metrics and plot:
         for device in ["Base", "EE"]:
             data_sets_y = {}
