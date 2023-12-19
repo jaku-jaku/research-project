@@ -53,7 +53,7 @@ from configs.uwarl_common import PARSER_CALLBACKS
 #     DEMO_1207_A, DEMO_1207_B, DEMO_1207_C, 
 #     DEMO_1207_A_v2, DEMO_1207_A_v3, DEMO_1207_B_v3, DEMO_1207_C_v3,
 # )
-from configs.uwarl_test_set_d455_Dec13 import (
+from configs.uwarl_test_set_d455_Dec13_v2 import (
     TEST_SET_TITLE,
     DEMO_1213_B_STA,DEMO_1213_B_SPI,DEMO_1213_B_FWD,DEMO_1213_B_RVR,DEMO_1213_B_CIR,DEMO_1213_B_BEE,DEMO_1213_B_SQR,DEMO_1213_B_TRI,
     DEMO_1213_A_STA,DEMO_1213_A_SPI,DEMO_1213_A_FWD,DEMO_1213_A_RVR,DEMO_1213_A_CIR,DEMO_1213_A_BEE,DEMO_1213_A_SQR_A,DEMO_1213_A_SQR_B,DEMO_1213_A_TRI,
@@ -72,8 +72,12 @@ FEATURE_LOCAL_DEVELOPMENT  = True
 FEATURE_ONLY_LAST                   = -1 #seconds: negative to iterate through entire bag
 
 ## OPTION:
-SPLIT_MAP = None
-# SPLIT_MAP = {1:"Base", 0:"EE"}   # to split graphs by devices
+# SPLIT_MAP = None
+SPLIT_MAP = {1:"Base", 0:"EE"}   # to split graphs by devices
+
+## OPTION:
+# SPLIT_MATRICS = True           # split xyz and rpy
+SPLIT_MATRICS = False 
 
 ## OPTION:
 FEATURE_AUTO_SAVE                   = True
@@ -89,14 +93,14 @@ FEATURE_PLOT_CAM_CONFIGS            = False
 FEATURE_OUTPUT_EXTRACTED_DATASET    = True
 
 ## OPTION:
-FIGSIZE_ERR = (3,3)
+FIGSIZE_ERR = (3,2)
 PLOT_FEATURE_VIEW_ANGLES            = [(30,10),(70,45),(10,10)]#[(30,10),(70,45),(10,10)]
 PLOT_FEATURE_VIEW_ANGLES_SEPARATED  = True
 
-## OPTION:
+## OPTION: (Block List:)
 # label_filters = {"unified":[]}                                 # ALL IN ONE
-# label_filters = {"odom":["Loop"], "loop":["Est"]}              # SPLIT FOR ODOM VS LOOP
-label_filters = {"baseline":["baseline"], "coupled":["coupled"]} # SPLIT FOR BASELINE VS COUPLED
+label_filters = {"odom":["Loop"], "loop":["Est"]}              # SPLIT FOR ODOM VS LOOP
+# label_filters = {"coupled":["baseline"], "baseline":["coupled"]} # SPLIT FOR BASELINE VS COUPLED
 
 ## OPTION:
 PLOT_FEATURE_AXIS_BOUNDARY_MAX      = [5,5,2] # <--- for whole floor rungs, we need to change this
@@ -184,6 +188,7 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
                 AM.save_fig(fig, tag=f"{cam._prefix}camera_config")
 
         # 0.3 try to load pickle
+        data_sets_3d = dict()
         if load_from_pickle:
             print("> Data loading from pickle!")
             try:
@@ -192,6 +197,7 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
             except Exception as e:
                 print(f"> Data loading from pickle failed due to {e}! Now, load process from bag files ...")
                 load_from_pickle = False # otherwise try to load all data
+            
         # 1. Process and Aggregate data from multiple bags:
         tic = time.perf_counter()
         if FEATURE_PROCESS_BAGS:
@@ -246,7 +252,7 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
             }
 
             # 4. Plot:
-            fig,ax,title = plot_time_series(DM, data_sets_y, title=label)
+            fig,ax,_,_,title = plot_time_series(DM, data_sets_y, title=label)
             AM.save_fig(fig, title)
             fig,ax,title = plot_time_parallel(DM, data_sets_y, figsize=(15,4), title=label)
             AM.save_fig(fig, title)
@@ -259,7 +265,6 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
             TYPES_VAR.ORIENTATION_XYZW: 'r',
         }        
         if not load_from_pickle:
-            data_sets_3d = dict()
             for label, DM in DMs.items():
                 data_sets_3d[f"Vicon Cam Base ({label})"]          = DM.extract_data(
                     bag_topic="/vins_estimator/base/vicon/path", dict_var_type=POSE_VARS,
@@ -318,9 +323,9 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
                         # show_grid=True, AXIS_BOUNDARY_MAX=[5,5,2], AXIS_BOUNDARY_MIN=[0.5,0.5,0.2]
                     )
                     file_name = AM.save_fig(fig, f"{title}_{name_lf}_{j}")
-                    # append to report
-                    if report_generator and file_name:
-                        report_generator.append_figname(file_name)
+                    # append to report at first view angle
+                    if j==0 and report_generator and file_name:
+                        report_generator.append_figname(bag_subset.name,name_lf,file_name)
     
     if FEATURE_OUTPUT_EXTRACTED_DATASET and not load_from_pickle:
         # df = pd.DataFrame(data_sets_3d)
@@ -331,22 +336,16 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
     if FEATURE_PLOT_ERROR_METRICS and FEATURE_PLOT_3D_TRAJECTORIES:
         # 1. compute error metrics and plot:
         for device in ["Base", "EE"]:
-            data_sets_y1 = dict() 
-            data_sets_y2 = dict() 
-            data_sets_y3 = dict() 
-            data_sets_y4 = dict() 
+            data_sets_y = {}
             for label, DM in DMs.items():
                 data_ref  = data_sets_3d[f"Vicon Cam {device} ({label})"]
                 data_est  = data_sets_3d[f"{label} VINS Est {device}"]
                 data_loop = data_sets_3d[f"{label} VINS Loop {device}"]
                 
                 N_sub = len(data_ref['t'])
-                t1 = []
-                x1 = []
-                x2 = []
-                t2 = []
-                x3 = []
-                x4 = []
+                list_of_data_delta = []
+                
+                data_delta = {"Est": {"t": [], "Pos": [], "Rot": []}, "Loop": {"t": [], "Pos": [], "Rot": []}}
                 for i in range(N_sub): # should be just one bag for this plot
                     t_ref  = data_ref['t'][i]
                     if len(t_ref) <= 0:
@@ -360,11 +359,14 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
                     print(q_corr_w2c)
                     if device == 'Base':
                         # convert to camera axis as base axis is not aligned with vicon
-                        R_ref = np.array(SO3.from_quat(q_ref).as_matrix() @ q_corr_w2c) 
+                        R_ref = SO3.from_quat(q_ref).as_matrix() @ q_corr_w2c
                     else:
-                        R_ref = np.array(SO3.from_quat(q_ref).as_matrix())
-    
-                    ic(np.shape(R_ref))
+                        R_ref = SO3.from_quat(q_ref).as_matrix()
+                    if SPLIT_MATRICS:
+                        Re_ref = np.array(SO3.from_matrix(R_ref).as_euler('xyz', degrees=True))
+                        ic(np.shape(Re_ref))
+                    else:
+                        R_ref = np.array(R_ref)
                     
                     def _get_delta(data):
                         N_est = len(data['t'][i])
@@ -377,7 +379,12 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
                             q_est  = np.array(data['r'][i])
                             p_est  = np.array(data['y'][i])
                             
-                            R_est = np.array(SO3.from_quat(q_est).as_matrix())
+                            if SPLIT_MATRICS:
+                                Re_est = np.array(SO3.from_quat(q_est).as_euler('xyz', degrees=True))
+                                ic(np.shape(Re_est))
+                            else:
+                                R_est = np.array(SO3.from_quat(q_est).as_matrix())
+                                
                            
                             delta_t = t0_est - t0_ref # compute how late estimation is
                             print(f">> T_est(0)):{t0_est}, T_ref(0): {t0_ref}, estimation is late for {delta_t}")
@@ -394,15 +401,22 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
 
                             k_max = min(selected_k+N_est, N_ref-1)
                             k_max_est = min(k_max-selected_k, N_est) # in case estimator ran shorter
+                            
                             d_t = t_est[-1]-t_ref[k_max]
-                            print(f">> T_est(-1)={t_est[-1]}, T_ref(-1)={t_ref[k_max]}, delta: {d_t}")
+                            print(f">> T_est(-1)={t_est[-1]}, T_ref(-1)={t_ref[k_max]}, compensated for: {delta_t - t_ref[k]}, delta: {d_t}")
                             
                             t_ = np.array(t_est) + delta_t
                             delta_p = p_est[0:k_max_est, :] - p_ref[selected_k:k_max, :]
-                            x1_ = np.linalg.norm(delta_p, axis=1)
+                            if SPLIT_MATRICS:
+                                x1_ = np.array(delta_p)
+                            else:
+                                x1_ = np.linalg.norm(delta_p, axis=1)
                             # || q.T * q ||_2  : frobenius norm
                             # err_R = [np.linalg.norm((SO3.from_quat(q_ref[z+selected_k, :]).inv() * SO3.from_quat(q_est[z,:])).as_quat()) - 1 for z in range(N_est)] 
-                            err_R = [np.linalg.norm(R_est[z, :].T @ R_ref[z+selected_k, :] - np.eye(3)) for z in range(k_max_est)]
+                            if SPLIT_MATRICS:
+                                err_R = Re_est[0:k_max_est,:] - Re_ref[selected_k:k_max,:]
+                            else:
+                                err_R = [np.linalg.norm(np.matmul(R_est[z, :].transpose(), R_ref[z+selected_k, :]) - np.eye(3)) for z in range(k_max_est)]
                             ic(np.shape(err_R))
                             x2_ = np.array(err_R)
                             # delta_RPY = RPY_est - RPY_ref[selected_k:k_max, :]
@@ -415,28 +429,67 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
 
                     t_, x1_, x2_ = _get_delta(data_est)
                     t2_, x3_, x4_ = _get_delta(data_loop)
-                    t1.append(t_.tolist())
-                    x1.append(x1_.tolist())
-                    x2.append(x2_.tolist())
-                    t2.append(t2_.tolist())
-                    x3.append(x3_.tolist())
-                    x4.append(x4_.tolist())
+                    ic(len(t_), np.shape(x1_), np.shape(x2_), np.shape(x3_), np.shape(x4_))
+                    
+                    if SPLIT_MATRICS:
+                        for i in range(3):
+                            data_delta = {"Est": {"t": [], "Pos": [], "Rot": []}, "Loop": {"t": [], "Pos": [], "Rot": []}}
+                            if len(t_) > 1:
+                                data_delta["Est"]["t"].append(t_.tolist())
+                                data_delta["Est"]["Pos"].append(x1_[:,i].tolist())
+                                data_delta["Est"]["Rot"].append(x2_[:,i].tolist())
+                            else:
+                                data_delta["Est"]["t"].append([])
+                                data_delta["Est"]["Pos"].append([])
+                                data_delta["Est"]["Rot"].append([])
+                            if len(t2_) > 1:
+                                data_delta["Loop"]["t"].append(t2_.tolist())
+                                data_delta["Loop"]["Pos"].append(x3_[:,i].tolist())
+                                data_delta["Loop"]["Rot"].append(x4_[:,i].tolist())
+                            else:
+                                data_delta["Loop"]["t"].append([])
+                                data_delta["Loop"]["Pos"].append([])
+                                data_delta["Loop"]["Rot"].append([])
+                            list_of_data_delta.append(data_delta)
+                    else:
+                        data_delta["Est"]["t"].append(t_.tolist())
+                        data_delta["Est"]["Pos"].append(x1_.tolist())
+                        data_delta["Est"]["Rot"].append(x2_.tolist())
+                        data_delta["Loop"]["t"].append(t2_.tolist())
+                        data_delta["Loop"]["Pos"].append(x3_.tolist())
+                        data_delta["Loop"]["Rot"].append(x4_.tolist())
 
-                data_sets_y1[f"VINS_Est {label}"] = {'t': t1, 'y': x1}
-                data_sets_y2[f"VINS_Est {label}"] = {'t': t1, 'y': x2}
-                data_sets_y3[f"VINS_Loop {label}"] = {'t': t2, 'y': x3}
-                data_sets_y4[f"VINS_Loop {label}"] = {'t': t2, 'y': x4}
-                
+                # plot:
+            
+                if SPLIT_MATRICS:
+                    for i in range(3):
+                        data_delta = list_of_data_delta[i]
+                        for ver_ in ["Est", "Loop"]:
+                            for type_ in ["Pos", "Rot"]:
+                                key_ = f"{ver_} {type_} Err ({device}) [{i}]"
+                                if key_ not in data_sets_y:
+                                    data_sets_y[f"{key_}"] = {}
+                                data_sets_y[f"{key_}"][f"{label}"] = {'t': data_delta[ver_]['t'], 'y': data_delta[ver_][type_]}
+                else:
+                    for ver_ in ["Est", "Loop"]:
+                        for type_ in ["Pos", "Rot"]:
+                            key_ = f"{ver_} {type_} Err ({device}) "
+                            if key_ not in data_sets_y:
+                                data_sets_y[f"{key_}"] = {}
+                            data_sets_y[f"{key_}"][f"{label}"] = {'t': data_delta[ver_]['t'], 'y': data_delta[ver_][type_]}
+                            # data_sets_y[f"{ver_} {type_} Err ({device})"][f"{type_} {label}"] = {'t': [[]], 'y': [[]]}
                 # data_sets_y[f"VINS_Loop-Vicon {device} ({label})"] = {'t': t, 'y': x}
-            fig,ax,title = plot_time_series(DM, data_sets_y1, title=f"Est Pos Err ({device})", align_y=True, if_mu=True, figsize=FIGSIZE_ERR)
-            file_name = AM.save_fig(fig, title)
-            fig,ax,title = plot_time_series(DM, data_sets_y2, title=f"Est Rot Err ({device})", align_y=True, if_mu=True, figsize=FIGSIZE_ERR)
-            file_name = AM.save_fig(fig, title)
-            fig,ax,title = plot_time_series(DM, data_sets_y3, title=f"Loop Pos Err ({device})", align_y=True, if_mu=True, figsize=FIGSIZE_ERR)
-            file_name = AM.save_fig(fig, title)
-            fig,ax,title = plot_time_series(DM, data_sets_y4, title=f"Loop Rot Err ({device})", align_y=True, if_mu=True, figsize=FIGSIZE_ERR)
-            file_name = AM.save_fig(fig, title)
-            ic(file_name)
+            
+            for title_, data_set_ in data_sets_y.items():
+                fig,ax,mu,std,title = plot_time_series(DM, data_set_, title=title_, align_y=True, if_mu=True, figsize=FIGSIZE_ERR, if_label_bags=False)
+                if title:
+                    file_name = AM.save_fig(fig, title)
+                    # report_generator.append_figname(bag_subset.name, title_, file_name)
+                    report_generator.append_variance(bag_subset.name, title_, mu, std)
+                else:
+                    # report_generator.append_figname(bag_subset.name, title_, "N/A")
+                    report_generator.append_variance(bag_subset.name, title_, None, None)
+                ic(file_name)
                 
 
 # %% MAIN --------------------------------:
@@ -468,14 +521,17 @@ for bag_test_case in [
         # DEMO_1207_A_v3,
         # DEMO_1207_B_v3, 
         # DEMO_1207_C_v3,
-        # DEMO_1213_A_STA,DEMO_1213_A_SPI,DEMO_1213_A_FWD,DEMO_1213_A_RVR,DEMO_1213_A_CIR,DEMO_1213_A_BEE,DEMO_1213_A_SQR_A,DEMO_1213_A_SQR_B,DEMO_1213_A_TRI,
-        # DEMO_1213_B_STA,DEMO_1213_B_SPI,DEMO_1213_B_FWD,DEMO_1213_B_RVR,DEMO_1213_B_CIR,DEMO_1213_B_BEE,DEMO_1213_B_SQR,DEMO_1213_B_TRI,
+        DEMO_1213_A_STA,DEMO_1213_A_SPI,DEMO_1213_A_FWD,DEMO_1213_A_RVR,DEMO_1213_A_CIR,DEMO_1213_A_BEE,DEMO_1213_A_SQR_A,DEMO_1213_A_SQR_B,DEMO_1213_A_TRI,
+        DEMO_1213_B_STA,DEMO_1213_B_SPI,DEMO_1213_B_FWD,DEMO_1213_B_RVR,DEMO_1213_B_CIR,DEMO_1213_B_BEE,DEMO_1213_B_SQR,DEMO_1213_B_TRI,
         DEMO_1213_C_ROG_1, DEMO_1213_C_ROG_2, DEMO_1213_C_LONG_SQR, DEMO_1213_C_SQR, DEMO_1213_C_ROG_3,
     ]:
+    print("\n================================")
+    print(f"\n==={bag_test_case}===")
+    print("\n================================\n")
     N_args = len(sys.argv)
     folder_id = "all"
     bag_id = "all"
-    option = ""
+    option = "bagfiles"
     if (N_args >= 3):
         folder_id = sys.argv[1]
         bag_id = sys.argv[2]
@@ -486,24 +542,24 @@ for bag_test_case in [
     #[TEST_SET_MONO_RGB_IMU, TEST_SET_MONO_IMU, TEST_SET_STEREO_IMU, TEST_SET_STEREO]:
     # go through all the bags set in each test set
     N = len(bag_test_case.TEST_SET.value)
+    # [MAIN]:
+    RG = ReportGenerator("temp" if N_args == 3 else "Overall")
     for test_index, bag_subset in enumerate(bag_test_case.TEST_SET.value):
         print("\n\n====== TEST [%d/%d] =====\n" % (test_index+1, N))
         # [DEV]: uncomment to skip n tests
         # if FEATURE_LOCAL_DEVELOPMENT and test_index < 5: # skip n tests
         #     continue
         
-        # [MAIN]:
-        RG = ReportGenerator("temp" if N_args == 3 else "Overall")
         if_exist = len(bag_subset.value) > 0
         if if_exist:
             # filter for the right bag
             attr = bag_subset.value[0].split('_')[0].split('-')
             if (attr[1] == folder_id or bag_id=="all") and (attr[2] == bag_id or bag_id == "all"): 
                 # process specific folder at a specific child or all children
-                print(f"Found index @ {folder_id}:{bag_id}")
+                print(f"Found index @ {folder_id}:{bag_id} with {option}")
             elif (attr[1] > folder_id and (option=="all" or option=="picke") and bag_id == "all"): 
                 # process any folder after given folder_id
-                print(f"Found index > {folder_id}:{bag_id}")
+                print(f"Found index > {folder_id}:{bag_id} with {option}")
             else:
                 continue # skip this rung
             # [REPORT]:

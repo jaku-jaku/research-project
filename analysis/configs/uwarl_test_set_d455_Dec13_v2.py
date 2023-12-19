@@ -19,7 +19,7 @@ from enum import Enum
 from scipy.spatial.transform import Rotation as R
 from utils.uwarl_bag_parser import TYPES_VAR
 
-TEST_SET_TITLE = "D455"
+TEST_SET_TITLE = "D455_v2"
 ####### 1213 A    Collection :
 class DATASET_DEMO_1213_A:
     class STA(Enum):
@@ -94,10 +94,8 @@ class DATASET_DEMO_1213_A:
 CONFIG_1213A = {
     "folder": ".ros/bag_replay_recorder_files/waterloo_steel_demo_1213A/mono_rgb_imu",
     "rungs": {
-        "baseline": "S-1_E-1_dual_baseline_fin/2023-12-17", 
-        "coupled (ours)": "S-1_E-1_dual_arm_odom_fin/2023-12-17"
-        # "baseline": "S-1_E-1_dual_baseline_fin/2023-12-15", 
-        # "coupled (ours)": "S-1_E-1_dual_arm_odom_fin/2023-12-15"
+        "baseline": "S-1_E-1_dual_baseline_final/2023-12-18", 
+        "coupled (ours)": "S-1_E-1_dual_arm_odom_final/2023-12-18"
     },
     "camera_config_file_dual": "mono_rgb_imu_config_dual.yaml",
     "demo_map": ".ros/bagfiles/waterloo_steel_demo_1213A/session_1/demo_map.json",
@@ -202,8 +200,8 @@ class DATASET_DEMO_1213_B:
 CONFIG_1213B = {
     "folder": ".ros/bag_replay_recorder_files/waterloo_steel_demo_1213B/mono_rgb_imu",
     "rungs": {
-        "baseline": "S-1_E-1_dual_baseline_fin/2023-12-17", 
-        "coupled (ours)": "S-1_E-1_dual_arm_odom_fin/2023-12-17"
+        "baseline": "S-1_E-1_dual_baseline_final/2023-12-18", 
+        "coupled (ours)": "S-1_E-1_dual_arm_odom_final/2023-12-18"
         # "baseline": "S-1_E-1_dual_baseline_fin/2023-12-15", 
         # "coupled (ours)": "S-1_E-1_dual_arm_odom_fin/2023-12-15"
     },
@@ -277,8 +275,8 @@ class DATASET_DEMO_1213_C:
 CONFIG_1213C = {
     "folder": ".ros/bag_replay_recorder_files/waterloo_steel_demo_1213C/mono_rgb_imu",
     "rungs": {
-        "baseline": "S-1_E-1_dual_baseline_fin/2023-12-17", 
-        "coupled (ours)": "S-1_E-1_dual_arm_odom_fin/2023-12-17"
+        "baseline": "S-1_E-1_dual_baseline_final/2023-12-18", 
+        "coupled (ours)": "S-1_E-1_dual_arm_odom_final/2023-12-18"
         # "baseline": "S-1_E-1_dual_baseline_fin/2023-12-15", 
         # "coupled (ours)": "S-1_E-1_dual_arm_odom_fin/2023-12-15"
     },

@@ -21,36 +21,58 @@ class ReportGenerator:
     _generated_figs_name:dict()={}
     _tag:str=""
     _output_dir=None
+    _table_of_var:dict()={}
     
     def __init__(self, tag) -> None:
         self._tag = tag
+        self._table_of_var = {"mu":{}, "std":{}}
         
-    def append_figname(self, file_name):
+    def append_figname(self, case, key, file_name):
         file_dir_, file_name_ = os.path.split(file_name) 
-        tags_ = file_name_.split('_')
         if self._output_dir is None:
             self._output_dir = file_dir_
             
-        if tags_[0] in self._generated_figs_name and tags_[1] in self._generated_figs_name[tags_[0]]:
-            self._generated_figs_name[tags_[0]][tags_[1]].append(file_name_) # overrides
+        if case in self._generated_figs_name:
+            self._generated_figs_name[case][key] = file_name_
         else: # init entries:
-            self._generated_figs_name[tags_[0]] = {tags_[1]: [file_name_]}
+            self._generated_figs_name[case] = {key: file_name_}
+
+    def append_variance(self, case, title, mu, std):
+        for entry in mu:
+            token = f"{title} - {entry}"
+            if token not in self._table_of_var["mu"]:
+                self._table_of_var["mu"][token] = {}
+                self._table_of_var["std"][token] = {}
             
+            self._table_of_var["mu"][token][case] = mu[entry] if mu else "N/A"
+            self._table_of_var["std"][token][case] = std[entry] if std else "N/A"
+        
     def save_report_as_md(self):
+        date_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         output_path=self._output_dir
         if output_path:
             file_name=f"{output_path}/APPENDIX_{self._tag.replace(' ', '_')}.md"
             with open(file_name, "w") as f:
-                date_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-                f.write(f"# Reprot \n[Auto-gen on {date_time}] \n")
+                f.write(f"# Report \n[Auto-gen on {date_time}] \n")
+                for ver in self._table_of_var:
+                    f.write(f"## Entry: {ver}\n")
+                    ic(self._table_of_var[ver])
+                    for i_, token in enumerate(self._table_of_var[ver]):
+                        if i_ == 0:
+                            f.write("|   "+"|{}|\n".format(" |".join(self._table_of_var[ver][token].keys())))
+                            f.write("|---"+"|{}|\n".format(" |".join(["---" for i in range(len(self._table_of_var[ver][token]))])))
+                        f.write("|{} |{}|\n".format(token, " | ".join([f"{val:.3f}" for val in self._table_of_var[ver][token].values()])))
+                    f.write("\n")
+                f.write("\n---\n")
                 
+            with open(file_name, "a") as f:
                 for section, fig_names in self._generated_figs_name.items():
                     f.write(f"## Base Motion: {section} \n")
                     N_len = len(fig_names)
                     ic(fig_names)
                     f.write("|{}|\n".format(" | ".join(fig_names.keys())))
                     f.write("|{}|\n".format("|".join(["---" for i in range(N_len)])))
-                    f.write("|{}|\n".format(" | ".join(["![{0}]({0})".format(val[0]) for val in fig_names.values()])))
+                    f.write("|{}|\n".format(" | ".join(["![{0}]({0})".format(val) for val in fig_names.values()])))
                     f.write("\n\n")
             print(f"[x]---> md report generated @ {file_name}")
             
@@ -236,7 +258,9 @@ class MultiBagsDataManager:
 # -------------------------------- 2D Plot Functions -------------------------------- %% #
 ## Generic Handy Multi-Segments Multi-Topical Plotting Functions:
 
-def plot_data_sets_along_xaxis(data_sets_xy, xlabel="", PAD_WIDTH=0.1, figsize=(10,5), align_y=False, if_mu=False):
+def plot_data_sets_along_xaxis(data_sets_xy, xlabel="", y_sublabels=[""], 
+        PAD_WIDTH=0.1, figsize=(10,5), align_y=False, if_mu=False, if_label=False,
+        if_legend=True):
     fig, ax = plt.subplots(figsize=figsize)
     
     N_size = len(data_sets_xy)
@@ -254,28 +278,36 @@ def plot_data_sets_along_xaxis(data_sets_xy, xlabel="", PAD_WIDTH=0.1, figsize=(
 
     # plotting:
     ylimit = []
-    mu = []
+    mu = {}
+    std = {}
     for i, (label, data) in enumerate(data_sets_xy.items()):
-        axes[i].plot(data["x"], data["y"], color=CWheel[i], label=label, alpha=0.9)
+        try:
+            axes[i].plot(data["x"], data["y"], color=CWheel[i], label=label, alpha=0.9)
+        except:
+            print("[Error] Could not plot~", np.shape(data["x"]), np.shape(data["y"]))
+            # print(data)
+        # if if_label:
         axes[i].set_ylabel(label, color=CWheel[i])
         axes[i].tick_params(axis='y', labelcolor=CWheel[i], colors=CWheel[i])
         # extra:
         ylimit.append(list(axes[i].get_ylim()))
         if if_mu:
-            mu = np.mean(data["y"])
-            axes[i].set_ylabel(f"{label} ($\mu$={mu:.3f})", color=CWheel[i])
-            axes[i].axhline(y=mu, color=CWheel[i], alpha=0.3, linestyle='--', label='$\mu$={mu:.3f}')
+            mu[label] = np.mean(data["y"])
+            std[label] = np.std(data["y"])
+            if if_label:
+                axes[i].set_ylabel(f"{label} ($\mu$={mu[label]:.3f})", color=CWheel[i])
+            axes[i].axhline(y=mu[label], color=CWheel[i], alpha=0.3, linestyle='--')
             
-    
     if align_y:
         btm = np.min(np.array(ylimit)[:, 0])
         top = np.max(np.array(ylimit)[:, 1])
         print(btm, top)
         for i, (label, data) in enumerate(data_sets_xy.items()):    
             axes[i].set_ylim(btm,top)
-            
+    
     axes[0].set_xlabel(xlabel)
-    return fig, ax
+    
+    return fig, ax, mu, std
 
 def plot_data_sets_subplots(data_sets_xys, xlabel="", figsize=(5, 5)):
     """ Plot multiple data sets on subplots, with different bag files on the same subplot.
@@ -299,7 +331,7 @@ def plot_data_sets_subplots(data_sets_xys, xlabel="", figsize=(5, 5)):
 
 def plot_time_series(
     bag_manager:MultiBagsDataManager, data_sets_y, title=None, 
-        if_label_bags=True, figsize=DEFAULT_FIGSIZE, align_y=False, if_mu=False):
+        if_label_bags=True, figsize=DEFAULT_FIGSIZE, align_y=False, if_mu=False, if_label=False):
     """
     data_sets_y = {
         "Voltage (V)"       : battery_v,
@@ -307,12 +339,12 @@ def plot_time_series(
     }
     """
     N_bags = bag_manager.N_bags
+    data_sets_xy = dict()
     if title is None:
         title = " and ".join(data_sets_y.keys())
     
     # concatenate all the data:
     dT_s = np.sum(bag_manager.list_of_dT_s)
-    data_sets_xy = dict()
     for label, data in data_sets_y.items():
         data_sets_xy[label] = dict()
         try:
@@ -321,7 +353,7 @@ def plot_time_series(
             print("[Error] Could not concatenate~", data)
             # print(data)
             # exit(1)
-            return None, None, None
+            return None, None, [], [], None
         ### cumulative time:
         prev_t0 = 0
         data_sets_xy[label]["x"] = [data['t'][0]]
@@ -332,9 +364,11 @@ def plot_time_series(
                 
     # figure:
     _fig_size =(figsize[0]*N_bags, figsize[1])
-    fig, ax = plot_data_sets_along_xaxis(data_sets_xy, xlabel="Time (s)", figsize=_fig_size, align_y=align_y, if_mu=if_mu)
-    # plot labels:
-    plt.title(f"{title} ({N_bags} bags)")
+    fig, ax, mu, std = plot_data_sets_along_xaxis(data_sets_xy, xlabel="Time (s)", figsize=_fig_size, align_y=align_y, if_mu=if_mu, if_label=if_label)
+    
+    # plot title:
+    if title and if_label:
+        plt.title(f"{title} ({N_bags} bags)")
     
     # (Auto-label) Segment bag files:
     if if_label_bags:
@@ -349,7 +383,7 @@ def plot_time_series(
             plt.axvline(x=t_end, color = 'r', ls='--', alpha=0.5)
             plt.text(t_end, y_range[1], f" [{label}]", color='r', verticalalignment='top', horizontalalignment='right')
         
-    return fig, ax, f"{title}_time_series"
+    return fig, ax, mu, std, f"{title}_time_series"
 
 def plot_time_parallel(bag_manager:MultiBagsDataManager, data_sets_y, title=None, figsize=DEFAULT_FIGSIZE):
     """
@@ -501,22 +535,7 @@ def plot_spatial(bag_manager:MultiBagsDataManager,
                                 axs[view_idx].quiver(xu_[:,0], xu_[:,1], xu_[:,2], ex_[:,0], ex_[:,1], ex_[:,2], length=0.1, normalize=True, color="red")
                                 axs[view_idx].quiver(xu_[:,0], xu_[:,1], xu_[:,2], ey_[:,0], ey_[:,1], ey_[:,2], length=0.1, normalize=True, color="green")
                                 axs[view_idx].quiver(xu_[:,0], xu_[:,1], xu_[:,2], ez_[:,0], ez_[:,1], ez_[:,2], length=0.1, normalize=True, color="blue")
-                        
-                        # set min max boundary for the axis:
-                        x_min, x_max = axs[view_idx].get_xlim()
-                        y_min, y_max = axs[view_idx].get_ylim()
-                        z_min, z_max = axs[view_idx].get_zlim()
-                        x_min = min(max(x_min, -AXIS_BOUNDARY_MAX[0]), -AXIS_BOUNDARY_MIN[0])
-                        x_max = max(min(x_max,  AXIS_BOUNDARY_MAX[0]),  AXIS_BOUNDARY_MIN[0])
-                        y_min = min(max(y_min, -AXIS_BOUNDARY_MAX[1]), -AXIS_BOUNDARY_MIN[1])
-                        y_max = max(min(y_max,  AXIS_BOUNDARY_MAX[1]),  AXIS_BOUNDARY_MIN[1])
-                        z_min = min(max(z_min, -AXIS_BOUNDARY_MAX[2]), -AXIS_BOUNDARY_MIN[2])
-                        z_max = max(min(z_max,  AXIS_BOUNDARY_MAX[2]),  AXIS_BOUNDARY_MIN[2])
-                        axs[view_idx].set_xlim3d(x_min, x_max)
-                        axs[view_idx].set_ylim3d(y_min, y_max)
-                        axs[view_idx].set_zlim3d(z_min, z_max)
-           
-            
+                     
             # subtitles:
             if sub_device:
                 axs[m+j].set_title(f"{bag_manager.list_of_bag_labels[j]} ({sub_device})")
@@ -540,7 +559,24 @@ def plot_spatial(bag_manager:MultiBagsDataManager,
                     axs[view_idx].legend(fontsize=ADAPTIVE_FONT_SIZE, 
                                          bbox_to_anchor=(0.5,-0.3), loc='lower center')
                     plt.tight_layout()
-                
+                   
+                # set min max boundary for the axis:
+                x_min, x_max = axs[view_idx].get_xlim()
+                y_min, y_max = axs[view_idx].get_ylim()
+                z_min, z_max = axs[view_idx].get_zlim()
+                x_min = min(max(x_min, -AXIS_BOUNDARY_MAX[0]), -AXIS_BOUNDARY_MIN[0])
+                x_max = max(min(x_max,  AXIS_BOUNDARY_MAX[0]),  AXIS_BOUNDARY_MIN[0])
+                y_min = min(max(y_min, -AXIS_BOUNDARY_MAX[1]), -AXIS_BOUNDARY_MIN[1])
+                y_max = max(min(y_max,  AXIS_BOUNDARY_MAX[1]),  AXIS_BOUNDARY_MIN[1])
+                z_min = min(max(z_min, -AXIS_BOUNDARY_MAX[2]), -AXIS_BOUNDARY_MIN[2])
+                z_max = max(min(z_max,  AXIS_BOUNDARY_MAX[2]),  AXIS_BOUNDARY_MIN[2])
+                x_min = min(x_min, y_min)
+                x_max = max(x_max, y_max)
+                axs[view_idx].set_xlim3d(x_min, x_max)
+                axs[view_idx].set_ylim3d(x_min, x_max)
+                axs[view_idx].set_zlim3d(z_min, z_max)
+    
+    
     # save file:
     if title is None:
         title = " and ".join(data_sets_3d.keys())
