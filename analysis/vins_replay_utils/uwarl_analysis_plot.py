@@ -540,18 +540,21 @@ def plot_spatial(bag_manager:MultiBagsDataManager,
                                 axs[view_idx].quiver(xu_[:,0], xu_[:,1], xu_[:,2], ez_[:,0], ez_[:,1], ez_[:,2], length=0.1, normalize=True, color="blue")
                         
                     # set min max boundary for the axis:
-                    x_min, x_max = min(x_[:,0]), max(x_[:,0])
-                    y_min, y_max = min(x_[:,1]), max(x_[:,1])
-                    z_min, z_max = min(x_[:,2]), max(x_[:,2])
-                    x_min = min(max(x_min, -AXIS_BOUNDARY_MAX[0]), -AXIS_BOUNDARY_MIN[0])
-                    x_max = max(min(x_max,  AXIS_BOUNDARY_MAX[0]),  AXIS_BOUNDARY_MIN[0])
-                    y_min = min(max(y_min, -AXIS_BOUNDARY_MAX[1]), -AXIS_BOUNDARY_MIN[1])
-                    y_max = max(min(y_max,  AXIS_BOUNDARY_MAX[1]),  AXIS_BOUNDARY_MIN[1])
-                    z_min = min(max(z_min, -AXIS_BOUNDARY_MAX[2]), -AXIS_BOUNDARY_MIN[2])
-                    z_max = max(min(z_max,  AXIS_BOUNDARY_MAX[2]),  AXIS_BOUNDARY_MIN[2])
-                    axs[view_idx].set_xlim3d(x_min, x_max)
-                    axs[view_idx].set_ylim3d(y_min, y_max)
-                    axs[view_idx].set_zlim3d(z_min, z_max)
+                    try:
+                        x_min, x_max = min(x_[:,0]), max(x_[:,0])
+                        y_min, y_max = min(x_[:,1]), max(x_[:,1])
+                        z_min, z_max = min(x_[:,2]), max(x_[:,2])
+                        x_min = min(max(x_min, -AXIS_BOUNDARY_MAX[0]), -AXIS_BOUNDARY_MIN[0])
+                        x_max = max(min(x_max,  AXIS_BOUNDARY_MAX[0]),  AXIS_BOUNDARY_MIN[0])
+                        y_min = min(max(y_min, -AXIS_BOUNDARY_MAX[1]), -AXIS_BOUNDARY_MIN[1])
+                        y_max = max(min(y_max,  AXIS_BOUNDARY_MAX[1]),  AXIS_BOUNDARY_MIN[1])
+                        z_min = min(max(z_min, -AXIS_BOUNDARY_MAX[2]), -AXIS_BOUNDARY_MIN[2])
+                        z_max = max(min(z_max,  AXIS_BOUNDARY_MAX[2]),  AXIS_BOUNDARY_MIN[2])
+                        axs[view_idx].set_xlim3d(x_min, x_max)
+                        axs[view_idx].set_ylim3d(y_min, y_max)
+                        axs[view_idx].set_zlim3d(z_min, z_max)
+                    except:
+                        pass
                     axs[view_idx].set_aspect('equal')
                     
             # subtitles:
