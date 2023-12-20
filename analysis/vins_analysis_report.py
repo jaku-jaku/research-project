@@ -76,9 +76,8 @@ FEATURE_ONLY_LAST                   = -1 #seconds: negative to iterate through e
 SPLIT_MAP = {1:"Base", 0:"EE"}   # to split graphs by devices
 
 ## OPTION:
-# SPLIT_MATRICS = True           # split xyz and rpy
-SPLIT_MATRICS = False 
-RELATIVE_MATRICS = True
+SPLIT_MATRICS = False            # --> TRUE: split xyz and rpy
+RELATIVE_MATRICS = True          # --> TRUE: compute relative error (derivative error)
 
 ## OPTION:
 FEATURE_AUTO_SAVE                   = True
@@ -87,7 +86,7 @@ FEATURE_OUTPUT_BAG_META             = False
 
 ## OPTION:
 FEATURE_PLOT_VOLTAGE_JOINT_EFFORTS  = False
-FEATURE_PLOT_3D_TRAJECTORIES        = True   # --> FALSE: to skip 3D trajectory plotting
+FEATURE_PLOT_3D_TRAJECTORIES        = False    # --> FALSE: to skip 3D trajectory plotting
 FEATURE_PLOT_ERROR_METRICS          = True
 FEATURE_PLOT_CAMERAS                = True
 FEATURE_PLOT_CAM_CONFIGS            = False
@@ -413,24 +412,39 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
                             d_t1 = t_est[k_max_est]-t_ref[k_max]
                             print(f">> compensated for: {delta_t}, start_delta: {d_t0}, end_delta: {d_t1}")
                             
-                            delta_p = p_est[0:k_max_est, :] - p_ref[selected_k:k_max, :]
+                            if RELATIVE_MATRICS:
+                                delta_p_est = p_est[1:k_max_est, :] - p_est[0:k_max_est-1, :] 
+                                delta_p_ref = p_ref[selected_k+1:k_max, :] - p_ref[selected_k:k_max-1, :]
+                                delta_p = delta_p_est - delta_p_ref
+                            else:
+                                delta_p = p_est[0:k_max_est, :] - p_ref[selected_k:k_max, :]
                             if SPLIT_MATRICS:
                                 x1_ = np.array(delta_p)
                             else:
                                 x1_ = np.linalg.norm(delta_p, axis=1)
                             # || q.T * q ||_2  : frobenius norm
                             # err_R = [np.linalg.norm((SO3.from_quat(q_ref[z+selected_k, :]).inv() * SO3.from_quat(q_est[z,:])).as_quat()) - 1 for z in range(N_est)] 
-                            if SPLIT_MATRICS:
-                                err_R = Re_est[0:k_max_est,:] - Re_ref[selected_k:k_max,:]
+                            if RELATIVE_MATRICS:
+                                delta_p_est = p_est[1:k_max_est, :] - p_est[0:k_max_est-1, :] 
+                                delta_p_ref = p_ref[selected_k+1:k_max, :] - p_ref[selected_k:k_max-1, :]
+                                err_R = [np.linalg.norm(np.matmul(
+                                    (np.matmul(R_est[z-1, :].transpose(), R_est[z, :])).transpose(), 
+                                    (np.matmul(R_ref[z+selected_k-1, :].transpose(), R_ref[z+selected_k, :]))) - np.eye(3)) for z in range(1,k_max_est)]
                             else:
-                                err_R = [np.linalg.norm(np.matmul(R_est[z, :].transpose(), R_ref[z+selected_k, :]) - np.eye(3)) for z in range(k_max_est)]
+                                if SPLIT_MATRICS:
+                                    err_R = Re_est[0:k_max_est,:] - Re_ref[selected_k:k_max,:]
+                                else:
+                                    err_R = [np.linalg.norm(np.matmul(R_est[z, :].transpose(), R_ref[z+selected_k, :]) - np.eye(3)) for z in range(k_max_est)]
                             ic(np.shape(err_R))
                             x2_ = np.array(err_R)
                             # delta_RPY = RPY_est - RPY_ref[selected_k:k_max, :]
                             # x2_ = delta_RPY[:, 2]
                             # print("np.shape(delta_R):", np.shape(delta_R))
                             # print("np.shape(x2_)", np.shape(x2_))
-                            t_ = t_est[0:k_max_est]
+                            if RELATIVE_MATRICS:
+                                t_ = t_est[1:k_max_est]
+                            else:
+                                t_ = t_est[0:k_max_est]
 
                         return t_, x1_, x2_
 
@@ -488,14 +502,15 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
                 # data_sets_y[f"VINS_Loop-Vicon {device} ({label})"] = {'t': t, 'y': x}
             
             for title_, data_set_ in data_sets_y.items():
-                fig,ax,mu,std,title = plot_time_series(DM, data_set_, title=title_, align_y=True, if_mu=True, figsize=FIGSIZE_ERR, if_label_bags=False)
+                title_ver = f"{title_}_relative" if RELATIVE_MATRICS else title_
+                fig,ax,mu,std,title = plot_time_series(DM, data_set_, title=title_ver, align_y=True, if_mu=True, figsize=FIGSIZE_ERR, if_label_bags=False)
                 if title:
                     file_name = AM.save_fig(fig, title)
                     # report_generator.append_figname(bag_subset.name, title_, file_name)
-                    report_generator.append_variance(bag_subset.name, title_, mu, std)
+                    report_generator.append_variance(bag_subset.name, title_ver, mu, std)
                 else:
                     # report_generator.append_figname(bag_subset.name, title_, "N/A")
-                    report_generator.append_variance(bag_subset.name, title_, None, None)
+                    report_generator.append_variance(bag_subset.name, title_ver, None, None)
                 ic(file_name)
                 
 
