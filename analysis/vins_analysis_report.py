@@ -76,8 +76,9 @@ FEATURE_ONLY_LAST                   = -1 #seconds: negative to iterate through e
 SPLIT_MAP = {1:"Base", 0:"EE"}   # to split graphs by devices
 
 ## OPTION:
-SPLIT_MATRICS = False            # --> TRUE: split xyz and rpy
-RELATIVE_MATRICS = True          # --> TRUE: compute relative error (derivative error)
+SPLIT_METRICS = False            # --> TRUE: split xyz and rpy
+RELATIVE_METRICS = True          # --> TRUE: compute relative error (derivative error)
+RPY_METRICS = True               # --> TRUE: compute rpy error instead of rotation matrix error
 
 ## OPTION:
 FEATURE_AUTO_SAVE                   = True
@@ -365,7 +366,7 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
                         R_ref = SO3.from_quat(q_ref).as_matrix() @ q_corr_w2c
                     else:
                         R_ref = SO3.from_quat(q_ref).as_matrix()
-                    if SPLIT_MATRICS:
+                    if SPLIT_METRICS:
                         Re_ref = np.array(SO3.from_matrix(R_ref).as_euler('xyz', degrees=True))
                         ic(np.shape(Re_ref))
                     else:
@@ -382,7 +383,7 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
                             q_est  = np.array(data['r'][i])
                             p_est  = np.array(data['y'][i])
                             
-                            if SPLIT_MATRICS:
+                            if SPLIT_METRICS:
                                 Re_est = np.array(SO3.from_quat(q_est).as_euler('xyz', degrees=True))
                                 ic(np.shape(Re_est))
                             else:
@@ -412,26 +413,26 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
                             d_t1 = t_est[k_max_est]-t_ref[k_max]
                             print(f">> compensated for: {delta_t}, start_delta: {d_t0}, end_delta: {d_t1}")
                             
-                            if RELATIVE_MATRICS:
+                            if RELATIVE_METRICS:
                                 delta_p_est = p_est[1:k_max_est, :] - p_est[0:k_max_est-1, :] 
                                 delta_p_ref = p_ref[selected_k+1:k_max, :] - p_ref[selected_k:k_max-1, :]
                                 delta_p = delta_p_est - delta_p_ref
                             else:
                                 delta_p = p_est[0:k_max_est, :] - p_ref[selected_k:k_max, :]
-                            if SPLIT_MATRICS:
+                            if SPLIT_METRICS:
                                 x1_ = np.array(delta_p)
                             else:
                                 x1_ = np.linalg.norm(delta_p, axis=1)
                             # || q.T * q ||_2  : frobenius norm
                             # err_R = [np.linalg.norm((SO3.from_quat(q_ref[z+selected_k, :]).inv() * SO3.from_quat(q_est[z,:])).as_quat()) - 1 for z in range(N_est)] 
-                            if RELATIVE_MATRICS:
+                            if RELATIVE_METRICS:
                                 delta_p_est = p_est[1:k_max_est, :] - p_est[0:k_max_est-1, :] 
                                 delta_p_ref = p_ref[selected_k+1:k_max, :] - p_ref[selected_k:k_max-1, :]
                                 err_R = [np.linalg.norm(np.matmul(
                                     (np.matmul(R_est[z-1, :].transpose(), R_est[z, :])).transpose(), 
                                     (np.matmul(R_ref[z+selected_k-1, :].transpose(), R_ref[z+selected_k, :]))) - np.eye(3)) for z in range(1,k_max_est)]
                             else:
-                                if SPLIT_MATRICS:
+                                if SPLIT_METRICS:
                                     err_R = Re_est[0:k_max_est,:] - Re_ref[selected_k:k_max,:]
                                 else:
                                     err_R = [np.linalg.norm(np.matmul(R_est[z, :].transpose(), R_ref[z+selected_k, :]) - np.eye(3)) for z in range(k_max_est)]
@@ -441,7 +442,7 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
                             # x2_ = delta_RPY[:, 2]
                             # print("np.shape(delta_R):", np.shape(delta_R))
                             # print("np.shape(x2_)", np.shape(x2_))
-                            if RELATIVE_MATRICS:
+                            if RELATIVE_METRICS:
                                 t_ = t_est[1:k_max_est]
                             else:
                                 t_ = t_est[0:k_max_est]
@@ -452,7 +453,7 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
                     t2_, x3_, x4_ = _get_delta(data_loop)
                     ic(len(t_), np.shape(x1_), np.shape(x2_), np.shape(x3_), np.shape(x4_))
                     
-                    if SPLIT_MATRICS:
+                    if SPLIT_METRICS:
                         for i in range(3):
                             data_delta = {"Est": {"t": [], "Pos": [], "Rot": []}, "Loop": {"t": [], "Pos": [], "Rot": []}}
                             if len(t_) > 1:
@@ -482,7 +483,7 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
 
                 # plot:
             
-                if SPLIT_MATRICS:
+                if SPLIT_METRICS:
                     for i in range(3):
                         data_delta = list_of_data_delta[i]
                         for ver_ in ["Est", "Loop"]:
@@ -502,7 +503,7 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
                 # data_sets_y[f"VINS_Loop-Vicon {device} ({label})"] = {'t': t, 'y': x}
             
             for title_, data_set_ in data_sets_y.items():
-                title_ver = f"{title_}_relative" if RELATIVE_MATRICS else title_
+                title_ver = f"{title_}_relative" if RELATIVE_METRICS else title_
                 fig,ax,mu,std,title = plot_time_series(DM, data_set_, title=title_ver, align_y=True, if_mu=True, figsize=FIGSIZE_ERR, if_label_bags=False)
                 if title:
                     file_name = AM.save_fig(fig, title)
