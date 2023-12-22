@@ -99,7 +99,7 @@ CONFIG_1213A = {
     },
     "camera_config_file_dual": "mono_rgb_imu_config_dual.yaml",
     "demo_map": ".ros/bagfiles/waterloo_steel_demo_1213A/session_1/demo_map.json",
-    "AXIS_BOUNDARY_MAX": [10,10,5],# in meters world boundary
+    "AXIS_BOUNDARY_MAX": [4,4,1],# in meters world boundary
 }
 class DEMO_1213_A_STA(Enum):
     CONFIG = CONFIG_1213A

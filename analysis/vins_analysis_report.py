@@ -77,8 +77,8 @@ SPLIT_MAP = {1:"Base", 0:"EE"}   # to split graphs by devices
 
 ## OPTION:
 SPLIT_METRICS = False            # --> TRUE: split xyz and rpy
-RELATIVE_METRICS = True          # --> TRUE: compute relative error (derivative error)
-RPY_METRICS = True               # --> TRUE: compute rpy error instead of rotation matrix error
+RELATIVE_METRICS = False          # --> TRUE: compute relative error (derivative error)
+# RPY_METRICS = True               # --> TRUE: compute rpy error instead of rotation matrix error, TODO
 
 ## OPTION:
 FEATURE_AUTO_SAVE                   = True
@@ -87,7 +87,7 @@ FEATURE_OUTPUT_BAG_META             = False
 
 ## OPTION:
 FEATURE_PLOT_VOLTAGE_JOINT_EFFORTS  = False
-FEATURE_PLOT_3D_TRAJECTORIES        = False    # --> FALSE: to skip 3D trajectory plotting
+FEATURE_PLOT_3D_TRAJECTORIES        = True    # --> FALSE: to skip 3D trajectory plotting
 FEATURE_PLOT_ERROR_METRICS          = True
 FEATURE_PLOT_CAMERAS                = True
 FEATURE_PLOT_CAM_CONFIGS            = False
@@ -95,7 +95,8 @@ FEATURE_OUTPUT_EXTRACTED_DATASET    = True
 
 ## OPTION:
 FIGSIZE_ERR = (3,2)
-PLOT_FEATURE_VIEW_ANGLES            = [(30,10),(70,45),(10,10)]#[(30,10),(70,45),(10,10)]
+# PLOT_FEATURE_VIEW_ANGLES            = [(30,10),(70,45),(10,10)]#[(30,10),(70,45),(10,10)]
+PLOT_FEATURE_VIEW_ANGLES            = [(30,10)]
 PLOT_FEATURE_VIEW_ANGLES_SEPARATED  = True
 
 ## OPTION: (Block List:)

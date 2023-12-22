@@ -429,8 +429,8 @@ def plot_spatial(bag_manager:MultiBagsDataManager,
         show_orientations=False, show_cameras=False, N_orientations_sample=20, zero_orienting=False,
         orientation_group=["Est"], label_filter=["Vicon", "VINS"],
         scatter_or_line="line", cameras=None, zero_position=False,
-        split_map=None, AXIS_BOUNDARY_MAX=[5,5,2], AXIS_BOUNDARY_MIN=[0.5,0.5,0.2],
-        align_time_at=-1.0, if_scatter_gradient_by_time=False,
+        split_map=None, AXIS_BOUNDARY_MAX=[5,5,2], AXIS_BOUNDARY_MIN=[0,0,1],
+        align_time_at=-1.0, if_scatter_gradient_by_time=False, if_lock_z_axis=True, if_hide=True,
 ):
     """ Plot is 3D Spatial Coordinates per data bag
         - muxing data from multiple topics
@@ -440,15 +440,18 @@ def plot_spatial(bag_manager:MultiBagsDataManager,
     N_bags = bag_manager.N_bags
     N_views = len(view_angles)
     N_split =  len(split_map) if split_map else 1 
-    fig = plt.figure(figsize=(figsize[0]*N_bags*N_split, figsize[1]*N_views))
+    fig = plt.figure(figsize=(figsize[0]*N_bags*N_split, figsize[1]*N_views),  constrained_layout=if_hide)
     fig.subplots_adjust(wspace=0, hspace=0)
     axs = [fig.add_subplot(N_views,N_bags*N_split,i+1, projection=projection, proj_type=proj_type) for i in range(N_bags*N_views*N_split)]
     N_entries = len(data_sets_3d.keys())
-    ADAPTIVE_FONT_SIZE = figsize[1] / N_views * 1.5
+    ADAPTIVE_FONT_SIZE = figsize[1] / N_views
     if_scatter = scatter_or_line == "scatter"
     CWheel = Color_Wheel(get_color_table("tab10", N=N_entries))
     CMAP = CMAP_Selector("Seq2")
     
+    x_min, x_max = 0,0
+    y_min, y_max = 0,0
+    z_min, z_max = 0,0
     # plot:
     for j in range(N_bags):
         for m in range(N_split):
@@ -514,9 +517,10 @@ def plot_spatial(bag_manager:MultiBagsDataManager,
                     view_idx = m+j+k*N_bags*N_split
                     axs[view_idx].view_init(*view_angles[k])
                     axs[view_idx].grid(show_grid)
-                    axs[view_idx].set_xlabel("x")
-                    axs[view_idx].set_ylabel("y")
-                    axs[view_idx].set_zlabel("z")
+                    if not if_hide:        
+                        axs[view_idx].set_xlabel("x")
+                        axs[view_idx].set_ylabel("y")
+                        axs[view_idx].set_zlabel("z")
                     # plot points:
                     if is_data_valid:
                         if if_scatter:
@@ -547,27 +551,39 @@ def plot_spatial(bag_manager:MultiBagsDataManager,
                         
                     # set min max boundary for the axis:
                     try:
-                        x_min, x_max = min(x_[:,0]), max(x_[:,0])
-                        y_min, y_max = min(x_[:,1]), max(x_[:,1])
-                        z_min, z_max = min(x_[:,2]), max(x_[:,2])
+                        x_min_, x_max_ = min(x_[:,0]), max(x_[:,0])
+                        y_min_, y_max_ = min(x_[:,1]), max(x_[:,1])
+                        z_min_, z_max_ = min(x_[:,2]), max(x_[:,2])
+                        x_min, x_max = min(x_min, x_min_), max(x_max, x_max_)
+                        y_min, y_max = min(y_min, y_min_), max(y_max, y_max_)
+                        z_min, z_max = min(z_min, z_min_), max(z_max, z_max_)
                         x_min = min(max(x_min, -AXIS_BOUNDARY_MAX[0]), -AXIS_BOUNDARY_MIN[0])
                         x_max = max(min(x_max,  AXIS_BOUNDARY_MAX[0]),  AXIS_BOUNDARY_MIN[0])
                         y_min = min(max(y_min, -AXIS_BOUNDARY_MAX[1]), -AXIS_BOUNDARY_MIN[1])
                         y_max = max(min(y_max,  AXIS_BOUNDARY_MAX[1]),  AXIS_BOUNDARY_MIN[1])
-                        z_min = min(max(z_min, -AXIS_BOUNDARY_MAX[2]), -AXIS_BOUNDARY_MIN[2])
-                        z_max = max(min(z_max,  AXIS_BOUNDARY_MAX[2]),  AXIS_BOUNDARY_MIN[2])
-                        axs[view_idx].set_xlim3d(x_min, x_max)
-                        axs[view_idx].set_ylim3d(y_min, y_max)
-                        axs[view_idx].set_zlim3d(z_min, z_max)
+                        if if_lock_z_axis:
+                            z_min = 0
+                            z_max = 1
+                            # x_min, x_max = -2, 1
+                            # y_min, y_max = 1, 4
+                            axs[view_idx].set_zlim3d(z_min, z_max)
+                            axs[view_idx].set_zticks([0,1])
+                        else:
+                            z_min = min(max(z_min, -AXIS_BOUNDARY_MAX[2]), -AXIS_BOUNDARY_MIN[2])
+                            z_max = max(min(z_max,  AXIS_BOUNDARY_MAX[2]),  AXIS_BOUNDARY_MIN[2])
+                            axs[view_idx].set_zlim3d(z_min, z_max)
+                        axs[view_idx].set_xlim3d(x_min-1, x_max+1)
+                        axs[view_idx].set_ylim3d(y_min-1, y_max+1)
                     except:
                         pass
                     axs[view_idx].set_aspect('equal')
                     
             # subtitles:
-            if sub_device:
-                axs[m+j].set_title(f"{bag_manager.list_of_bag_labels[j]} ({sub_device})")
-            else:
-                axs[j].set_title(f"{bag_manager.list_of_bag_labels[j]}")
+            if not if_hide:
+                if sub_device:
+                    axs[m+j].set_title(f"{bag_manager.list_of_bag_labels[j]} ({sub_device})")
+                else:
+                    axs[j].set_title(f"{bag_manager.list_of_bag_labels[j]}")
             # apply custom legends:
             for k in range(N_views):
                 view_idx = j+k*N_bags*N_split+m 
@@ -577,14 +593,16 @@ def plot_spatial(bag_manager:MultiBagsDataManager,
                         cmap_handles, handler_map = CMAP.get_cmap_handles(N_color=N_entries)  
                     else:
                         cmap_handles, handler_map = CWheel.get_cwheel_handles(indices=color_indices)  
-                    axs[view_idx].legend(
-                        handles=cmap_handles, labels=label_list, handler_map=handler_map, 
-                        fontsize=ADAPTIVE_FONT_SIZE, bbox_to_anchor=(0.5,-0.3), loc='lower center')
+                    if not if_hide:
+                        axs[view_idx].legend(
+                            handles=cmap_handles, labels=label_list, handler_map=handler_map, 
+                            fontsize=ADAPTIVE_FONT_SIZE, bbox_to_anchor=(0.5,-0.3), loc='lower center')
                     plt.tight_layout()
                 else:
                     # regular:
-                    axs[view_idx].legend(fontsize=ADAPTIVE_FONT_SIZE, 
-                                         bbox_to_anchor=(0.5,-0.3), loc='lower center')
+                    if not if_hide:
+                        axs[view_idx].legend(fontsize=ADAPTIVE_FONT_SIZE, 
+                                            bbox_to_anchor=(0.5,-0.3), loc='lower center')
                     plt.tight_layout()
                    
     
