@@ -1,5 +1,4 @@
 import os
-import rospy
 import yaml
 
 def get_files(DIR:str, file_end:str=".bag"):
@@ -7,7 +6,7 @@ def get_files(DIR:str, file_end:str=".bag"):
 
 def create_all_folders(DIR:str):
     if not (os.path.isdir(DIR)):
-        rospy.logwarn("[uwarl_util] creating folder: " + DIR + "")
+        print("[uwarl_util] creating folder: " + DIR + "")
         os.makedirs(DIR)
 
 def read_yaml(path):

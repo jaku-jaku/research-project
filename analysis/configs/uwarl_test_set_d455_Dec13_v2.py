@@ -17,7 +17,6 @@ from enum import Enum
 #   long-O:	     | 67   | 68.    | 69.   | 70.     | 71.     | 72
 
 from scipy.spatial.transform import Rotation as R
-from utils.uwarl_bag_parser import TYPES_VAR
 
 TEST_SET_TITLE = "D455_v2"
 ####### 1213 A    Collection :

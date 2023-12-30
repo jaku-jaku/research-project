@@ -23,7 +23,7 @@ class ReportGenerator:
     _output_dir=None
     _table_of_var:dict()={}
     
-    def __init__(self, title, tag) -> None:
+    def __init__(self, title, tag):
         self._tag = tag
         self._title = title
         self._table_of_var = {"mu":{}, "std":{}}
