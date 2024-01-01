@@ -21,8 +21,8 @@ class ReportGenerator:
         self._title = title
         self._table_of_var = {"mu":{}, "std":{}}
     
-    def bind_output_dir(self, _output_dir):
-        self._output_dir = _output_dir
+    def bind_output_dir(self, output_dir):
+        self._output_dir = output_dir
         
     def append_figname(self, case, key, file_name):
         file_dir_, file_name_ = os.path.split(file_name) 
@@ -78,7 +78,12 @@ class ReportGenerator:
             print(f"[x]---> md report generated @ {file_name}")
         else:
             print(">>> No output path specified! HINT: please bind with `bind_output_dir`")
-            
+    
+    def create_subfolder(self, folder_name):
+        path = f"{self._output_dir}/{folder_name}"
+        create_all_folders(path)
+        return path
+        
     # def append_errors(self, error_list):
         
             
@@ -144,15 +149,19 @@ class AnalysisManager:
             data = yaml.load(f)
         return data
 
-    def save_dict_as_pickle(self, data, file_name="data"):
-        output_path=self.output_path()
+    def save_dict_as_pickle(self, data, file_name="data", output_path=None):
+        if output_path is None:
+            output_path = self.output_path()
         with open(f"{output_path}{file_name}.pickle", "wb") as f:
             pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
     
-    def load_dict_from_pickle(self, file_name="data"):
+    def load_dict_from_pickle(self, file_name="data", input_path=None):
         data = {}
-        output_path=self.output_path()
-        with open(f"{output_path}{file_name}.pickle", "rb") as f:
+        if input_path is None:
+            input_path = self.output_path()
+        else:
+            input_path = f"{input_path}/"
+        with open(f"{input_path}{file_name}.pickle", "rb") as f:
             data = pickle.load(f)
         return data
 

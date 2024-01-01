@@ -244,6 +244,11 @@ class BagParser:
         payload[topic][TYPES_VAR.TIME_STAMP_SEC].append(msg.header.stamp.to_sec())
         payload[topic][TYPES_VAR.POSITION_XYZ].append(BagParser._xyz_to_array(msg.transform.translation))
         payload[topic][TYPES_VAR.ORIENTATION_XYZW].append(BagParser._xyzw_to_array(msg.transform.rotation))
+        # Quaternion:
+        #   float64 x
+        #   float64 y
+        #   float64 z
+        #   float64 w
         return payload
     
     @staticmethod

@@ -9,7 +9,7 @@ import time
 # 3rd party lib
 import numpy as np
 from scipy.ndimage import gaussian_filter1d
-from scipy.spatial.transform import Rotation as SO3
+from scipy.spatial.transform import Rotation as SO3 # quaternion in scalar-last (x, y, z, w) format
 
 # 3rd party util
 from icecream import ic
