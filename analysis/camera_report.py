@@ -180,6 +180,18 @@ summit_base   =np.array([25.783	, -0.106  ,  -0.138])/1000
 wam_EE        =np.array([23.250 , 129.329 ,  1783.290])/1000
 wam_base      =np.array([24.299 , 139.57  ,  746.148])/1000
 wam_elbow     =np.array([33.430 , 178.856 ,  1304.734])/1000
+
+# %%
+## Dec 21
+cam_EE        =np.array([5 , 55.681  ,  1674.371 ])/1000
+cam_base      =np.array([5 , 350.148 ,  392.077  ])/1000
+summit_base   =np.array([5 , 20 	 ,  0        ])/1000
+wam_EE        =np.array([5 , 148.328 ,  1782.830 ])/1000
+wam_base      =np.array([5 , 161.983 ,  748.879  ])/1000
+wam_elbow     =np.array([-48.589, 198.464, 1299.484])/1000
+wrist_jnt     =np.array([6.354, 163.923, 1607.433])/1000
+
+
 # %%
 base_yaw_joint = np.array([0,0,0]) #ARM_MODEL_CONFIG_L_SHOULDER
 
@@ -197,5 +209,12 @@ ic(summit_dP_wam)
 dP_tip = wam_EE - wam_base - zero_config
 ic(dP_tip)
 wam_dP_cam_ee = cam_EE - wam_EE + dP_tip
+ic(wam_dP_cam_ee);
+# %%
+zero_config_vicon = wrist_jnt - wam_base + 0.0609
+ic(zero_config_vicon)
+dP_tip = wam_EE - wrist_jnt - 0.0609
+ic(dP_tip)
+wam_dP_cam_ee = cam_EE - wrist_jnt - 0.0609
 ic(wam_dP_cam_ee);
 # %%
