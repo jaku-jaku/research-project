@@ -19,6 +19,13 @@ from enum import Enum
 from scipy.spatial.transform import Rotation as R
 
 TEST_SET_TITLE = "D455_v2"
+### Structure:
+from dataclasses import dataclass, field
+@dataclass
+class DEMO_STRUCT:
+    CONFIG: dict
+    TEST_SET: Enum
+    
 ####### 1213 A    Collection :
 class DATASET_DEMO_1213_A:
     class STA(Enum):
@@ -90,42 +97,35 @@ class DATASET_DEMO_1213_A:
         LR = ["dual-2-10_DEMO-47_vins-replay.bag"]
         UD = ["dual-2-11_DEMO-48_vins-replay.bag"]
 
-CONFIG_1213A = {
-    "folder": ".ros/bag_replay_recorder_files/waterloo_steel_demo_1213A/mono_rgb_imu",
-    "rungs": {
-        "baseline": "S-1_E-1_dual_baseline_final/2023-12-18", 
-        "coupled (ours)": "S-1_E-1_dual_arm_odom_final/2023-12-18"
-    },
-    "camera_config_file_dual": "mono_rgb_imu_config_dual.yaml",
-    "demo_map": ".ros/bagfiles/waterloo_steel_demo_1213A/session_1/demo_map.json",
-    "AXIS_BOUNDARY_MAX": [4,4,1],# in meters world boundary
-}
-class DEMO_1213_A_STA(Enum):
-    CONFIG = CONFIG_1213A
+class DEMO_1213_A(DEMO_STRUCT):
+    CONFIG = {
+        "folder": ".ros/bag_replay_recorder_files/waterloo_steel_demo_1213A/mono_rgb_imu",
+        "rungs": {
+            "baseline": "S-1_E-1_dual_baseline_final/2023-12-18", 
+            "coupled (ours)": "S-1_E-1_dual_arm_odom_final/2023-12-18"
+        },
+        "camera_config_file_dual": "mono_rgb_imu_config_dual.yaml",
+        "demo_map": ".ros/bagfiles/waterloo_steel_demo_1213A/session_1/demo_map.json",
+        "AXIS_BOUNDARY_MAX": [4,4,1],# in meters world boundary
+    }
+    
+class DEMO_1213_A_STA(DEMO_1213_A):
     TEST_SET = DATASET_DEMO_1213_A.STA
-class DEMO_1213_A_SPI(Enum):
-    CONFIG = CONFIG_1213A
+class DEMO_1213_A_SPI(DEMO_1213_A):
     TEST_SET = DATASET_DEMO_1213_A.SPI
-class DEMO_1213_A_FWD(Enum):
-    CONFIG = CONFIG_1213A
+class DEMO_1213_A_FWD(DEMO_1213_A):
     TEST_SET = DATASET_DEMO_1213_A.FWD
-class DEMO_1213_A_RVR(Enum):
-    CONFIG = CONFIG_1213A
+class DEMO_1213_A_RVR(DEMO_1213_A):
     TEST_SET = DATASET_DEMO_1213_A.RVR
-class DEMO_1213_A_CIR(Enum):
-    CONFIG = CONFIG_1213A
+class DEMO_1213_A_CIR(DEMO_1213_A):
     TEST_SET = DATASET_DEMO_1213_A.CIR
-class DEMO_1213_A_BEE(Enum):
-    CONFIG = CONFIG_1213A
+class DEMO_1213_A_BEE(DEMO_1213_A):
     TEST_SET = DATASET_DEMO_1213_A.BEE
-class DEMO_1213_A_SQR_A(Enum):
-    CONFIG = CONFIG_1213A
+class DEMO_1213_A_SQR_A(DEMO_1213_A):
     TEST_SET = DATASET_DEMO_1213_A.SQR_A
-class DEMO_1213_A_SQR_B(Enum):
-    CONFIG = CONFIG_1213A
+class DEMO_1213_A_SQR_B(DEMO_1213_A):
     TEST_SET = DATASET_DEMO_1213_A.SQR_B
-class DEMO_1213_A_TRI(Enum):
-    CONFIG = CONFIG_1213A
+class DEMO_1213_A_TRI(DEMO_1213_A):
     TEST_SET = DATASET_DEMO_1213_A.TRI
 
 
@@ -196,42 +196,35 @@ class DATASET_DEMO_1213_B:
         LR = ["dual-1-47_DEMO-47_vins-replay.bag"]
         UD = ["dual-1-48_DEMO-48_vins-replay.bag"]
 
-CONFIG_1213B = {
-    "folder": ".ros/bag_replay_recorder_files/waterloo_steel_demo_1213B/mono_rgb_imu",
-    "rungs": {
-        "baseline": "S-1_E-1_dual_baseline_final/2023-12-18", 
-        "coupled (ours)": "S-1_E-1_dual_arm_odom_final/2023-12-18"
-        # "baseline": "S-1_E-1_dual_baseline_fin/2023-12-15", 
-        # "coupled (ours)": "S-1_E-1_dual_arm_odom_fin/2023-12-15"
-    },
-    "camera_config_file_dual": "mono_rgb_imu_config_dual.yaml",
-    "demo_map": ".ros/bagfiles/waterloo_steel_demo_1213B/session_1/demo_map.json",
-    "AXIS_BOUNDARY_MAX": [10,10,5],# in meters world boundary
-}
+class DEMO_1213_B(DEMO_STRUCT):
+    CONFIG = {
+        "folder": ".ros/bag_replay_recorder_files/waterloo_steel_demo_1213B/mono_rgb_imu",
+        "rungs": {
+            "baseline": "S-1_E-1_dual_baseline_final/2023-12-18", 
+            "coupled (ours)": "S-1_E-1_dual_arm_odom_final/2023-12-18"
+            # "baseline": "S-1_E-1_dual_baseline_fin/2023-12-15", 
+            # "coupled (ours)": "S-1_E-1_dual_arm_odom_fin/2023-12-15"
+        },
+        "camera_config_file_dual": "mono_rgb_imu_config_dual.yaml",
+        "demo_map": ".ros/bagfiles/waterloo_steel_demo_1213B/session_1/demo_map.json",
+        "AXIS_BOUNDARY_MAX": [10,10,5],# in meters world boundary
+    }
 
-class DEMO_1213_B_STA(Enum):
-    CONFIG = CONFIG_1213B
+class DEMO_1213_B_STA(DEMO_1213_B):
     TEST_SET = DATASET_DEMO_1213_B.STA
-class DEMO_1213_B_SPI(Enum):
-    CONFIG = CONFIG_1213B
+class DEMO_1213_B_SPI(DEMO_1213_B):
     TEST_SET = DATASET_DEMO_1213_B.SPI
-class DEMO_1213_B_FWD(Enum):
-    CONFIG = CONFIG_1213B
+class DEMO_1213_B_FWD(DEMO_1213_B):
     TEST_SET = DATASET_DEMO_1213_B.FWD
-class DEMO_1213_B_RVR(Enum):
-    CONFIG = CONFIG_1213B
+class DEMO_1213_B_RVR(DEMO_1213_B):
     TEST_SET = DATASET_DEMO_1213_B.RVR
-class DEMO_1213_B_CIR(Enum):
-    CONFIG = CONFIG_1213B
+class DEMO_1213_B_CIR(DEMO_1213_B):
     TEST_SET = DATASET_DEMO_1213_B.CIR
-class DEMO_1213_B_BEE(Enum):
-    CONFIG = CONFIG_1213B
+class DEMO_1213_B_BEE(DEMO_1213_B):
     TEST_SET = DATASET_DEMO_1213_B.BEE
-class DEMO_1213_B_SQR(Enum):
-    CONFIG = CONFIG_1213B
+class DEMO_1213_B_SQR(DEMO_1213_B):
     TEST_SET = DATASET_DEMO_1213_B.SQR
-class DEMO_1213_B_TRI(Enum):
-    CONFIG = CONFIG_1213B
+class DEMO_1213_B_TRI(DEMO_1213_B):
     TEST_SET = DATASET_DEMO_1213_B.TRI
 
 
@@ -271,30 +264,26 @@ class DATASET_DEMO_1213_C:
         H = ["dual-1-6_DEMO-55_vins-replay.bag"] # 1-2 elevator
         U = ["dual-1-7_DEMO-57_vins-replay.bag"] # 2nd floor
 
-CONFIG_1213C = {
-    "folder": ".ros/bag_replay_recorder_files/waterloo_steel_demo_1213C/mono_rgb_imu",
-    "rungs": {
-        "baseline": "S-1_E-1_dual_baseline_final/2023-12-18", 
-        "coupled (ours)": "S-1_E-1_dual_arm_odom_final/2023-12-18"
-        # "baseline": "S-1_E-1_dual_baseline_fin/2023-12-15", 
-        # "coupled (ours)": "S-1_E-1_dual_arm_odom_fin/2023-12-15"
-    },
-    "camera_config_file_dual": "mono_rgb_imu_config_dual.yaml",
-    "demo_map": ".ros/bagfiles/waterloo_steel_demo_1213C/session_1/demo_map.json",
-    "AXIS_BOUNDARY_MAX": [50,50,5],# in meters world boundary
-}
-class DEMO_1213_C_ROG_1(Enum):
-    CONFIG = CONFIG_1213C
+class DEMO_1213_C(DEMO_STRUCT):
+    CONFIG = {
+        "folder": ".ros/bag_replay_recorder_files/waterloo_steel_demo_1213C/mono_rgb_imu",
+        "rungs": {
+            "baseline": "S-1_E-1_dual_baseline_final/2023-12-18", 
+            "coupled (ours)": "S-1_E-1_dual_arm_odom_final/2023-12-18"
+            # "baseline": "S-1_E-1_dual_baseline_fin/2023-12-15", 
+            # "coupled (ours)": "S-1_E-1_dual_arm_odom_fin/2023-12-15"
+        },
+        "camera_config_file_dual": "mono_rgb_imu_config_dual.yaml",
+        "demo_map": ".ros/bagfiles/waterloo_steel_demo_1213C/session_1/demo_map.json",
+        "AXIS_BOUNDARY_MAX": [50,50,5],# in meters world boundary
+    }
+class DEMO_1213_C_ROG_1(DEMO_1213_C):
     TEST_SET = DATASET_DEMO_1213_C.ROGUE_H
-class DEMO_1213_C_ROG_2(Enum):
-    CONFIG = CONFIG_1213C
+class DEMO_1213_C_ROG_2(DEMO_1213_C):
     TEST_SET = DATASET_DEMO_1213_C.ROGUES
-class DEMO_1213_C_LONG_SQR(Enum):
-    CONFIG = CONFIG_1213C
+class DEMO_1213_C_LONG_SQR(DEMO_1213_C):
     TEST_SET = DATASET_DEMO_1213_C.LONG_SQR
-class DEMO_1213_C_SQR(Enum):
-    CONFIG = CONFIG_1213C
+class DEMO_1213_C_SQR(DEMO_1213_C):
     TEST_SET = DATASET_DEMO_1213_C.SQR
-class DEMO_1213_C_ROG_3(Enum):
-    CONFIG = CONFIG_1213C
+class DEMO_1213_C_ROG_3(DEMO_1213_C):
     TEST_SET = DATASET_DEMO_1213_C.ROGUE_NO_VICON

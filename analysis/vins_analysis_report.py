@@ -53,11 +53,17 @@ from configs.uwarl_common import PARSER_CALLBACKS
 #     DEMO_1207_A, DEMO_1207_B, DEMO_1207_C, 
 #     DEMO_1207_A_v2, DEMO_1207_A_v3, DEMO_1207_B_v3, DEMO_1207_C_v3,
 # )
-from configs.uwarl_test_set_d455_Dec13_v2 import (
+# from configs.uwarl_test_set_d455_Dec13_v2 import (
+#     TEST_SET_TITLE,
+#     DEMO_1213_B_STA,DEMO_1213_B_SPI,DEMO_1213_B_FWD,DEMO_1213_B_RVR,DEMO_1213_B_CIR,DEMO_1213_B_BEE,DEMO_1213_B_SQR,DEMO_1213_B_TRI,
+#     DEMO_1213_A_STA,DEMO_1213_A_SPI,DEMO_1213_A_FWD,DEMO_1213_A_RVR,DEMO_1213_A_CIR,DEMO_1213_A_BEE,DEMO_1213_A_SQR_A,DEMO_1213_A_SQR_B,DEMO_1213_A_TRI,
+#     DEMO_1213_C_ROG_1, DEMO_1213_C_ROG_2, DEMO_1213_C_LONG_SQR, DEMO_1213_C_SQR, DEMO_1213_C_ROG_3,
+# )
+from configs.uwarl_test_set_d455_Dec21 import (
     TEST_SET_TITLE,
-    DEMO_1213_B_STA,DEMO_1213_B_SPI,DEMO_1213_B_FWD,DEMO_1213_B_RVR,DEMO_1213_B_CIR,DEMO_1213_B_BEE,DEMO_1213_B_SQR,DEMO_1213_B_TRI,
-    DEMO_1213_A_STA,DEMO_1213_A_SPI,DEMO_1213_A_FWD,DEMO_1213_A_RVR,DEMO_1213_A_CIR,DEMO_1213_A_BEE,DEMO_1213_A_SQR_A,DEMO_1213_A_SQR_B,DEMO_1213_A_TRI,
-    DEMO_1213_C_ROG_1, DEMO_1213_C_ROG_2, DEMO_1213_C_LONG_SQR, DEMO_1213_C_SQR, DEMO_1213_C_ROG_3,
+    DEMO_1221_A_SPI, DEMO_1221_A_FWD, DEMO_1221_A_RVR, DEMO_1221_A_CIR, DEMO_1221_A_BEE, DEMO_1221_A_SQR, DEMO_1221_A_TRI,
+    DEMO_1221_B_SPI, DEMO_1221_B_FWD, DEMO_1221_B_RVR, DEMO_1221_B_CIR, DEMO_1221_B_SQR, DEMO_1221_B_TRI,
+    DEMO_1221_C_ARM_Pt_LeftDownRightUp_R1, DEMO_1221_C_ARM_Pt_LeftDownRightUp_R2, DEMO_1221_C_BASE_BEE, DEMO_1221_C_BASE_ROGUE, DEMO_1221_C_Pt_UpRight_R1, DEMO_1221_C_Pt_UpRight_R2,
 )
 from vins_replay_utils.uwarl_replay_decoder import auto_generate_labels_from_bag_file_name_with_json_config, ProcessedData
 from vins_replay_utils.uwarl_analysis_plot import ReportGenerator, AnalysisManager, MultiBagsDataManager, plot_time_parallel, plot_time_series, plot_spatial
@@ -87,8 +93,8 @@ FEATURE_OUTPUT_BAG_META             = False
 
 ## OPTION:
 FEATURE_PLOT_VOLTAGE_JOINT_EFFORTS  = False
-FEATURE_PLOT_3D_TRAJECTORIES        = True    # --> FALSE: to skip 3D trajectory plotting
-FEATURE_PLOT_ERROR_METRICS          = True
+FEATURE_PLOT_3D_TRAJECTORIES        = False    # --> FALSE: to skip 3D trajectory plotting
+FEATURE_PLOT_ERROR_METRICS          = False    # --> FALSE: to skip error metric plotting
 FEATURE_PLOT_CAMERAS                = True
 FEATURE_PLOT_CAM_CONFIGS            = False
 FEATURE_OUTPUT_EXTRACTED_DATASET    = True
@@ -262,7 +268,7 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
             AM.save_fig(fig, title)
 
     # -------------------------------- Plot Data Prep: 3D trajectories -------------------------------- %% #
-    if FEATURE_PLOT_3D_TRAJECTORIES:
+    if FEATURE_PROCESS_BAGS:
         # 3. assemble data sets:
         POSE_VARS = {
             TYPES_VAR.POSITION_XYZ: 'y',
@@ -295,6 +301,7 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
             print(f"> [{label}] t0:{data['t0']}")
             # print(data_sets_3d[label])
 
+    if FEATURE_PLOT_3D_TRAJECTORIES:
         # # 4. Plot:
         ### pip install ipympl
         # prep:
@@ -545,9 +552,14 @@ for bag_test_case in [
         # DEMO_1207_A_v3,
         # DEMO_1207_B_v3, 
         # DEMO_1207_C_v3,
-        DEMO_1213_A_STA,DEMO_1213_A_SPI,DEMO_1213_A_FWD,DEMO_1213_A_RVR,DEMO_1213_A_CIR,DEMO_1213_A_BEE,DEMO_1213_A_SQR_A,DEMO_1213_A_SQR_B,DEMO_1213_A_TRI,
         # DEMO_1213_B_STA,DEMO_1213_B_SPI,DEMO_1213_B_FWD,DEMO_1213_B_RVR,DEMO_1213_B_CIR,DEMO_1213_B_BEE,DEMO_1213_B_SQR,DEMO_1213_B_TRI,
         # DEMO_1213_C_ROG_1, DEMO_1213_C_ROG_2, DEMO_1213_C_LONG_SQR, DEMO_1213_C_SQR, DEMO_1213_C_ROG_3,
+        ### RESULT: DEMO 1212
+        # DEMO_1213_A_STA,DEMO_1213_A_SPI,DEMO_1213_A_FWD,DEMO_1213_A_RVR,DEMO_1213_A_CIR,DEMO_1213_A_BEE,DEMO_1213_A_SQR_A,DEMO_1213_A_SQR_B,DEMO_1213_A_TRI,
+        ### RESULT: DEMO on 1221
+        DEMO_1221_A_SPI, DEMO_1221_A_FWD, DEMO_1221_A_RVR, DEMO_1221_A_CIR, DEMO_1221_A_BEE, DEMO_1221_A_SQR, DEMO_1221_A_TRI,
+        DEMO_1221_B_SPI, DEMO_1221_B_FWD, DEMO_1221_B_RVR, DEMO_1221_B_CIR, DEMO_1221_B_SQR, DEMO_1221_B_TRI,
+        DEMO_1221_C_ARM_Pt_LeftDownRightUp_R1, DEMO_1221_C_ARM_Pt_LeftDownRightUp_R2, DEMO_1221_C_BASE_BEE, DEMO_1221_C_BASE_ROGUE, DEMO_1221_C_Pt_UpRight_R1, DEMO_1221_C_Pt_UpRight_R2,
     ]:
     print("\n================================")
     print(f"\n==={bag_test_case}===")
@@ -565,10 +577,10 @@ for bag_test_case in [
     #TEST_SET_MONO_RGB_IMU_ACC_TIC, TEST_SET_MONO_RGB_IMU_INIT_GUESS_TIC]:
     #[TEST_SET_MONO_RGB_IMU, TEST_SET_MONO_IMU, TEST_SET_STEREO_IMU, TEST_SET_STEREO]:
     # go through all the bags set in each test set
-    N = len(bag_test_case.TEST_SET.value)
+    N = len(bag_test_case.TEST_SET)
     # [MAIN]:
     RG = ReportGenerator(bag_test_case, f"run_{folder_id}_{bag_id}_{option}")
-    for test_index, bag_subset in enumerate(bag_test_case.TEST_SET.value):
+    for test_index, bag_subset in enumerate(bag_test_case.TEST_SET):
         print("\n\n====== TEST [%d/%d] =====\n" % (test_index+1, N))
         # [DEV]: uncomment to skip n tests
         # if FEATURE_LOCAL_DEVELOPMENT and test_index < 5: # skip n tests
@@ -588,7 +600,7 @@ for bag_test_case in [
                 continue # skip this rung
             # [REPORT]:
             print(f"> Generating report for {bag_subset.name}:{bag_subset.value}")
-            generate_report(bag_test_case.__name__, bag_test_case.CONFIG.value, bag_subset, 
+            generate_report(bag_test_case.__name__, bag_test_case.CONFIG, bag_subset, 
                             report_generator=RG, load_from_pickle=(bool)(option=="pickle"))
             RG.save_report_as_md()
         else:
