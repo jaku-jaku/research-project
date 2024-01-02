@@ -191,6 +191,23 @@ wam_base      =np.array([5 , 161.983 ,  748.879  ])/1000
 wam_elbow     =np.array([-48.589, 198.464, 1299.484])/1000
 wrist_jnt     =np.array([6.354, 163.923, 1607.433])/1000
 
+# %% Jan 2 2024, for Dec 21 2023 rung
+summit_wam_base = wam_base.copy()
+summit_wam_base[2] = 0
+ic(summit_wam_base)
+
+summit_dP_wam = wam_base - summit_wam_base
+summit_dP_cam_base = cam_base - summit_wam_base
+
+ic(summit_dP_wam)
+ic(summit_dP_cam_base)
+
+wam_dP_elbow = wam_elbow - wam_base
+elbow_dP_wrist = wrist_jnt - wam_elbow
+ic(wam_dP_elbow, elbow_dP_wrist)
+
+wam_dP_cam_ee = cam_EE - wrist_jnt
+ic(wam_dP_cam_ee)
 
 # %%
 base_yaw_joint = np.array([0,0,0]) #ARM_MODEL_CONFIG_L_SHOULDER

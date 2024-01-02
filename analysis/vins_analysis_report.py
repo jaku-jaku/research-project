@@ -407,6 +407,8 @@ def generate_report(bag_test_case_name, bag_test_case_config, bag_subset, report
                             else:
                                 for k in range(N_ref):
                                     if (t_ref[k]) > delta_t:
+                                        if (t_ref[k]-delta_t) < (delta_t-t_ref[k-1]):
+                                            selected_k = k # cache last index if its closer
                                         break
                                     selected_k = k # cache index
                             
