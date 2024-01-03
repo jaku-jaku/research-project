@@ -27,12 +27,12 @@ from vins_replay_utils.uwarl_reporter import ReportGenerator, AnalysisManager
 # data labels:
 from configs.uwarl_test_set_d455_Dec13_v2 import (
     TEST_SET_TITLE,
-    DEMO_1213_A_STA,DEMO_1213_A_SPI,DEMO_1213_A_FWD,DEMO_1213_A_RVR,DEMO_1213_A_CIR,DEMO_1213_A_BEE,DEMO_1213_A_SQR_A,DEMO_1213_A_SQR_B,DEMO_1213_A_TRI,
+    DEMO_1213_A_SQR,DEMO_1213_A_SPI,DEMO_1213_A_FWD,DEMO_1213_A_RVR,DEMO_1213_A_CIR,DEMO_1213_A_BEE,DEMO_1213_A_SQR_A,DEMO_1213_A_SQR_B,DEMO_1213_A_TRI,
 )
 
 # %% -------------------------------- Config -------------------------------- %% #
 CONFIG_LOCAL_DIR = "/Users/jaku/Downloads/run_2023-12-20/[DEV]D455_v2"
-ALL_TEST_SETS = [DEMO_1213_A_SPI,DEMO_1213_A_FWD,DEMO_1213_A_RVR,DEMO_1213_A_CIR,DEMO_1213_A_BEE,DEMO_1213_A_SQR_A,DEMO_1213_A_SQR_B,DEMO_1213_A_TRI]
+ALL_TEST_SETS = [DEMO_1213_A_SPI,DEMO_1213_A_FWD,DEMO_1213_A_RVR,DEMO_1213_A_CIR,DEMO_1213_A_BEE,DEMO_1213_A_SQR,DEMO_1213_A_TRI]
 FIG_OUT_DIR = CONFIG_LOCAL_DIR # same as local
 
 Q_CORR_W2C = np.array([[1,0,0],[0,0,1],[0,-1,0]])
@@ -41,6 +41,14 @@ Q_CORR_W2C = np.array([[1,0,0],[0,0,1],[0,-1,0]])
 ## time alignment:
 DEVICES     = ["Base", "EE"]
 RUN_LABELS  = ["baseline", "coupled (ours)"]
+ERROR_KEYS  = ["est_pe", "est_qe", "loop_pe", "loop_qe"]
+
+## user:
+FEATURE_PLOT_ERROR_PER_TEST_SET = False
+FEATURE_GENERATE_SUMMARY        = True
+BAR_PLOT_SIZE_ERROR_SUMMARY     = (10,2)
+BAR_PLOT_SIZE_ERROR_TEST_SET    = (12,4)
+FEATURE_ZERO_ORIENTATION_WRT_INIT = False # NOT needed for ATE, for sanity check only
 # %% -------------------------------- REPORT -------------------------------- %% #
 # 0. init report generator:
 date = datetime.now().strftime("%Y-%m-%d")
@@ -55,6 +63,23 @@ AM = AnalysisManager(
 )
 RG.bind_output_dir(output_dir=AM._output_dir)
 
+# %% 1. Table Result Expected:
+TARGET_EE_MOTIONS = ["LR-EE", "LR-Base", "UD-EE", "UD-Base"]
+TABULAR_RESULT = {}
+TABULAR_PLOT_DATA = {}
+for key in ERROR_KEYS:
+    TABULAR_RESULT[key] = {}
+    TABULAR_PLOT_DATA[key] = {}
+    for label in RUN_LABELS:
+        TABULAR_RESULT[key][label] = {}
+        TABULAR_PLOT_DATA[key][label] = {}
+        for ee_motion in TARGET_EE_MOTIONS:
+            TABULAR_RESULT[key][label][ee_motion] = {}
+            TABULAR_PLOT_DATA[key][label][ee_motion] = {}
+            for base_motion in ["SPI", "FWD", "RVR", "CIR", "SQR","BEE", "TRI"]:
+                TABULAR_RESULT[key][label][ee_motion][base_motion] = 0.0
+                TABULAR_PLOT_DATA[key][label][ee_motion][base_motion] = []
+
 # %% 2. gather pickles:
 test_error_dict = {} # DEBUG
 for test_set in ALL_TEST_SETS:
@@ -62,13 +87,15 @@ for test_set in ALL_TEST_SETS:
     print(f"# Processing {test_set}@{TEST_SET_DIR}")
     
     test_error_dict = {}
-    for test in test_set.TEST_SET.value:        
+    for key in ERROR_KEYS:
+        test_error_dict[key] = {}
+    for test in test_set.TEST_SET:
         TEST_TAG = test.name
         TEST_PICKLE = f"{TEST_TAG}_data_sets_3d"
         print(f"  > Indexing {test:8s}:{TEST_PICKLE}")
-        
+        # ---- LOAD DATA ---- #
         ## load data:
-        data_ = AM.load_dict_from_pickle(file_name=TEST_PICKLE,input_path=TEST_SET_DIR)
+        data_ = AM.load_dict_from_pickle(file_name=TEST_PICKLE, input_path=TEST_SET_DIR)
         ## create output folder:
         path_ = RG.create_subfolder(folder_name=f"{test_set.__name__}/{test}")
         # ---- RAW DATA ---- #
@@ -83,8 +110,8 @@ for test_set in ALL_TEST_SETS:
                 t_R1 = data_[key_]['t'][0]
                 y_R3 = np.array(data_[key_]['y'][0])
                 r_R4 = np.array(data_[key_]['r'][0])
-                data_sub['t0'] = t0_[0]
-                data_sub['t'] = t_R1
+                data_sub['t0']  = t0_[0]
+                data_sub['t']   = t_R1
                 data_sub['p_x'] = y_R3[:,0]
                 data_sub['p_y'] = y_R3[:,1]
                 data_sub['p_z'] = y_R3[:,2]
@@ -98,11 +125,13 @@ for test_set in ALL_TEST_SETS:
         # ---- ALIGNED DATA ---- #
         # ic(data_.keys())
         for device in DEVICES:
-            if device not in test_error_dict:
-                test_error_dict[device] = {}
+            for key in ERROR_KEYS:
+                if device not in test_error_dict[key]:
+                    test_error_dict[key][device] = {}
             for label in RUN_LABELS:
-                if label not in test_error_dict[device]:
-                    test_error_dict[device][label] = {"pe":{}, "qe":{}}
+                for key in ERROR_KEYS:
+                    if label not in test_error_dict[key][device]:
+                        test_error_dict[key][device][label] = {}
                 data_ref  = data_[f"Vicon Cam {device} ({label})"]
                 data_est  = data_[f"{label} VINS Est {device}"]
                 data_loop = data_[f"{label} VINS Loop {device}"]
@@ -226,28 +255,24 @@ for test_set in ALL_TEST_SETS:
                             # global metrics:
                             e_metric = np.zeros((N_, 2))
                             e_metric[:,0] = np.linalg.norm(p_ - pr_, axis=1)
-                            for z in range(N_):
-                                RzT_ = SO3.from_quat(q_[z,:]).as_matrix().transpose()
-                                Rzr_ = SO3.from_quat(qr_[z,:]).as_matrix()
-                                e_metric[z,1] = np.linalg.norm(np.matmul(RzT_, Rzr_) - np.eye(3), ord='fro')
                             
+                            if FEATURE_ZERO_ORIENTATION_WRT_INIT:
+                                Rz0 = SO3.from_quat(q_[0,:]).as_matrix()
+                                Rr0_T = SO3.from_quat(qr_[0,:]).as_matrix().transpose()
+                                # zeroing orientation wrt itself.
+                                for z in range(N_):
+                                    RzT_ = SO3.from_quat(q_[z,:]).as_matrix().transpose() * Rz0
+                                    Rzr_ = Rr0_T * SO3.from_quat(qr_[z,:]).as_matrix()
+                                    e_metric[z,1] = np.linalg.norm(np.matmul(RzT_, Rzr_) - np.eye(3), ord='fro')
+                            else: # direct metric:
+                                for z in range(N_):
+                                    RzT_ = SO3.from_quat(q_[z,:]).as_matrix().transpose()
+                                    Rzr_ = SO3.from_quat(qr_[z,:]).as_matrix()
+                                    if device == 'Base':
+                                        Rzr_ =  Rzr_ * Q_CORR_W2C # world to camera axis
+                                    e_metric[z,1] = np.linalg.norm(np.matmul(RzT_, Rzr_) - np.eye(3), ord='fro')
+                                
                             return e_metric
-                            # local metrics:
-                            # e_local  = np.zeros((N_, 6))
-                            # for k in range(N_):
-                            #     # position error:
-                            #     e_[k,0:3] = p_[k,:] - pr_[k,:]
-                            #     # orientation error:
-                            #     q_ref = qr_[k,:]
-                            #     q_est = q_[k,:]
-                            #     q_err = SO3.from_quat(q_ref).inv() * SO3.from_quat(q_est)
-                            #     e_[k,3:6] = q_err.as_euler('xyz', degrees=True)
-                            # # smooth error:
-                            # e_[:,0:3] = gaussian_filter1d(e_[:,0:3], sigma=3, axis=0)
-                            # e_[:,3:6] = gaussian_filter1d(e_[:,3:6], sigma=3, axis=0)
-                            # # compute RMSE:
-                            # RMSE_ = np.sqrt(np.mean(e_**2, axis=0))
-                            # return e_, RMSE_
                         else:
                             return None
                     
@@ -258,12 +283,33 @@ for test_set in ALL_TEST_SETS:
                     if parsed_data_est:
                         parsed_data_est.update({'pe': e_metric_est[:,0],'qe': e_metric_est[:,1]})
                         pd.DataFrame(parsed_data_est ).to_csv(f"{path_}/[error] Est--vs-GT {device} ({label}).csv", index = False)
-                        test_error_dict[device][label]["pe"][TEST_TAG] = e_metric_est[:,0]
-                    
                     if parsed_data_loop:
                         parsed_data_loop.update({'pe': e_metric_loop[:,0],'qe': e_metric_loop[:,1]})
                         pd.DataFrame(parsed_data_loop).to_csv(f"{path_}/[error] Loop-vs-GT {device} ({label}).csv", index = False)
-                        test_error_dict[device][label]["qe"][TEST_TAG] = e_metric_est[:,1]
+                    
+                    # cache for report:
+                    if FEATURE_PLOT_ERROR_PER_TEST_SET:
+                        if parsed_data_est:
+                            test_error_dict["est_pe"][device][label][TEST_TAG] = e_metric_est[:,0]
+                            test_error_dict["est_qe"][device][label][TEST_TAG] = e_metric_est[:,1]
+                        if parsed_data_loop:
+                            test_error_dict["loop_pe"][device][label][TEST_TAG] = e_metric_loop[:,0]
+                            test_error_dict["loop_qe"][device][label][TEST_TAG] = e_metric_loop[:,1]
+                    
+                    # cache for greater table result:
+                    if FEATURE_GENERATE_SUMMARY:
+                        try:
+                            TABULAR_RESULT["est_pe"][label][f"{TEST_TAG}-{device}"][f"{test_set.TEST_SET.__name__}"] = np.mean(e_metric_est[:,0] )
+                            TABULAR_RESULT["est_qe"][label][f"{TEST_TAG}-{device}"][f"{test_set.TEST_SET.__name__}"] = np.mean(e_metric_est[:,1] )
+                            TABULAR_PLOT_DATA["est_pe"][label][f"{TEST_TAG}-{device}"][f"{test_set.TEST_SET.__name__}"] = e_metric_est[:,0] 
+                            TABULAR_PLOT_DATA["est_qe"][label][f"{TEST_TAG}-{device}"][f"{test_set.TEST_SET.__name__}"] = e_metric_est[:,1] 
+                            if parsed_data_loop:
+                                TABULAR_RESULT["loop_pe"][label][f"{TEST_TAG}-{device}"][f"{test_set.TEST_SET.__name__}"] = np.mean(e_metric_loop[:,0])
+                                TABULAR_RESULT["loop_qe"][label][f"{TEST_TAG}-{device}"][f"{test_set.TEST_SET.__name__}"] = np.mean(e_metric_loop[:,1])
+                                TABULAR_PLOT_DATA["loop_pe"][label][f"{TEST_TAG}-{device}"][f"{test_set.TEST_SET.__name__}"] = e_metric_loop[:,0]
+                                TABULAR_PLOT_DATA["loop_qe"][label][f"{TEST_TAG}-{device}"][f"{test_set.TEST_SET.__name__}"] = e_metric_loop[:,1]
+                        except KeyError:
+                            pass
                     
                     # e_metric_mu = np.mean(e_metric, axis=0)
                     # e_metric_std = np.std(e_metric, axis=0)
@@ -271,23 +317,65 @@ for test_set in ALL_TEST_SETS:
                 
     # ---- PLOT PER SET of TESTs ---- #
     # plot error bar:
-    for key_ in ["pe", "qe"]:
-        for dev_ in DEVICES:
-            fig, axes = plt.subplots(nrows=1, ncols=2, 
-                figsize=(12,4), facecolor='white', 
-                sharey=True, gridspec_kw={'wspace': 0})
-            # iterate over labels:
-            for i_, label_ in enumerate(RUN_LABELS):
-                if key_ in test_error_dict[dev_][label_]:
-                    err_ = test_error_dict[dev_][label_][key_]
+    if FEATURE_PLOT_ERROR_PER_TEST_SET:
+        for key_ in ERROR_KEYS:
+            for dev_ in DEVICES:
+                fig, axes = plt.subplots(nrows=1, ncols=2, 
+                    figsize=BAR_PLOT_SIZE_ERROR_TEST_SET, facecolor='white', 
+                    sharey=True, gridspec_kw={'wspace': 0})
+                # iterate over labels:
+                for i_, label_ in enumerate(RUN_LABELS):
+                    err_ = test_error_dict[key_][dev_][label_]
                     pd_ = pd.DataFrame.from_dict(err_, orient='index').transpose()
                     # plot if not empty:
                     if len(pd_):
                         sns.boxplot(data=pd_, palette="Set3", ax=axes[i_])
                         axes[i_].set_title(f"{label_}")
                         # pe_pd.boxplot()
-            file_name = AM.save_fig(fig, f"{dev_}_{key_}_boxplot", subdir=f"{test_set.__name__}")
+                file_name = AM.save_fig(fig, f"{dev_}_{key_}_boxplot", subdir=f"{test_set.__name__}")
     # break
     # break
+# %% ---- Tabulate OVERALL ---- #
+if FEATURE_GENERATE_SUMMARY:
+    # tabluate result:
+    for key_ in ERROR_KEYS:
+        for label_ in RUN_LABELS:
+            rmse_ = TABULAR_RESULT[key_][label_]
+            pd_ = pd.DataFrame.from_dict(rmse_)
+            print(f"Table {label_} @ {key_}")
+            print(pd_)
+            print("=====================================\n")
+            pd_.to_csv(f"{AM._output_dir}/[overall]_{key_}_{label_}.csv", index = False)
+# %% ---- PLOT OVERALL ---- #
+if FEATURE_GENERATE_SUMMARY:
+    # plot error bar:
+    for key_ in ERROR_KEYS:
+        for test_ in TARGET_EE_MOTIONS:
+            print(f"Plotting {test_} @ {key_}")
+            fig, axes = plt.subplots(nrows=1, ncols=2, 
+                figsize=BAR_PLOT_SIZE_ERROR_SUMMARY, facecolor='white', 
+                sharey=True, gridspec_kw={'wspace': 0})
+            # iterate over labels:        
+            for i_, label_ in enumerate(RUN_LABELS):
+                err_ = TABULAR_PLOT_DATA[key_][label_][test_]
+                pd_ = pd.DataFrame.from_dict(err_, orient='index').transpose()
+                # plot if not empty:
+                if len(pd_):
+                    sns.boxplot(data=pd_, palette="Set3", ax=axes[i_])
+                    axes[i_].set_title(f"{label_}")
+                    # pe_pd.boxplot()
+            if 'pe' in key_:
+                btm_, top_ = axes[0].get_ylim()
+                axes[0].set_ybound(max(btm_, 0), min(top_, 4))
+                axes[0].set_ylabel("$\|\Delta P_{R^3}\|_2 \,[m]$")
+            else:
+                # axes[0].set_ybound(max(btm_, 0), min(top_, 1))
+                axes[0].set_ylabel("$\|\Delta R_{SE(3)} \|_F$")
+                
+                
+            # output:
+            file_name = AM.save_fig(fig, f"overall_{key_}_{test_}_boxplot")
 
 # %% -------------------------------- REPORT -------------------------------- %% #
+
+

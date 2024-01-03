@@ -71,10 +71,19 @@ class DATASET_DEMO_1213_A:
         D  = ["dual-1-23_DEMO-34_vins-replay.bag"]
         LR = ["dual-1-24_DEMO-35_vins-replay.bag"]
         UD = ["dual-1-25_DEMO-36_vins-replay.bag"]
+    class SQR(Enum):
+        H  = ["dual-2-5_DEMO-37_vins-replay.bag"]
+        E  = ["dual-2-3_DEMO-39_vins-replay.bag"]
+        U  = ["dual-2-4_DEMO-38_vins-replay.bag"]
+        D  = ["dual-2-2_DEMO-40_vins-replay.bag"]
+        LR = ["dual-2-1_DEMO-41_vins-replay.bag"]
+        LR2= ["dual-1-33_DEMO-41_vins-replay.bag"]
+        LR3= ["dual-1-35_DEMO-41_vins-replay.bag"]
+        UD = ["dual-2-0_DEMO-42_vins-replay.bag"]
     class SQR_A(Enum):
         H  = ["dual-1-26_DEMO-37_vins-replay.bag"]
         E  = ["dual-1-27_DEMO-38_vins-replay.bag"]
-        E2 = ["dual-1-28_DEMO-38_vins-replay.bag"]
+        # E2 = ["dual-1-28_DEMO-38_vins-replay.bag"]
         U  = ["dual-1-29_DEMO-39_vins-replay.bag"]
         D  = ["dual-1-30_DEMO-40_vins-replay.bag"]
         LR = ["dual-1-31_DEMO-41_vins-replay.bag"]
@@ -121,6 +130,8 @@ class DEMO_1213_A_CIR(DEMO_1213_A):
     TEST_SET = DATASET_DEMO_1213_A.CIR
 class DEMO_1213_A_BEE(DEMO_1213_A):
     TEST_SET = DATASET_DEMO_1213_A.BEE
+class DEMO_1213_A_SQR(DEMO_1213_A):
+    TEST_SET = DATASET_DEMO_1213_A.SQR
 class DEMO_1213_A_SQR_A(DEMO_1213_A):
     TEST_SET = DATASET_DEMO_1213_A.SQR_A
 class DEMO_1213_A_SQR_B(DEMO_1213_A):
@@ -251,7 +262,7 @@ class DATASET_DEMO_1213_C:
         D  = ["dual-0-14_DEMO-64_vins-replay.bag"]
         LR = ["dual-0-16_DEMO-65_vins-replay.bag"]
         UD = ["dual-0-17_DEMO-66_vins-replay.bag"]
-  
+
     class SQR(Enum):
         H  = ["dual-1-0_DEMO-37_vins-replay.bag"]
         E  = ["dual-1-1_DEMO-38_vins-replay.bag"]
