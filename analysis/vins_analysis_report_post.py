@@ -12,6 +12,10 @@ from scipy.ndimage import gaussian_filter1d
 from scipy.spatial.transform import Rotation as SO3
 import pandas as pd
 
+import matplotlib.pyplot as plt
+import plotly.express as px
+import seaborn as sns
+
 # 3rd party util
 from icecream import ic
 
@@ -28,11 +32,15 @@ from configs.uwarl_test_set_d455_Dec13_v2 import (
 
 # %% -------------------------------- Config -------------------------------- %% #
 CONFIG_LOCAL_DIR = "/Users/jaku/Downloads/run_2023-12-20/[DEV]D455_v2"
-ALL_TEST_SETS = [DEMO_1213_A_STA,DEMO_1213_A_SPI,DEMO_1213_A_FWD,DEMO_1213_A_RVR,DEMO_1213_A_CIR,DEMO_1213_A_BEE,DEMO_1213_A_SQR_A,DEMO_1213_A_SQR_B,DEMO_1213_A_TRI]
+ALL_TEST_SETS = [DEMO_1213_A_SPI,DEMO_1213_A_FWD,DEMO_1213_A_RVR,DEMO_1213_A_CIR,DEMO_1213_A_BEE,DEMO_1213_A_SQR_A,DEMO_1213_A_SQR_B,DEMO_1213_A_TRI]
 FIG_OUT_DIR = CONFIG_LOCAL_DIR # same as local
 
 Q_CORR_W2C = np.array([[1,0,0],[0,0,1],[0,-1,0]])
 
+
+## time alignment:
+DEVICES     = ["Base", "EE"]
+RUN_LABELS  = ["baseline", "coupled (ours)"]
 # %% -------------------------------- REPORT -------------------------------- %% #
 # 0. init report generator:
 date = datetime.now().strftime("%Y-%m-%d")
@@ -48,10 +56,13 @@ AM = AnalysisManager(
 RG.bind_output_dir(output_dir=AM._output_dir)
 
 # %% 2. gather pickles:
+test_error_dict = {} # DEBUG
 for test_set in ALL_TEST_SETS:
     TEST_SET_DIR = os.path.join(CONFIG_LOCAL_DIR, test_set.__name__)
     print(f"# Processing {test_set}@{TEST_SET_DIR}")
-    for test in test_set.TEST_SET.value:
+    
+    test_error_dict = {}
+    for test in test_set.TEST_SET.value:        
         TEST_TAG = test.name
         TEST_PICKLE = f"{TEST_TAG}_data_sets_3d"
         print(f"  > Indexing {test:8s}:{TEST_PICKLE}")
@@ -60,6 +71,7 @@ for test_set in ALL_TEST_SETS:
         data_ = AM.load_dict_from_pickle(file_name=TEST_PICKLE,input_path=TEST_SET_DIR)
         ## create output folder:
         path_ = RG.create_subfolder(folder_name=f"{test_set.__name__}/{test}")
+        # ---- RAW DATA ---- #
         ## convert to csv files in a folder:
         for key_ in data_.keys():
             file_name = f"{path_}/[raw] {key_}.csv"
@@ -83,12 +95,14 @@ for test_set in ALL_TEST_SETS:
             pd.DataFrame(data_sub).to_csv(file_name, index = False)
             print(f"       - {file_name}")
             
-        ## time alignment:
-        DEVICES     = ["Base", "EE"]
-        RUN_LABELS  = ["baseline", "coupled (ours)"]
+        # ---- ALIGNED DATA ---- #
         # ic(data_.keys())
         for device in DEVICES:
+            if device not in test_error_dict:
+                test_error_dict[device] = {}
             for label in RUN_LABELS:
+                if label not in test_error_dict[device]:
+                    test_error_dict[device][label] = {"pe":{}, "qe":{}}
                 data_ref  = data_[f"Vicon Cam {device} ({label})"]
                 data_est  = data_[f"{label} VINS Est {device}"]
                 data_loop = data_[f"{label} VINS Loop {device}"]
@@ -101,11 +115,11 @@ for test_set in ALL_TEST_SETS:
                     p_ref  = np.array(data_ref['y'][0])
                     N_ref  = len(t_ref)
                     
-                    # Alignment details:
+                    # Align Data wrt Est/Loop:
                     def _get_aligned_data(data_pred): # align time to estimation
                         is_valid_ = (bool)(len(data_pred['t0']) == 1 and data_pred['t0'][0] > 0)
                         if not is_valid_: 
-                            return None
+                            return {}
                         # data exists:
                         t0_pred = data_pred['t0'][0]
                         t_pred  = data_pred['t'][0]
@@ -148,45 +162,47 @@ for test_set in ALL_TEST_SETS:
                         }
                         return aligned_data_
                     
-                    # Apply alignment:
+                    # - alignment:
                     aligned_data_est  = _get_aligned_data(data_est)
                     aligned_data_loop = _get_aligned_data(data_loop)
                     
-                    # save aligned data:
+                    # Parse aligned data:
                     def parse_aligned_data(aligned_data):
-                        if not aligned_data:
+                        if aligned_data:
+                            ## DEBUG:
+                            # ic(
+                            #     np.shape(aligned_data['t0']),
+                            #     np.shape(aligned_data['t']),
+                            #     np.shape(aligned_data['q']),
+                            #     np.shape(aligned_data['p']),
+                            #     np.shape(aligned_data['tr']),
+                            #     np.shape(aligned_data['qr']),
+                            #     np.shape(aligned_data['pr'])
+                            # )
+                            parsed_data = {
+                                't0':   aligned_data['t0'],
+                                't':    aligned_data['t'][:],
+                                'q_x':  aligned_data['qr'][:,0],
+                                'q_y':  aligned_data['qr'][:,1],
+                                'q_z':  aligned_data['qr'][:,2],
+                                'q_w':  aligned_data['qr'][:,3],
+                                'p_x':  aligned_data['pr'][:,0],
+                                'p_y':  aligned_data['pr'][:,1],
+                                'p_z':  aligned_data['pr'][:,2],
+                                'tr':   aligned_data['tr'][:],
+                                'qr_x': aligned_data['qr'][:,0],
+                                'qr_y': aligned_data['qr'][:,1],
+                                'qr_z': aligned_data['qr'][:,2],
+                                'qr_w': aligned_data['qr'][:,3],
+                                'pr_x': aligned_data['pr'][:,0],
+                                'pr_y': aligned_data['pr'][:,1],
+                                'pr_z': aligned_data['pr'][:,2],
+                            }
+                            return parsed_data
+                        else:
                             return None
-                        ## DEBUG:
-                        # ic(
-                        #     np.shape(aligned_data['t0']),
-                        #     np.shape(aligned_data['t']),
-                        #     np.shape(aligned_data['q']),
-                        #     np.shape(aligned_data['p']),
-                        #     np.shape(aligned_data['tr']),
-                        #     np.shape(aligned_data['qr']),
-                        #     np.shape(aligned_data['pr'])
-                        # )
-                        parsed_data = {
-                            't0':   aligned_data['t0'],
-                            't':    aligned_data['t'][:],
-                            'q_x':  aligned_data['qr'][:,0],
-                            'q_y':  aligned_data['qr'][:,1],
-                            'q_z':  aligned_data['qr'][:,2],
-                            'q_w':  aligned_data['qr'][:,3],
-                            'p_x':  aligned_data['pr'][:,0],
-                            'p_y':  aligned_data['pr'][:,1],
-                            'p_z':  aligned_data['pr'][:,2],
-                            'tr':   aligned_data['tr'][:],
-                            'qr_x': aligned_data['qr'][:,0],
-                            'qr_y': aligned_data['qr'][:,1],
-                            'qr_z': aligned_data['qr'][:,2],
-                            'qr_w': aligned_data['qr'][:,3],
-                            'pr_x': aligned_data['pr'][:,0],
-                            'pr_y': aligned_data['pr'][:,1],
-                            'pr_z': aligned_data['pr'][:,2],
-                        }
-                        return parsed_data
                     
+                    # - parse
                     parsed_data_est  = parse_aligned_data(aligned_data_est)
                     parsed_data_loop = parse_aligned_data(aligned_data_loop)
                     
@@ -194,11 +210,84 @@ for test_set in ALL_TEST_SETS:
                     pd.DataFrame(parsed_data_est ).to_csv(f"{path_}/[aligned] Est--vs-GT {device} ({label}).csv", index = False)
                     pd.DataFrame(parsed_data_loop).to_csv(f"{path_}/[aligned] Loop-vs-GT {device} ({label}).csv", index = False)
         
-        ## process data:
-        # ic(data_.keys())
-        # ic(data_['Vicon Cam Base (coupled (ours))'].keys())
-        # ic(np.shape(np.array(data_['Vicon Cam Base (coupled (ours))']['r'])))
-    #     break
+                    # ---- COMPUTE ERROR ---- #
+                    def process_aligned_data_global_error(aligned_data):
+                        if aligned_data:
+                            # convert to numpy array:
+                            t0_ = aligned_data['t0']
+                            t_  = np.array(aligned_data['t'])
+                            q_  = np.array(aligned_data['q'])
+                            p_  = np.array(aligned_data['p'])
+                            tr_ = np.array(aligned_data['tr'])
+                            qr_ = np.array(aligned_data['qr'])
+                            pr_ = np.array(aligned_data['pr'])
+                            # compute error:
+                            N_ = len(t_)
+                            # global metrics:
+                            e_metric = np.zeros((N_, 2))
+                            e_metric[:,0] = np.linalg.norm(p_ - pr_, axis=1)
+                            for z in range(N_):
+                                RzT_ = SO3.from_quat(q_[z,:]).as_matrix().transpose()
+                                Rzr_ = SO3.from_quat(qr_[z,:]).as_matrix()
+                                e_metric[z,1] = np.linalg.norm(np.matmul(RzT_, Rzr_) - np.eye(3), ord='fro')
+                            
+                            return e_metric
+                            # local metrics:
+                            # e_local  = np.zeros((N_, 6))
+                            # for k in range(N_):
+                            #     # position error:
+                            #     e_[k,0:3] = p_[k,:] - pr_[k,:]
+                            #     # orientation error:
+                            #     q_ref = qr_[k,:]
+                            #     q_est = q_[k,:]
+                            #     q_err = SO3.from_quat(q_ref).inv() * SO3.from_quat(q_est)
+                            #     e_[k,3:6] = q_err.as_euler('xyz', degrees=True)
+                            # # smooth error:
+                            # e_[:,0:3] = gaussian_filter1d(e_[:,0:3], sigma=3, axis=0)
+                            # e_[:,3:6] = gaussian_filter1d(e_[:,3:6], sigma=3, axis=0)
+                            # # compute RMSE:
+                            # RMSE_ = np.sqrt(np.mean(e_**2, axis=0))
+                            # return e_, RMSE_
+                        else:
+                            return None
+                    
+                    e_metric_est  = process_aligned_data_global_error(aligned_data_est )
+                    e_metric_loop = process_aligned_data_global_error(aligned_data_loop)
+                    
+                    # update and save to csv:
+                    if parsed_data_est:
+                        parsed_data_est.update({'pe': e_metric_est[:,0],'qe': e_metric_est[:,1]})
+                        pd.DataFrame(parsed_data_est ).to_csv(f"{path_}/[error] Est--vs-GT {device} ({label}).csv", index = False)
+                        test_error_dict[device][label]["pe"][TEST_TAG] = e_metric_est[:,0]
+                    
+                    if parsed_data_loop:
+                        parsed_data_loop.update({'pe': e_metric_loop[:,0],'qe': e_metric_loop[:,1]})
+                        pd.DataFrame(parsed_data_loop).to_csv(f"{path_}/[error] Loop-vs-GT {device} ({label}).csv", index = False)
+                        test_error_dict[device][label]["qe"][TEST_TAG] = e_metric_est[:,1]
+                    
+                    # e_metric_mu = np.mean(e_metric, axis=0)
+                    # e_metric_std = np.std(e_metric, axis=0)
+                    
+                
+    # ---- PLOT PER SET of TESTs ---- #
+    # plot error bar:
+    for key_ in ["pe", "qe"]:
+        for dev_ in DEVICES:
+            fig, axes = plt.subplots(nrows=1, ncols=2, 
+                figsize=(12,4), facecolor='white', 
+                sharey=True, gridspec_kw={'wspace': 0})
+            # iterate over labels:
+            for i_, label_ in enumerate(RUN_LABELS):
+                if key_ in test_error_dict[dev_][label_]:
+                    err_ = test_error_dict[dev_][label_][key_]
+                    pd_ = pd.DataFrame.from_dict(err_, orient='index').transpose()
+                    # plot if not empty:
+                    if len(pd_):
+                        sns.boxplot(data=pd_, palette="Set3", ax=axes[i_])
+                        axes[i_].set_title(f"{label_}")
+                        # pe_pd.boxplot()
+            file_name = AM.save_fig(fig, f"{dev_}_{key_}_boxplot", subdir=f"{test_set.__name__}")
+    # break
     # break
 
 # %% -------------------------------- REPORT -------------------------------- %% #

@@ -128,7 +128,7 @@ class AnalysisManager:
             plt.title(title)
         if self._auto_save:
             output_path=self.output_path()
-            file_name=f"{output_path}plot_{tag.replace(' ', '_')}.png"
+            file_name=f"{output_path}/plot_{tag.replace(' ', '_')}.png"
             fig.savefig(file_name, bbox_inches = 'tight', dpi=dpi)
             if self._verbose:
                 print(f"Saved figure to {file_name}")
@@ -141,25 +141,25 @@ class AnalysisManager:
     
     def save_dict(self, data, file_name):
         output_path=self.output_path()
-        with open(f"{output_path}{file_name}.yaml", "w") as f:
+        with open(f"{output_path}/{file_name}.yaml", "w") as f:
             yaml.dump(data, f)
     
     def load_dict(self, data, file_name):
         data = {}
         output_path=self.output_path()
-        with open(f"{output_path}{file_name}.yaml", "r") as f:
+        with open(f"{output_path}/{file_name}.yaml", "r") as f:
             data = yaml.load(f)
         return data
 
     def save_dict_as_pickle(self, data, file_name="data"):
         output_path=self.output_path()
-        with open(f"{output_path}{file_name}.pickle", "wb") as f:
+        with open(f"{output_path}/{file_name}.pickle", "wb") as f:
             pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
     
     def load_dict_from_pickle(self, file_name="data"):
         data = {}
         output_path=self.output_path()
-        with open(f"{output_path}{file_name}.pickle", "rb") as f:
+        with open(f"{output_path}/{file_name}.pickle", "rb") as f:
             data = pickle.load(f)
         return data
 

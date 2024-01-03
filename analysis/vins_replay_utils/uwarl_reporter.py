@@ -115,18 +115,20 @@ class AnalysisManager:
         self._create_dir(output_dir, run_name, test_set_name)
     
     def _create_dir(self, output_dir: str, run_name: str, test_set_name):
-        self._output_dir = f"{output_dir}/{run_name}/{test_set_name}"#/{self._prefix}"
+        self._output_dir = f"{output_dir}/{run_name}/{test_set_name}"
         create_all_folders(self._output_dir)
 
-    def save_fig(self, fig, tag, title=None, dpi=600):
+    def save_fig(self, fig, tag, title=None, dpi=600, subdir=None):
         if fig is None:
             return None
         file_name = None
         if title:
             plt.title(title)
         if self._auto_save:
-            output_path=self.output_path()
-            file_name=f"{output_path}plot_{tag.replace(' ', '_')}.png"
+            output_path=self._output_dir
+            if subdir:
+                output_path = f"{output_path}/{subdir}"
+            file_name=f"{output_path}/plot_{tag.replace(' ', '_')}.png"
             fig.savefig(file_name, bbox_inches = 'tight', dpi=dpi)
             if self._verbose:
                 print(f"Saved figure to {file_name}")
@@ -138,27 +140,27 @@ class AnalysisManager:
         return file_name
     
     def save_dict(self, data, file_name):
-        output_path=self.output_path()
+        output_path=self._output_dir
         with open(f"{output_path}{file_name}.yaml", "w") as f:
             yaml.dump(data, f)
     
     def load_dict(self, data, file_name):
         data = {}
-        output_path=self.output_path()
+        output_path=self._output_dir
         with open(f"{output_path}{file_name}.yaml", "r") as f:
             data = yaml.load(f)
         return data
 
     def save_dict_as_pickle(self, data, file_name="data", output_path=None):
         if output_path is None:
-            output_path = self.output_path()
+            output_path = self._output_dir
         with open(f"{output_path}{file_name}.pickle", "wb") as f:
             pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
     
     def load_dict_from_pickle(self, file_name="data", input_path=None):
         data = {}
         if input_path is None:
-            input_path = self.output_path()
+            input_path = self._output_dir
         else:
             input_path = f"{input_path}/"
         with open(f"{input_path}{file_name}.pickle", "rb") as f:
@@ -166,4 +168,4 @@ class AnalysisManager:
         return data
 
     def output_path(self):
-        return f"{self._output_dir}/{self._prefix}_"
+        return self._output_dir
