@@ -49,6 +49,7 @@ FEATURE_GENERATE_SUMMARY        = True
 BAR_PLOT_SIZE_ERROR_SUMMARY     = (10,2)
 BAR_PLOT_SIZE_ERROR_TEST_SET    = (12,4)
 FEATURE_ZERO_ORIENTATION_WRT_INIT = False # NOT needed for ATE, for sanity check only
+FEATURE_PLOT_3D_TRAJECTORY_COMPARE_GT      = True
 # %% -------------------------------- REPORT -------------------------------- %% #
 # 0. init report generator:
 date = datetime.now().strftime("%Y-%m-%d")
@@ -76,7 +77,7 @@ for key in ERROR_KEYS:
         for ee_motion in TARGET_EE_MOTIONS:
             TABULAR_RESULT[key][label][ee_motion] = {}
             TABULAR_PLOT_DATA[key][label][ee_motion] = {}
-            for base_motion in ["SPI", "FWD", "RVR", "CIR", "SQR","BEE", "TRI"]:
+            for base_motion in ["FWD", "RVR", "SPI", "TRI", "SQR", "CIR", "BEE"]:
                 TABULAR_RESULT[key][label][ee_motion][base_motion] = 0.0
                 TABULAR_PLOT_DATA[key][label][ee_motion][base_motion] = []
 
@@ -128,6 +129,12 @@ for test_set in ALL_TEST_SETS:
             for key in ERROR_KEYS:
                 if device not in test_error_dict[key]:
                     test_error_dict[key][device] = {}
+            
+            if FEATURE_PLOT_3D_TRAJECTORY_COMPARE_GT:
+                traj_fig = plt.figure(figsize=(4,4))
+                traj_ax = traj_fig.add_subplot(111, projection='3d')
+                traj_dict = {}
+                
             for label in RUN_LABELS:
                 for key in ERROR_KEYS:
                     if label not in test_error_dict[key][device]:
@@ -211,13 +218,13 @@ for test_set in ALL_TEST_SETS:
                             parsed_data = {
                                 't0':   aligned_data['t0'],
                                 't':    aligned_data['t'][:],
-                                'q_x':  aligned_data['qr'][:,0],
-                                'q_y':  aligned_data['qr'][:,1],
-                                'q_z':  aligned_data['qr'][:,2],
-                                'q_w':  aligned_data['qr'][:,3],
-                                'p_x':  aligned_data['pr'][:,0],
-                                'p_y':  aligned_data['pr'][:,1],
-                                'p_z':  aligned_data['pr'][:,2],
+                                'q_x':  aligned_data['q'][:,0],
+                                'q_y':  aligned_data['q'][:,1],
+                                'q_z':  aligned_data['q'][:,2],
+                                'q_w':  aligned_data['q'][:,3],
+                                'p_x':  aligned_data['p'][:,0],
+                                'p_y':  aligned_data['p'][:,1],
+                                'p_z':  aligned_data['p'][:,2],
                                 'tr':   aligned_data['tr'][:],
                                 'qr_x': aligned_data['qr'][:,0],
                                 'qr_y': aligned_data['qr'][:,1],
@@ -313,7 +320,39 @@ for test_set in ALL_TEST_SETS:
                     
                     # e_metric_mu = np.mean(e_metric, axis=0)
                     # e_metric_std = np.std(e_metric, axis=0)
-                    
+                            
+                    if FEATURE_PLOT_3D_TRAJECTORY_COMPARE_GT:
+                        traj_dict[label] = {"est": parsed_data_est.copy(), "loop": parsed_data_loop.copy()}
+                        
+            # ---- PLOT 3D TRAJECTORY ---- #
+            if FEATURE_PLOT_3D_TRAJECTORY_COMPARE_GT:
+                traj_ax.view_init(elev=20, azim=45)
+                ## plot:
+                def plot_trajectory_from_parsed(ax_, data_dict_, type_):
+                    xb_ = data_dict_["baseline"][type_]
+                    xo_ = data_dict_["coupled (ours)"][type_]
+                    ax_.plot3D(xo_["pr_x"], xo_["pr_y"], xo_["pr_z"], label="GT (Vicon)", alpha=0.6, linestyle='dashed', color='black')
+                    ax_.plot3D(xb_["p_x" ], xb_["p_y" ], xb_["p_z" ], label="VIO (baseline)", alpha=0.6, linestyle='dashdot')
+                    ax_.plot3D(xo_["p_x" ], xo_["p_y" ], xo_["p_z" ], label="VIO (ours)", alpha=0.6, linestyle='solid')
+                plot_trajectory_from_parsed(traj_ax, traj_dict, "est")
+                ## label:
+                traj_ax.set_xlabel('X [m]')
+                traj_ax.set_ylabel('Y [m]')
+                traj_ax.set_zlabel('Z [m]')
+                traj_ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+                traj_ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+                traj_ax.zaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+                traj_ax.set_box_aspect([1,1,1]) 
+                if device == 'Base':
+                    traj_ax.set_zlim3d(0,1)
+                    traj_ax.set_zticks([x for x in np.arange(0,1,0.2)])
+                traj_ax.set_facecolor("white")
+                traj_ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1),fancybox=True, ncol=3)
+                file_name = AM.save_fig(traj_fig, 
+                    f"3d_trajectory_{test_set.TEST_SET.__name__}_{test.name}_{device}", 
+                    subdir=f"{test_set.__name__}")
+                # plt.show()
+                # break
                 
     # ---- PLOT PER SET of TESTs ---- #
     # plot error bar:
