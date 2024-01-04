@@ -268,8 +268,8 @@ for test_set in ALL_TEST_SETS:
                                 for z in range(N_):
                                     RzT_ = SO3.from_quat(q_[z,:]).as_matrix().transpose()
                                     Rzr_ = SO3.from_quat(qr_[z,:]).as_matrix()
-                                    if device == 'Base':
-                                        Rzr_ =  Rzr_ * Q_CORR_W2C # world to camera axis
+                                    if device == "Base":
+                                        Rzr_ =  Rzr_ @ Q_CORR_W2C # world to camera axis
                                     e_metric[z,1] = np.linalg.norm(np.matmul(RzT_, Rzr_) - np.eye(3), ord='fro')
                                 
                             return e_metric
