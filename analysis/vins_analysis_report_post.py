@@ -81,6 +81,9 @@ for key in ERROR_KEYS:
                 TABULAR_RESULT[key][label][ee_motion][base_motion] = 0.0
                 TABULAR_PLOT_DATA[key][label][ee_motion][base_motion] = []
 
+if FEATURE_PLOT_3D_TRAJECTORY_COMPARE_GT:
+    # used for batch plots:
+    RG.create_subfolder(folder_name="trajectories")
 # %% 2. gather pickles:
 test_error_dict = {} # DEBUG
 for test_set in ALL_TEST_SETS:
@@ -125,15 +128,14 @@ for test_set in ALL_TEST_SETS:
             
         # ---- ALIGNED DATA ---- #
         # ic(data_.keys())
+        traj_dict = {}
         for device in DEVICES:
             for key in ERROR_KEYS:
                 if device not in test_error_dict[key]:
                     test_error_dict[key][device] = {}
             
             if FEATURE_PLOT_3D_TRAJECTORY_COMPARE_GT:
-                traj_fig = plt.figure(figsize=(4,4))
-                traj_ax = traj_fig.add_subplot(111, projection='3d')
-                traj_dict = {}
+                traj_dict[device] = {}
                 
             for label in RUN_LABELS:
                 for key in ERROR_KEYS:
@@ -322,10 +324,14 @@ for test_set in ALL_TEST_SETS:
                     # e_metric_std = np.std(e_metric, axis=0)
                             
                     if FEATURE_PLOT_3D_TRAJECTORY_COMPARE_GT:
-                        traj_dict[label] = {"est": parsed_data_est.copy(), "loop": parsed_data_loop.copy()}
+                        traj_dict[device][label] = {"est": parsed_data_est.copy(), "loop": parsed_data_loop.copy()}
                         
-            # ---- PLOT 3D TRAJECTORY ---- #
+        # ---- PLOT 3D TRAJECTORY ---- #
+        btm_x , btm_y, delta_ = 0,0,0;
+        for device in DEVICES:
             if FEATURE_PLOT_3D_TRAJECTORY_COMPARE_GT:
+                traj_fig = plt.figure(figsize=(4,4))
+                traj_ax = traj_fig.add_subplot(111, projection='3d')
                 traj_ax.view_init(elev=20, azim=45)
                 ## plot:
                 def plot_trajectory_from_parsed(ax_, data_dict_, type_):
@@ -334,7 +340,7 @@ for test_set in ALL_TEST_SETS:
                     ax_.plot3D(xo_["pr_x"], xo_["pr_y"], xo_["pr_z"], label="GT (Vicon)", alpha=0.6, linestyle='dashed', color='black')
                     ax_.plot3D(xb_["p_x" ], xb_["p_y" ], xb_["p_z" ], label="VIO (baseline)", alpha=0.6, linestyle='dashdot')
                     ax_.plot3D(xo_["p_x" ], xo_["p_y" ], xo_["p_z" ], label="VIO (ours)", alpha=0.6, linestyle='solid')
-                plot_trajectory_from_parsed(traj_ax, traj_dict, "est")
+                plot_trajectory_from_parsed(traj_ax, traj_dict[device], "est")
                 ## label:
                 traj_ax.set_xlabel('X [m]')
                 traj_ax.set_ylabel('Y [m]')
@@ -346,11 +352,49 @@ for test_set in ALL_TEST_SETS:
                 if device == 'Base':
                     traj_ax.set_zlim3d(0,1)
                     traj_ax.set_zticks([x for x in np.arange(0,1,0.2)])
+                    btm1_, top1_ = traj_ax.get_xlim3d()
+                    btm2_, top2_ = traj_ax.get_ylim3d()
+                    
+                    btm_x = max(btm1_, -5)
+                    btm_y = max(btm2_, -5)
+                    
+                    d1_, d2_ = (top1_ - btm1_)*1.2,(top2_ - btm2_)*1.2
+                    if d2_>d1_:
+                        delta_ = d2_
+                        if delta_ > 10:
+                            print("d2_ WARNING: delta_ > 10")
+                            delta_ = d1_ 
+                            btm_y -= (d2_-d1_)/2
+                        else:
+                            # print("WARNING: delta_ < 10")
+                            btm_x -= (d2_-d1_)/2
+                    else: # d1 > d2
+                        delta_ = d1_
+                        if delta_ > 10:
+                            print("d1_ WARNING: delta_ > 10") # out bound
+                            delta_ = d2_
+                            btm_x -= (d1_-d2_)/2
+                        else:
+                            # print("dx WARNING: delta_ < 10")
+                            btm_y -= (d1_-d2_)/2
+                    
+                    traj_ax.set_xlim3d(btm_x , btm_x+delta_)
+                    traj_ax.set_ylim3d(btm_y , btm_y+delta_)
+                else: # EE plot:
+                    btm_, top_ = traj_ax.get_zlim3d()
+                    traj_ax.set_zlim3d(max(btm_, -1), min(top_, 1.5))
+                    # btm1_, top1_ = traj_ax.get_xlim3d()
+                    # btm2_, top2_ = traj_ax.get_ylim3d()
+                    # btm_x = max(btm_x, btm1_)
+                    # btm_y = max(btm_y, btm2_)
+                    traj_ax.set_xlim3d(btm_x , btm_x+delta_)
+                    traj_ax.set_ylim3d(btm_y , btm_y+delta_)
+                    
                 traj_ax.set_facecolor("white")
                 traj_ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1),fancybox=True, ncol=3)
                 file_name = AM.save_fig(traj_fig, 
-                    f"3d_trajectory_{test_set.TEST_SET.__name__}_{test.name}_{device}", 
-                    subdir=f"{test_set.__name__}")
+                    f"3d_trajectory_{test.name}_{device}_{test_set.TEST_SET.__name__}", 
+                    subdir=f"trajectories")
                 # plt.show()
                 # break
                 
