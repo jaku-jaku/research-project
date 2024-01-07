@@ -298,3 +298,11 @@ class DEMO_1213_C_SQR(DEMO_1213_C):
     TEST_SET = DATASET_DEMO_1213_C.SQR
 class DEMO_1213_C_ROG_3(DEMO_1213_C):
     TEST_SET = DATASET_DEMO_1213_C.ROGUE_NO_VICON
+
+
+#### FOR post processing report only:
+class DATASET_DEMO_1213_C_SQR_OCC: # original: DEMO_1207_C_v3
+    class SQR(Enum):
+        OC3_SQR_UD = ["todo.bag"]
+class DEMO_1213_C_SQR_OCC(DEMO_1213_A):
+    TEST_SET = DATASET_DEMO_1213_C_SQR_OCC.SQR

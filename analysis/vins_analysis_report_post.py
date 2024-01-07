@@ -28,11 +28,12 @@ from vins_replay_utils.uwarl_reporter import ReportGenerator, AnalysisManager
 from configs.uwarl_test_set_d455_Dec13_v2 import (
     TEST_SET_TITLE,
     DEMO_1213_A_SQR,DEMO_1213_A_SPI,DEMO_1213_A_FWD,DEMO_1213_A_RVR,DEMO_1213_A_CIR,DEMO_1213_A_BEE,DEMO_1213_A_SQR_A,DEMO_1213_A_SQR_B,DEMO_1213_A_TRI,
+    DEMO_1213_C_SQR_OCC,
 )
 
 # %% -------------------------------- Config -------------------------------- %% #
 CONFIG_LOCAL_DIR = "/Users/jaku/Downloads/run_2023-12-20/[DEV]D455_v2"
-ALL_TEST_SETS = [DEMO_1213_A_SPI,DEMO_1213_A_FWD,DEMO_1213_A_RVR,DEMO_1213_A_CIR,DEMO_1213_A_BEE,DEMO_1213_A_SQR,DEMO_1213_A_TRI]
+ALL_TEST_SETS = [DEMO_1213_C_SQR_OCC,DEMO_1213_A_SPI,DEMO_1213_A_FWD,DEMO_1213_A_RVR,DEMO_1213_A_CIR,DEMO_1213_A_BEE,DEMO_1213_A_SQR,DEMO_1213_A_TRI]
 FIG_OUT_DIR = CONFIG_LOCAL_DIR # same as local
 
 Q_CORR_W2C = np.array([[1,0,0],[0,0,1],[0,-1,0]])
@@ -50,6 +51,7 @@ BAR_PLOT_SIZE_ERROR_SUMMARY     = (10,2)
 BAR_PLOT_SIZE_ERROR_TEST_SET    = (12,4)
 FEATURE_ZERO_ORIENTATION_WRT_INIT = False # NOT needed for ATE, for sanity check only
 FEATURE_PLOT_3D_TRAJECTORY_COMPARE_GT      = True
+FEATURE_TRAJ_PLOT_LEGEND                   = None # choose from: ["outside", "inside", None]
 # %% -------------------------------- REPORT -------------------------------- %% #
 # 0. init report generator:
 date = datetime.now().strftime("%Y-%m-%d")
@@ -391,7 +393,12 @@ for test_set in ALL_TEST_SETS:
                     traj_ax.set_ylim3d(btm_y , btm_y+delta_)
                     
                 traj_ax.set_facecolor("white")
-                traj_ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1),fancybox=True, ncol=3)
+                if FEATURE_TRAJ_PLOT_LEGEND:
+                    if FEATURE_TRAJ_PLOT_LEGEND == "outside":
+                        traj_ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1),fancybox=True, ncol=3)
+                    elif FEATURE_TRAJ_PLOT_LEGEND == "inside":
+                        traj_ax.legend()
+                
                 file_name = AM.save_fig(traj_fig, 
                     f"3d_trajectory_{test.name}_{device}_{test_set.TEST_SET.__name__}", 
                     subdir=f"trajectories")
