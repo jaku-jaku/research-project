@@ -35,11 +35,11 @@ class VideoSuperMan:
         create_all_folders(path)
         return path
         
-    def super_impose(self, filename, if_skip_sampling, file_type=".mov"):
+    def super_impose(self, filename, if_skip_sampling, file_type=".mov", if_fwd=False):
         intermediate_output_path_ = self._create_subfolder(filename)
         file_path_ = f"{self._video_dir}/{filename}{file_type}"
         frame_count_  = self._sample_frames(file_path_, intermediate_output_path_, if_skip_sampling=if_skip_sampling)
-        out_image_ = self._impose_frames_from_directory(filename, frame_count_, intermediate_output_path_, self._output_dir)
+        out_image_ = self._impose_frames_from_directory(filename, frame_count_, intermediate_output_path_, self._output_dir, if_fwd=if_fwd)
         return out_image_
         
     #Extract frames from video into a folder
@@ -119,13 +119,17 @@ class VideoSuperMan:
     def _impose_frames_from_directory(self, 
         filename, frame_count, 
         inter_folder, output_dir,
-        t_start = 1,    
+        t_start = 1,
+        if_cropping = True,
+        if_fwd = False
     ):
-        output_file_name_ = f"{output_dir}/super_{filename}.png"
+        tag = "_fwd" if if_fwd else ""
+        output_file_name_ = f"{output_dir}/super_{filename}{tag}.png"
         print(f"Super Imposing {frame_count} frames..")
         img_base_ = None
         if frame_count > 2:
-            for i in range(frame_count-1, t_start, -1):
+            items = range(t_start+1, frame_count, 1) if if_fwd else range(frame_count-1, t_start, -1)
+            for i in items:
                 print(">>> Overlapping frame:", i)
                 try:
                     img_new_ = cv2.imread(f"{inter_folder}/frame_{i}.png", cv2.IMREAD_UNCHANGED)
@@ -165,8 +169,7 @@ class VideoSuperMan:
             img_base_0 = cv2.imread(f"{inter_folder}/frame_1.png")
             print(np.max(img_base_0))
             print(np.max(img_base_))
-            img_base_ = cv2.addWeighted(img_base_0, 0.5, img_base_, 0.5
-            , 0)
+            img_base_ = cv2.addWeighted(img_base_0, 0.3, img_base_, 0.7, 0)
             
             # # histogram:
             # if 0:
@@ -178,6 +181,8 @@ class VideoSuperMan:
             plt.figure()
             plt.imshow(img_base_)
             # Next we stack our equalized channels back into a single image
+            if if_cropping:
+                img_base_ = img_base_[:, 200:] # cropping
             cv2.imwrite(output_file_name_, img_base_)
         
         return output_file_name_
@@ -198,23 +203,19 @@ LIST_VIDEO_FILES = [
     "Demo_1213_Clips_LR_CIR",
     "Demo_1213_Clips_LR_SQR",
     "Demo_1213_Clips_LR_TRI",
+    "Demo_1213_Clips_LR_BEE",
     "Demo_1213_Clips_UD_FWD",
     "Demo_1213_Clips_UD_RVR",
     "Demo_1213_Clips_UD_SPI",
     "Demo_1213_Clips_UD_CIR",
     "Demo_1213_Clips_UD_SQR",
     "Demo_1213_Clips_UD_TRI",
+    "Demo_1213_Clips_UD_BEE",
 ]
 for file in LIST_VIDEO_FILES:
     print(" === Processing:", file, " === ")
-    path = king_.super_impose(filename=file, file_type=".mp4", if_skip_sampling=False)
+    path = king_.super_impose(filename=file, file_type=".mp4", if_skip_sampling=True, if_fwd=True)
     print(">>> Generated @", path)
 
-
-# %%
-
-# %%
-
-# %%
 
 # %%
