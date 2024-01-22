@@ -73,8 +73,8 @@ class DATASET_DEMO_1213_A:
         UD = ["dual-1-25_DEMO-36_vins-replay.bag"]
     class SQR(Enum):
         H  = ["dual-2-5_DEMO-37_vins-replay.bag"]
-        E  = ["dual-2-3_DEMO-39_vins-replay.bag"]
-        U  = ["dual-2-4_DEMO-38_vins-replay.bag"]
+        E  = ["dual-2-4_DEMO-38_vins-replay.bag"]
+        U  = ["dual-2-3_DEMO-39_vins-replay.bag"]
         D  = ["dual-2-2_DEMO-40_vins-replay.bag"]
         LR = ["dual-2-1_DEMO-41_vins-replay.bag"]
         LR2= ["dual-1-33_DEMO-41_vins-replay.bag"]
@@ -93,8 +93,8 @@ class DATASET_DEMO_1213_A:
         UD = ["dual-1-34_DEMO-42_vins-replay.bag"]
     class SQR_B(Enum):
         H  = ["dual-2-5_DEMO-37_vins-replay.bag"]
-        E  = ["dual-2-3_DEMO-39_vins-replay.bag"]
-        U  = ["dual-2-4_DEMO-38_vins-replay.bag"]
+        E  = ["dual-2-4_DEMO-38_vins-replay.bag"]
+        U  = ["dual-2-3_DEMO-39_vins-replay.bag"]
         D  = ["dual-2-2_DEMO-40_vins-replay.bag"]
         LR = ["dual-2-1_DEMO-41_vins-replay.bag"]
         UD = ["dual-2-0_DEMO-42_vins-replay.bag"]
