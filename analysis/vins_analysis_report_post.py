@@ -67,7 +67,12 @@ AM = AnalysisManager(
 RG.bind_output_dir(output_dir=AM._output_dir)
 
 # %% 1. Table Result Expected:
-TARGET_EE_MOTIONS = ["LR-EE", "LR-Base", "UD-EE", "UD-Base"]
+# TARGET_EE_MOTIONS = ["LR-EE", "LR-Base", "UD-EE", "UD-Base"]
+TARGET_EE_MOTIONS = [
+    "H-EE", "H-Base", "E-EE", "E-Base", 
+    "U-EE", "U-Base", "D-EE", "D-Base", 
+    "LR-EE", "LR-Base", "UD-EE", "UD-Base"]
+TARGET_BASE_MOTIONS = ["FWD", "RVR", "SPI", "TRI", "SQR", "CIR", "BEE"]
 TABULAR_RESULT = {}
 TABULAR_PLOT_DATA = {}
 for key in ERROR_KEYS:
@@ -79,7 +84,7 @@ for key in ERROR_KEYS:
         for ee_motion in TARGET_EE_MOTIONS:
             TABULAR_RESULT[key][label][ee_motion] = {}
             TABULAR_PLOT_DATA[key][label][ee_motion] = {}
-            for base_motion in ["FWD", "RVR", "SPI", "TRI", "SQR", "CIR", "BEE"]:
+            for base_motion in TARGET_BASE_MOTIONS:
                 TABULAR_RESULT[key][label][ee_motion][base_motion] = 0.0
                 TABULAR_PLOT_DATA[key][label][ee_motion][base_motion] = []
 

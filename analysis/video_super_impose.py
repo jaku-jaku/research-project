@@ -3,6 +3,7 @@
 import cv2
 import numpy as np
 
+
 from matplotlib import pyplot as plt
 # %% ------------------------------- SUPER IMPOSE -------------------------------- %% #
 # ours:
@@ -47,13 +48,13 @@ class VideoSuperMan:
         if_skip_sampling=False,
         methods="MOG2", # methods in ["sub", "MOG2"]
         if_floor_filter = False,
-        t_offset = 10,
+        t_offset = 0,
     ):
         vCap = cv2.VideoCapture(file_path)
         frame_count = 1
         tick = 0
         N_frames = vCap.get(cv2.CAP_PROP_FRAME_COUNT)
-        indices_ = list(range(t_offset, int(N_frames), int(self._gap)))
+        indices_ = list(range(t_offset, int(N_frames), int(self._gap))) + [N_frames]
         N_samples = len(indices_)
         print("N_frames:",N_frames, " N_samples:", N_samples)
         
@@ -148,6 +149,8 @@ class VideoSuperMan:
                     if img_base_ is not None:
                         # - apply mask:
                         fg = cv2.bitwise_and(img_new_, img_new_, mask=mask_new_)
+                        fg_orig = cv2.bitwise_and(img_base_, img_base_, mask=mask_new_)
+                        fg = cv2.addWeighted(fg_orig, 0.4, fg, 0.6, 0) # lets blend instead of overriding
                         plt.figure(); plt.imshow(fg);
                         mask_inv_ = cv2.bitwise_not(mask_new_)
                         bk = cv2.bitwise_and(img_base_, img_base_, mask=mask_inv_)
@@ -156,7 +159,8 @@ class VideoSuperMan:
                         # combine foreground+background
                         img_base_ = cv2.bitwise_or(fg, bk)
                     else:
-                        img_base_ = img_new_  
+                        img_base_ = img_new_
+                        # img_base_ = (img_base_.astype(np.float32) * 0.9).astype(np.uint8)
                         
                     #     # base:
                     #     img_base_ = cv2.imread(f"{inter_folder}/frame_1.png", cv2.IMREAD_UNCHANGED)
@@ -165,18 +169,20 @@ class VideoSuperMan:
                 except:
                     raise("Error opening images! Abort!")
             
+            # histogram:
+            if 0:
+                img_base_[:,:,0], _ = image_histogram_equalization(img_base_[:,:,0])
+                img_base_[:,:,1], _ = image_histogram_equalization(img_base_[:,:,1])
+                img_base_[:,:,2], _ = image_histogram_equalization(img_base_[:,:,2])
+                img_base_[:,:,3], _ = image_histogram_equalization(img_base_[:,:,3])
+            
             # Blending:
-            img_base_0 = cv2.imread(f"{inter_folder}/frame_1.png")
+            index = items[-1]
+            img_base_0 = cv2.imread(f"{inter_folder}/frame_{index}.png")
             print(np.max(img_base_0))
             print(np.max(img_base_))
-            img_base_ = cv2.addWeighted(img_base_0, 0.3, img_base_, 0.7, 0)
+            img_base_ = cv2.addWeighted(img_base_0, 0.2, img_base_, 0.8, 0)
             
-            # # histogram:
-            # if 0:
-            #     img_base_[:,:,0], _ = image_histogram_equalization(img_base_[:,:,0])
-            #     img_base_[:,:,1], _ = image_histogram_equalization(img_base_[:,:,1])
-            #     img_base_[:,:,2], _ = image_histogram_equalization(img_base_[:,:,2])
-            #     img_base_[:,:,3], _ = image_histogram_equalization(img_base_[:,:,3])
             
             plt.figure()
             plt.imshow(img_base_)
@@ -211,10 +217,20 @@ LIST_VIDEO_FILES = [
     "Demo_1213_Clips_UD_SQR",
     "Demo_1213_Clips_UD_TRI",
     "Demo_1213_Clips_UD_BEE",
+    "Demo_1213_Clips_H_FWD",
+    "Demo_1213_Clips_H_RVR",
+    "Demo_1213_Clips_H_SPI",
+    "Demo_1213_Clips_H_CIR",
+    "Demo_1213_Clips_H_SQR",
+    "Demo_1213_Clips_H_TRI",
+    "Demo_1213_Clips_H_BEE",
+    "Demo_1213_Clips_FIX_D",
+    "Demo_1213_Clips_FIX_U",
+    "Demo_1213_Clips_FIX_E",
 ]
 for file in LIST_VIDEO_FILES:
     print(" === Processing:", file, " === ")
-    path = king_.super_impose(filename=file, file_type=".mp4", if_skip_sampling=True, if_fwd=True)
+    path = king_.super_impose(filename=file, file_type=".mp4", if_skip_sampling=True, if_fwd=False)
     print(">>> Generated @", path)
 
 
