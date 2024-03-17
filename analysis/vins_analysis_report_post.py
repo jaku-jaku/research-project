@@ -32,7 +32,8 @@ from configs.uwarl_test_set_d455_Dec13_v2 import (
 )
 
 # %% -------------------------------- Config -------------------------------- %% #
-CONFIG_LOCAL_DIR = "/Users/jaku/Downloads/run_2023-12-20/[DEV]D455_v2"
+# CONFIG_LOCAL_DIR = "/Users/jaku/Downloads/run_2023-12-20/[DEV]D455_v2"
+CONFIG_LOCAL_DIR = "/Users/jaku/JX-Platform/Github_Research/dual-vins-data/run_2023-12-20/[DEV]D455_v2"
 ALL_TEST_SETS = [DEMO_1213_C_SQR_OCC,DEMO_1213_A_SPI,DEMO_1213_A_FWD,DEMO_1213_A_RVR,DEMO_1213_A_CIR,DEMO_1213_A_BEE,DEMO_1213_A_SQR,DEMO_1213_A_TRI]
 FIG_OUT_DIR = CONFIG_LOCAL_DIR # same as local
 
@@ -464,8 +465,8 @@ if FEATURE_GENERATE_SUMMARY:
                 axes[0].set_ybound(max(btm_, 0), min(top_, 4))
                 axes[0].set_ylabel("$\|\Delta P_{R^3}\|_2 \,[m]$")
             else:
-                # axes[0].set_ybound(max(btm_, 0), min(top_, 1))
-                axes[0].set_ylabel("$\|\Delta R_{SE(3)} \|_F$")
+                axes[0].set_ybound(max(btm_, 0), min(top_, 1))
+                axes[0].set_ylabel("$\|\Delta R_{SO(3)} \|_F$")
                 
                 
             # output:
