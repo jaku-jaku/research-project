@@ -89,6 +89,7 @@ class VideoSuperMan:
                 path_frame = f"{intermediate_folder}/frame_{frame_count}.png"
                 path_frame2 = f"{intermediate_folder}/de_frame_{frame_count}.png"
                 # frame = frame[0:900, 340:1800]
+                frame = frame[0:987, 0:1600]
                 cv2.imwrite(path_frame,frame)
                 frame_count += 1 
                 if methods == "MOG2":
@@ -128,7 +129,9 @@ class VideoSuperMan:
         inter_folder, output_dir,
         t_start = 1,
         if_cropping = True,
-        if_fwd = False
+        if_fwd = False,
+        fg_alpha=[0.5,0.5],
+        alpha=[0.2,0.8],
     ):
         tag = "_fwd" if if_fwd else ""
         output_file_name_ = f"{output_dir}/super_{filename}{tag}.png"
@@ -156,7 +159,7 @@ class VideoSuperMan:
                         # - apply mask:
                         fg = cv2.bitwise_and(img_new_, img_new_, mask=mask_new_)
                         fg_orig = cv2.bitwise_and(img_base_, img_base_, mask=mask_new_)
-                        fg = cv2.addWeighted(fg_orig, 0.4, fg, 0.6, 0) # lets blend instead of overriding
+                        fg = cv2.addWeighted(fg_orig, fg_alpha[0], fg, fg_alpha[1], 0.2) # lets blend instead of overriding
                         plt.figure(); plt.imshow(fg);
                         mask_inv_ = cv2.bitwise_not(mask_new_)
                         bk = cv2.bitwise_and(img_base_, img_base_, mask=mask_inv_)
@@ -187,7 +190,7 @@ class VideoSuperMan:
             img_base_0 = cv2.imread(f"{inter_folder}/frame_{index}.png")
             print(np.max(img_base_0))
             print(np.max(img_base_))
-            img_base_ = cv2.addWeighted(img_base_0, 0.2, img_base_, 0.8, 0)
+            img_base_ = cv2.addWeighted(img_base_0, alpha[0], img_base_, alpha[1], 0)
             
             
             plt.figure()
@@ -237,7 +240,7 @@ class VideoSuperMan:
 king_ = VideoSuperMan(
     video_dir="/Users/jaku/JX-Platform/Github_Research/dual-vins-data/demo_record/video_1127",
     output_dir="/Users/jaku/JX-Platform/Github_Research/dual-vins-data/demo_record/video_1127/output",
-    gap = 120
+    gap = 60
 )
 
 LIST_VIDEO_FILES = [
@@ -245,8 +248,8 @@ LIST_VIDEO_FILES = [
     "Demo_1127_Clips_UD_RVR",
     "Demo_1127_Clips_UD_CIR",
     "Demo_1127_Clips_UD_CIR2",
-    "Demo_1127_Clips_UD_CIR3",
     "Demo_1127_Clips_UD_BEE",
+    "Demo_1127_Clips_UD_BEE2",
     "Demo_1127_Clips_UD_SQR",
     "Demo_1127_Clips_UD_TRI",
 ]
