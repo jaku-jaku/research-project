@@ -13,6 +13,7 @@ from scipy.spatial.transform import Rotation as SO3
 import pandas as pd
 
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import plotly.express as px
 import seaborn as sns
 
@@ -47,12 +48,13 @@ ERROR_KEYS  = ["est_pe", "est_qe", "loop_pe", "loop_qe"]
 
 ## user:
 FEATURE_PLOT_ERROR_PER_TEST_SET = False
-FEATURE_GENERATE_SUMMARY        = True
-BAR_PLOT_SIZE_ERROR_SUMMARY     = (10,2)
+FEATURE_GENERATE_SUMMARY        = False
+BAR_PLOT_SIZE_ERROR_SUMMARY     = (10,1.5)
 BAR_PLOT_SIZE_ERROR_TEST_SET    = (12,4)
+TRAJ_FIG_SIZE                   = (3,3) #(4,4)
 FEATURE_ZERO_ORIENTATION_WRT_INIT = False # NOT needed for ATE, for sanity check only
 FEATURE_PLOT_3D_TRAJECTORY_COMPARE_GT      = True
-FEATURE_TRAJ_PLOT_LEGEND                   = None # choose from: ["outside", "inside", None]
+FEATURE_TRAJ_PLOT_LEGEND                   = "FWD-only" #"inside" # choose from: ["outside", "inside", None]
 # %% -------------------------------- REPORT -------------------------------- %% #
 # 0. init report generator:
 date = datetime.now().strftime("%Y-%m-%d")
@@ -338,7 +340,7 @@ for test_set in ALL_TEST_SETS:
         btm_x , btm_y, delta_ = 0,0,0;
         for device in DEVICES:
             if FEATURE_PLOT_3D_TRAJECTORY_COMPARE_GT:
-                traj_fig = plt.figure(figsize=(4,4))
+                traj_fig = plt.figure(figsize=TRAJ_FIG_SIZE)
                 traj_ax = traj_fig.add_subplot(111, projection='3d')
                 traj_ax.view_init(elev=20, azim=45)
                 ## plot:
@@ -346,20 +348,27 @@ for test_set in ALL_TEST_SETS:
                     xb_ = data_dict_["baseline"][type_]
                     xo_ = data_dict_["coupled (ours)"][type_]
                     ax_.plot3D(xo_["pr_x"], xo_["pr_y"], xo_["pr_z"], label="GT (Vicon)", alpha=0.6, linestyle='dashed', color='black')
-                    ax_.plot3D(xb_["p_x" ], xb_["p_y" ], xb_["p_z" ], label="VIO (baseline)", alpha=0.6, linestyle='dashdot')
-                    ax_.plot3D(xo_["p_x" ], xo_["p_y" ], xo_["p_z" ], label="VIO (ours)", alpha=0.6, linestyle='solid')
+                    ax_.plot3D(xb_["p_x" ], xb_["p_y" ], xb_["p_z" ], label="VIO (baseline)", alpha=0.9, linestyle='dashdot')
+                    ax_.plot3D(xo_["p_x" ], xo_["p_y" ], xo_["p_z" ], label="VIO (ours)", alpha=0.8, linestyle='solid')
                 plot_trajectory_from_parsed(traj_ax, traj_dict[device], "est")
                 ## label:
-                traj_ax.set_xlabel('X [m]')
-                traj_ax.set_ylabel('Y [m]')
+                traj_ax.set_xlabel('X [m]', labelpad=-3)
+                traj_ax.set_ylabel('Y [m]', labelpad=-3)
                 traj_ax.set_zlabel('Z [m]')
                 traj_ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
                 traj_ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
                 traj_ax.zaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
                 traj_ax.set_box_aspect([1,1,1]) 
+                traj_ax.tick_params(axis='x', which='major', pad=-3)
+                traj_ax.tick_params(axis='y', which='major', pad=-3)
+                traj_ax.tick_params(axis='z', which='major')
+                @ticker.FuncFormatter
+                def major_formatter(x, pos):
+                    return ("-%.1f" % abs(x)) if x < 0 else (" %.1f" % abs(x))
+                traj_ax.zaxis.set_major_formatter(major_formatter)
                 if device == 'Base':
-                    traj_ax.set_zlim3d(0,1)
-                    traj_ax.set_zticks([x for x in np.arange(0,1,0.2)])
+                    traj_ax.set_zlim3d(-1,1)
+                    traj_ax.set_zticks([x for x in np.arange(-1,1.1,0.5)])
                     btm1_, top1_ = traj_ax.get_xlim3d()
                     btm2_, top2_ = traj_ax.get_ylim3d()
                     
@@ -389,8 +398,10 @@ for test_set in ALL_TEST_SETS:
                     traj_ax.set_xlim3d(btm_x , btm_x+delta_)
                     traj_ax.set_ylim3d(btm_y , btm_y+delta_)
                 else: # EE plot:
+                    traj_ax.set_zlim3d(-1,1)
+                    traj_ax.set_zticks([x for x in np.arange(-1,1.1,0.5)])
                     btm_, top_ = traj_ax.get_zlim3d()
-                    traj_ax.set_zlim3d(max(btm_, -1), min(top_, 1.5))
+                    # traj_ax.set_zlim3d(max(btm_, -1), min(top_, 1.5))
                     # btm1_, top1_ = traj_ax.get_xlim3d()
                     # btm2_, top2_ = traj_ax.get_ylim3d()
                     # btm_x = max(btm_x, btm1_)
@@ -404,9 +415,13 @@ for test_set in ALL_TEST_SETS:
                         traj_ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1),fancybox=True, ncol=3)
                     elif FEATURE_TRAJ_PLOT_LEGEND == "inside":
                         traj_ax.legend()
+                    elif FEATURE_TRAJ_PLOT_LEGEND == "FWD-only":
+                        if "FWD" in test_set.TEST_SET.__name__:
+                            traj_ax.legend()
                 
                 file_name = AM.save_fig(traj_fig, 
                     f"3d_trajectory_{test.name}_{device}_{test_set.TEST_SET.__name__}", 
+                    dpi=300,
                     subdir=f"trajectories")
                 # plt.show()
                 # break

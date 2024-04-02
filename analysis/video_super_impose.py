@@ -36,7 +36,13 @@ class VideoSuperMan:
         create_all_folders(path)
         return path
         
-    def super_impose(self, filename, if_skip_sampling, file_type=".mov", if_fwd=False):
+    def super_impose(
+        self, 
+        filename:str, 
+        if_skip_sampling:bool, 
+        file_type:str=".mov", 
+        if_fwd:bool=False, 
+    ):
         intermediate_output_path_ = self._create_subfolder(filename)
         file_path_ = f"{self._video_dir}/{filename}{file_type}"
         frame_count_  = self._sample_frames(file_path_, intermediate_output_path_, if_skip_sampling=if_skip_sampling)
@@ -82,7 +88,7 @@ class VideoSuperMan:
             if ret:
                 path_frame = f"{intermediate_folder}/frame_{frame_count}.png"
                 path_frame2 = f"{intermediate_folder}/de_frame_{frame_count}.png"
-                frame = frame[0:900, 340:1800]
+                # frame = frame[0:900, 340:1800]
                 cv2.imwrite(path_frame,frame)
                 frame_count += 1 
                 if methods == "MOG2":
@@ -195,42 +201,58 @@ class VideoSuperMan:
         
         
 # % ------------------------------- MAIN ----------------------------
+# king_ = VideoSuperMan(
+#     video_dir="/Users/jaku/Desktop/demo_record",
+#     output_dir="/Users/jaku/Desktop/demo_record/output",
+#     gap = 120
+# )
+
+# LIST_VIDEO_FILES = [
+#     # "Demo_1207_UD_OCC3",
+#     "Demo_1213_Clips_LR_FWD",
+#     "Demo_1213_Clips_LR_RVR",
+#     "Demo_1213_Clips_LR_SPI",
+#     "Demo_1213_Clips_LR_CIR",
+#     "Demo_1213_Clips_LR_SQR",
+#     "Demo_1213_Clips_LR_TRI",
+#     "Demo_1213_Clips_LR_BEE",
+#     "Demo_1213_Clips_UD_FWD",
+#     "Demo_1213_Clips_UD_RVR",
+#     "Demo_1213_Clips_UD_SPI",
+#     "Demo_1213_Clips_UD_CIR",
+#     "Demo_1213_Clips_UD_SQR",
+#     "Demo_1213_Clips_UD_TRI",
+#     "Demo_1213_Clips_UD_BEE",
+#     "Demo_1213_Clips_H_FWD",
+#     "Demo_1213_Clips_H_RVR",
+#     "Demo_1213_Clips_H_SPI",
+#     "Demo_1213_Clips_H_CIR",
+#     "Demo_1213_Clips_H_SQR",
+#     "Demo_1213_Clips_H_TRI",
+#     "Demo_1213_Clips_H_BEE",
+#     "Demo_1213_Clips_FIX_D",
+#     "Demo_1213_Clips_FIX_U",
+#     "Demo_1213_Clips_FIX_E",
+# ]
 king_ = VideoSuperMan(
-    video_dir="/Users/jaku/Desktop/demo_record",
-    output_dir="/Users/jaku/Desktop/demo_record/output",
+    video_dir="/Users/jaku/JX-Platform/Github_Research/dual-vins-data/demo_record/video_1127",
+    output_dir="/Users/jaku/JX-Platform/Github_Research/dual-vins-data/demo_record/video_1127/output",
     gap = 120
 )
 
 LIST_VIDEO_FILES = [
-    # "Demo_1207_UD_OCC3",
-    "Demo_1213_Clips_LR_FWD",
-    "Demo_1213_Clips_LR_RVR",
-    "Demo_1213_Clips_LR_SPI",
-    "Demo_1213_Clips_LR_CIR",
-    "Demo_1213_Clips_LR_SQR",
-    "Demo_1213_Clips_LR_TRI",
-    "Demo_1213_Clips_LR_BEE",
-    "Demo_1213_Clips_UD_FWD",
-    "Demo_1213_Clips_UD_RVR",
-    "Demo_1213_Clips_UD_SPI",
-    "Demo_1213_Clips_UD_CIR",
-    "Demo_1213_Clips_UD_SQR",
-    "Demo_1213_Clips_UD_TRI",
-    "Demo_1213_Clips_UD_BEE",
-    "Demo_1213_Clips_H_FWD",
-    "Demo_1213_Clips_H_RVR",
-    "Demo_1213_Clips_H_SPI",
-    "Demo_1213_Clips_H_CIR",
-    "Demo_1213_Clips_H_SQR",
-    "Demo_1213_Clips_H_TRI",
-    "Demo_1213_Clips_H_BEE",
-    "Demo_1213_Clips_FIX_D",
-    "Demo_1213_Clips_FIX_U",
-    "Demo_1213_Clips_FIX_E",
+    "Demo_1127_Clips_UD_FWD",
+    "Demo_1127_Clips_UD_RVR",
+    "Demo_1127_Clips_UD_CIR",
+    "Demo_1127_Clips_UD_CIR2",
+    "Demo_1127_Clips_UD_CIR3",
+    "Demo_1127_Clips_UD_BEE",
+    "Demo_1127_Clips_UD_SQR",
+    "Demo_1127_Clips_UD_TRI",
 ]
 for file in LIST_VIDEO_FILES:
     print(" === Processing:", file, " === ")
-    path = king_.super_impose(filename=file, file_type=".mp4", if_skip_sampling=True, if_fwd=False)
+    path = king_.super_impose(filename=file, file_type=".mp4", if_skip_sampling=False, if_fwd=False)
     print(">>> Generated @", path)
 
 
