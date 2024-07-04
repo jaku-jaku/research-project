@@ -42,18 +42,29 @@ class VideoSuperMan:
         if_skip_sampling:bool, 
         file_type:str=".mov", 
         if_fwd:bool=False, 
+        step_size = 1,
     ):
         intermediate_output_path_ = self._create_subfolder(filename)
         file_path_ = f"{self._video_dir}/{filename}{file_type}"
         frame_count_  = self._sample_frames(file_path_, intermediate_output_path_, if_skip_sampling=if_skip_sampling)
-        out_image_ = self._impose_frames_from_directory(filename, frame_count_, intermediate_output_path_, self._output_dir, if_fwd=if_fwd)
+        out_image_ = self._impose_frames_from_directory(filename, frame_count_, intermediate_output_path_, self._output_dir, if_fwd=if_fwd, step_size=step_size)
         return out_image_
+        
+    def sample_video(
+        self, 
+        filename:str, 
+        file_type:str=".mov", 
+    ):
+        intermediate_output_path_ = self._create_subfolder(filename)
+        file_path_ = f"{self._video_dir}/{filename}{file_type}"
+        self._sample_frames(file_path_, intermediate_output_path_, if_bkg_subtracation=False)
         
     #Extract frames from video into a folder
     def _sample_frames(self, file_path, intermediate_folder, 
         if_skip_sampling=False,
         methods="MOG2", # methods in ["sub", "MOG2"]
         if_floor_filter = False,
+        if_bkg_subtracation = True,
         t_offset = 0,
     ):
         vCap = cv2.VideoCapture(file_path)
@@ -66,20 +77,21 @@ class VideoSuperMan:
         
         if if_skip_sampling:
             return N_samples
-            
-        # - apply initial empty bkg: 
-        path_bkg = f"{intermediate_folder}/../background_cropped.png"
-        frame_bkg = cv2.imread(path_bkg)
-        # - prep bkg subtraction:
-        if methods == "MOG2":
-            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
-            fgbg = cv2.createBackgroundSubtractorMOG2()
-            fgmask = fgbg.apply(frame_bkg)
-        else:
-            background_gray = cv2.cvtColor(frame_bkg, cv2.COLOR_BGR2GRAY)
-        if if_floor_filter:
-            lower_color = np.array([78, 5, 150])
-            upper_color = np.array([138, 8, 176])
+        
+        if if_bkg_subtracation:
+            # - apply initial empty bkg: 
+            path_bkg = f"{intermediate_folder}/../background_cropped.png"
+            frame_bkg = cv2.imread(path_bkg)
+            # - prep bkg subtraction:
+            if methods == "MOG2":
+                kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
+                fgbg = cv2.createBackgroundSubtractorMOG2()
+                fgmask = fgbg.apply(frame_bkg)
+            else:
+                background_gray = cv2.cvtColor(frame_bkg, cv2.COLOR_BGR2GRAY)
+            if if_floor_filter:
+                lower_color = np.array([78, 5, 150])
+                upper_color = np.array([138, 8, 176])
 
         mask_ = None
         for i in indices_:
@@ -87,32 +99,41 @@ class VideoSuperMan:
             ret,frame = vCap.read()
             if ret:
                 path_frame = f"{intermediate_folder}/frame_{frame_count}.png"
-                path_frame2 = f"{intermediate_folder}/de_frame_{frame_count}.png"
-                # frame = frame[0:900, 340:1800]
-                frame = frame[0:987, 0:1600]
-                cv2.imwrite(path_frame,frame)
                 frame_count += 1 
-                if methods == "MOG2":
-                    fgmask = fgbg.apply(frame)
-                    fgmask = cv2.morphologyEx(fgmask, cv2.MORPH_OPEN, kernel)
-                    cv2.imwrite(path_frame2, fgmask)
-                    mask_new_ = cv2.imread(path_frame2, cv2.IMREAD_UNCHANGED)
+                if if_bkg_subtracation:
+                    if "1213" in intermediate_folder:
+                        frame = frame[0:900, 340:1800] # cropping for 1213 setups
+                    else:
+                        frame = frame[0:987, 0:1600]
+                    cv2.imwrite(path_frame,frame)
+                    path_frame2 = f"{intermediate_folder}/de_frame_{frame_count}.png"
+                    if methods == "MOG2":
+                        fgmask = fgbg.apply(frame)
+                        fgmask = cv2.morphologyEx(fgmask, cv2.MORPH_OPEN, kernel)
+                        cv2.imwrite(path_frame2, fgmask)
+                        mask_new_ = cv2.imread(path_frame2, cv2.IMREAD_UNCHANGED)
+                    else:
+                        image_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                        diff = cv2.absdiff(background_gray, image_gray)
+                        threshold_value = 30
+                        _, mask_new_ = cv2.threshold(diff, threshold_value, 255, cv2.THRESH_BINARY)
+                    if if_floor_filter:
+                        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+                        mask = cv2.inRange(hsv, lower_color, upper_color)
+                        plt.figure(); plt.imshow(mask);
+                        mask_inverse = cv2.bitwise_not(mask)
+                        mask_new_ = cv2.bitwise_and(mask_new_, mask_inverse)
+                    # create cumulated masks:
+                    if mask_ is not None:
+                        mask_ = mask_ + mask_new_
+                    else:
+                        mask_ = mask_new_
                 else:
-                    image_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                    diff = cv2.absdiff(background_gray, image_gray)
-                    threshold_value = 30
-                    _, mask_new_ = cv2.threshold(diff, threshold_value, 255, cv2.THRESH_BINARY)
-                if if_floor_filter:
-                    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-                    mask = cv2.inRange(hsv, lower_color, upper_color)
-                    plt.figure(); plt.imshow(mask);
-                    mask_inverse = cv2.bitwise_not(mask)
-                    mask_new_ = cv2.bitwise_and(mask_new_, mask_inverse)
-                # create cumulated masks:
-                if mask_ is not None:
-                    mask_ = mask_ + mask_new_
-                else:
-                    mask_ = mask_new_
+                    scale = 0.25 # 1/4 original res:
+                    size_ = np.shape(frame)
+                    print(size_)
+                    frame = cv2.resize(src=frame, dsize=[int(size_[1]*scale), int(size_[0]*scale)])
+                    cv2.imwrite(path_frame,frame)
             else:
                 break 
 
@@ -127,27 +148,35 @@ class VideoSuperMan:
     def _impose_frames_from_directory(self, 
         filename, frame_count, 
         inter_folder, output_dir,
-        t_start = 1,
+        t_start=1,
         if_cropping = True,
         if_fwd = False,
         fg_alpha=[0.5,0.5],
         alpha=[0.2,0.8],
+        step_size=1,
     ):
         tag = "_fwd" if if_fwd else ""
         output_file_name_ = f"{output_dir}/super_{filename}{tag}.png"
         print(f"Super Imposing {frame_count} frames..")
         img_base_ = None
         if frame_count > 2:
-            items = range(t_start+1, frame_count, 1) if if_fwd else range(frame_count-1, t_start, -1)
+            items = range(t_start+step_size, frame_count, step_size) if if_fwd else range(frame_count-step_size, t_start, -step_size)
+            print(items)
             for i in items:
                 print(">>> Overlapping frame:", i)
                 try:
                     img_new_ = cv2.imread(f"{inter_folder}/frame_{i}.png", cv2.IMREAD_UNCHANGED)
                     mask_new_ = cv2.imread(f"{inter_folder}/de_frame_{i}.png", cv2.IMREAD_UNCHANGED)
                     _, mask_new_ = cv2.threshold(mask_new_, 5, 255, cv2.THRESH_BINARY)
+                    avg_ = np.average(mask_new_)
 
                     print(img_new_.shape)
                     print(mask_new_.shape)
+                    print(avg_)
+                    THRESHOLD_EMPTY_MASK = 1 # NOTE: need this to filter out static images with empty mask
+                    if avg_ < THRESHOLD_EMPTY_MASK:
+                        print("X-  skipping due to invalid maskings (close to none)")
+                        continue # skip
                     # img_new_[:,:,0], _ = image_histogram_equalization(img_new_[:,:,0])
                     # img_new_[:,:,1], _ = image_histogram_equalization(img_new_[:,:,1])
                     # img_new_[:,:,2], _ = image_histogram_equalization(img_new_[:,:,2])
@@ -155,7 +184,7 @@ class VideoSuperMan:
                     # img_background_ = cv2.imread(f"{inter_folder}/frame_{i}.png")
                     # img_new_[:,:,:3] = img_new_[:,:,:3] + img_background_[:,:,:3] * 0.1
                     # img_new_ = img_new_.astype(np.float32)/255.0
-                    if img_base_ is not None:
+                    if img_base_ is not None and avg_:
                         # - apply mask:
                         fg = cv2.bitwise_and(img_new_, img_new_, mask=mask_new_)
                         fg_orig = cv2.bitwise_and(img_base_, img_base_, mask=mask_new_)
@@ -203,60 +232,100 @@ class VideoSuperMan:
         return output_file_name_
         
         
-# % ------------------------------- MAIN ----------------------------
-# king_ = VideoSuperMan(
-#     video_dir="/Users/jaku/Desktop/demo_record",
-#     output_dir="/Users/jaku/Desktop/demo_record/output",
-#     gap = 120
-# )
+#  ------------------------------- MAIN ----------------------------
+def main_superImposed():
+    king_ = VideoSuperMan(
+        video_dir="/Users/jaku/JX-Platform/Github_Research/dual-vins-data/demo_record/video_1213",
+        output_dir="/Users/jaku/JX-Platform/Github_Research/dual-vins-data/demo_record/video_1213/output",
+        gap = 120
+    )
+    
+    LIST_VIDEO_FILES = [
+        "Demo_1213_H_FWD",
+        "Demo_1213_E_FWD",
+        "Demo_1213_U_FWD",
+        "Demo_1213_D_FWD",
+        "Demo_1213_LR_FWD",
+        "Demo_1213_UD_FWD",
+        "Demo_1213_H_RVR",
+        "Demo_1213_E_RVR",
+        "Demo_1213_U_RVR",
+        "Demo_1213_D_RVR",
+        "Demo_1213_LR_RVR",
+        "Demo_1213_UD_RVR",
+        "Demo_1213_H_SPI",
+        "Demo_1213_E_SPI",
+        "Demo_1213_U_SPI",
+        "Demo_1213_D_SPI",
+        "Demo_1213_LR_SPI",
+        "Demo_1213_UD_SPI",
+        "Demo_1213_H_CIR",
+        "Demo_1213_E_CIR",
+        "Demo_1213_U_CIR",
+        "Demo_1213_D_CIR",
+        "Demo_1213_LR_CIR",
+        "Demo_1213_UD_CIR",
+        "Demo_1213_H_SQR",
+        "Demo_1213_E_SQR",
+        "Demo_1213_U_SQR",
+        "Demo_1213_D_SQR",
+        "Demo_1213_LR_SQR",
+        "Demo_1213_UD_SQR",
+        "Demo_1213_UD_SQR_Person",
+        "Demo_1213_H_TRI",
+        "Demo_1213_E_TRI",
+        "Demo_1213_U_TRI",
+        "Demo_1213_D_TRI",
+        "Demo_1213_LR_TRI",
+        "Demo_1213_UD_TRI",
+        "Demo_1213_H_BEE",
+        "Demo_1213_E_BEE",
+        "Demo_1213_U_BEE",
+        "Demo_1213_D_BEE",
+        "Demo_1213_LR_BEE",
+        "Demo_1213_UD_BEE",
+    ]
+    # king_ = VideoSuperMan(
+    #     video_dir="/Users/jaku/JX-Platform/Github_Research/dual-vins-data/demo_record/video_1127",
+    #     output_dir="/Users/jaku/JX-Platform/Github_Research/dual-vins-data/demo_record/video_1127/output",
+    #     gap = 10
+    # )  
+    
+    # LIST_VIDEO_FILES = [
+    #     "Demo_1127_Clips_UD_FWD",
+    #     "Demo_1127_Clips_UD_RVR",
+    #     "Demo_1127_Clips_UD_CIR",
+    #     "Demo_1127_Clips_UD_CIR2",
+    #     "Demo_1127_Clips_UD_BEE",
+    #     "Demo_1127_Clips_UD_BEE2",
+    #     "Demo_1127_Clips_UD_SQR",
+    #     "Demo_1127_Clips_UD_TRI",
+    # ]
+    SKIP_SAMPLING = False
+    for file in LIST_VIDEO_FILES:
+        print(" === Processing:", file, " === ")
+        path = king_.super_impose(
+            filename=file, file_type=".mp4", 
+            if_skip_sampling=SKIP_SAMPLING, if_fwd=False,
+            step_size=1,
+        )
+        print(">>> Generated @", path)
 
-# LIST_VIDEO_FILES = [
-#     # "Demo_1207_UD_OCC3",
-#     "Demo_1213_Clips_LR_FWD",
-#     "Demo_1213_Clips_LR_RVR",
-#     "Demo_1213_Clips_LR_SPI",
-#     "Demo_1213_Clips_LR_CIR",
-#     "Demo_1213_Clips_LR_SQR",
-#     "Demo_1213_Clips_LR_TRI",
-#     "Demo_1213_Clips_LR_BEE",
-#     "Demo_1213_Clips_UD_FWD",
-#     "Demo_1213_Clips_UD_RVR",
-#     "Demo_1213_Clips_UD_SPI",
-#     "Demo_1213_Clips_UD_CIR",
-#     "Demo_1213_Clips_UD_SQR",
-#     "Demo_1213_Clips_UD_TRI",
-#     "Demo_1213_Clips_UD_BEE",
-#     "Demo_1213_Clips_H_FWD",
-#     "Demo_1213_Clips_H_RVR",
-#     "Demo_1213_Clips_H_SPI",
-#     "Demo_1213_Clips_H_CIR",
-#     "Demo_1213_Clips_H_SQR",
-#     "Demo_1213_Clips_H_TRI",
-#     "Demo_1213_Clips_H_BEE",
-#     "Demo_1213_Clips_FIX_D",
-#     "Demo_1213_Clips_FIX_U",
-#     "Demo_1213_Clips_FIX_E",
-# ]
-king_ = VideoSuperMan(
-    video_dir="/Users/jaku/JX-Platform/Github_Research/dual-vins-data/demo_record/video_1127",
-    output_dir="/Users/jaku/JX-Platform/Github_Research/dual-vins-data/demo_record/video_1127/output",
-    gap = 60
-)
-
-LIST_VIDEO_FILES = [
-    "Demo_1127_Clips_UD_FWD",
-    "Demo_1127_Clips_UD_RVR",
-    "Demo_1127_Clips_UD_CIR",
-    "Demo_1127_Clips_UD_CIR2",
-    "Demo_1127_Clips_UD_BEE",
-    "Demo_1127_Clips_UD_BEE2",
-    "Demo_1127_Clips_UD_SQR",
-    "Demo_1127_Clips_UD_TRI",
-]
-for file in LIST_VIDEO_FILES:
-    print(" === Processing:", file, " === ")
-    path = king_.super_impose(filename=file, file_type=".mp4", if_skip_sampling=False, if_fwd=False)
-    print(">>> Generated @", path)
+def main_superSampling():
+    king_ = VideoSuperMan(
+        video_dir="/Users/jaku/JX-Learn/(Grad) UW/Advanced Robotis LAB/Demo-Videos/Demo-Multi-Floor/",
+        output_dir="/Users/jaku/JX-Learn/(Grad) UW/Advanced Robotis LAB/Demo-Videos/Demo-Multi-Floor/output",
+        gap = 600
+    )  
+    
+    LIST_VIDEO_FILES = [
+        "UWARL-Demo-Multi-Floor",
+    ]
+    for file in LIST_VIDEO_FILES:
+        print(" === Processing:", file, " === ")
+        path = king_.sample_video(filename=file, file_type=".mp4")
+        print(">>> Generated @", path)
 
 
-# %%
+main_superImposed()
+# main_superSampling()
