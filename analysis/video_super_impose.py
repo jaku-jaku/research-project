@@ -91,7 +91,7 @@ class VideoSuperMan:
             if ret:
                 # - prep bkg subtraction:
                 kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
-                frame = frame[0:900, 340:1800] # cropping for 1213 setups
+                frame = frame[0:900, 500:1900] # cropping for 1213 setups
                 fgmask = fgbg.apply(frame)
         
         positive_mask = {}
@@ -101,7 +101,7 @@ class VideoSuperMan:
             ret,frame = vCap.read()
             if ret:
                 
-                frame_ = frame[0:900, 340:1800] # cropping for 1213 setups
+                frame_ = frame[0:900, 500:1900] # cropping for 1213 setups
                 # apply mask:
                 fgmask = fgbg.apply(frame_)
                 fgmask0 = cv2.morphologyEx(fgmask, cv2.MORPH_OPEN, kernel)
@@ -123,7 +123,7 @@ class VideoSuperMan:
             if ret:
                 # - prep bkg subtraction:
                 kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
-                frame = frame[0:900, 340:1800] # cropping for 1213 setups
+                frame = frame[0:900, 500:1900] # cropping for 1213 setups
                 fgmask = fgbg.apply(frame)
         
         frame_count = len(indices_)
@@ -132,7 +132,7 @@ class VideoSuperMan:
             vCap.set(cv2.CAP_PROP_POS_FRAMES, i)
             ret,frame = vCap.read()
             if ret:
-                frame_ = frame[0:900, 340:1800] # cropping for 1213 setups
+                frame_ = frame[0:900, 500:1900] # cropping for 1213 setups
                 # apply mask:
                 fgmask = fgbg.apply(frame_)
                 fgmask0 = cv2.morphologyEx(fgmask, cv2.MORPH_OPEN, kernel)
@@ -183,6 +183,10 @@ class VideoSuperMan:
                 mask_new_ = cv2.imread(f"{inter_folder}/de_frame_{i}.png", cv2.IMREAD_UNCHANGED)
                 _, mask_new_ = cv2.threshold(mask_new_, 5, 255, cv2.THRESH_BINARY)
                 avg_ = np.average(mask_new_)
+                
+                if img_new_ is None or mask_new_ is None:
+                    print(f"X- Skipping {i} due to missing images!")
+                    continue # skip
 
                 print(img_new_.shape)
                 print(mask_new_.shape)
@@ -208,8 +212,6 @@ class VideoSuperMan:
             plt.figure()
             plt.imshow(img_base_)
             # Next we stack our equalized channels back into a single image
-            if if_cropping:
-                img_base_ = img_base_[:, 200:] # cropping
             cv2.imwrite(output_file_name_, img_base_)
         
         return output_file_name_
