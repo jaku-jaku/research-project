@@ -37,13 +37,17 @@ class VideoSuperMan:
     def super_impose(
         self, 
         filename:str, 
-        if_skip_sampling:bool, 
+        if_skip_sampling:bool = False, 
+        if_sampling_only:bool = False, 
         file_type:str=".mov", 
         step_size = 1,
     ):
         intermediate_output_path_ = self._create_subfolder(filename)
         file_path_ = f"{self._video_dir}/{filename}{file_type}"
         frame_count_  = self._sample_frames(file_path_, intermediate_output_path_, if_skip_sampling=if_skip_sampling)
+        if if_sampling_only:
+            return file_path_
+        
         out_image_file_1 = self._impose_frames_from_directory(filename, frame_count_, intermediate_output_path_, self._output_dir, step_size=step_size, fg_alpha=[0.3,0.7], if_fwd=True, tag="_1")
         out_image_file_2 = self._impose_frames_from_directory(filename, frame_count_, intermediate_output_path_, self._output_dir, step_size=step_size, fg_alpha=[0.3,0.7], if_fwd=False, tag="_2")
         out_image_file_3 = self._impose_frames_from_directory(filename, frame_count_, intermediate_output_path_, self._output_dir, step_size=step_size, fg_alpha=[0.5,0.5], if_fwd=True, tag="_3")
@@ -70,6 +74,7 @@ class VideoSuperMan:
     def _sample_frames(self, file_path, intermediate_folder, 
         if_skip_sampling=False,
         t_offset = 0,
+        image_crop_height_width = [[0,900],[500,1900]],
     ):
         vCap = cv2.VideoCapture(file_path)
         frame_count = 0
@@ -83,15 +88,22 @@ class VideoSuperMan:
             return N_samples
         mask_ = None
         
+        def _crop_image(frame):
+            h0 = image_crop_height_width[0][0]
+            h1 = image_crop_height_width[0][1]
+            w0 = image_crop_height_width[1][0]
+            w1 = image_crop_height_width[1][1]
+            return frame[h0:h1, w0:w1]
+        
         # fwd
         fgbg = cv2.createBackgroundSubtractorMOG2()
         for i in range(self._gap):
             vCap.set(cv2.CAP_PROP_POS_FRAMES, i)
             ret,frame = vCap.read()
             if ret:
+                frame_ = _crop_image(frame)
                 # - prep bkg subtraction:
                 kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
-                frame = frame[0:900, 500:1900] # cropping for 1213 setups
                 fgmask = fgbg.apply(frame)
         
         positive_mask = {}
@@ -100,8 +112,7 @@ class VideoSuperMan:
             vCap.set(cv2.CAP_PROP_POS_FRAMES, i)
             ret,frame = vCap.read()
             if ret:
-                
-                frame_ = frame[0:900, 500:1900] # cropping for 1213 setups
+                frame_ = _crop_image(frame)
                 # apply mask:
                 fgmask = fgbg.apply(frame_)
                 fgmask0 = cv2.morphologyEx(fgmask, cv2.MORPH_OPEN, kernel)
@@ -123,29 +134,30 @@ class VideoSuperMan:
             if ret:
                 # - prep bkg subtraction:
                 kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
-                frame = frame[0:900, 500:1900] # cropping for 1213 setups
+                frame = _crop_image(frame)
                 fgmask = fgbg.apply(frame)
         
-        frame_count = len(indices_)
+        frame_count = len(indices_) - 1
         indices_.reverse()
         for i in indices_:
             vCap.set(cv2.CAP_PROP_POS_FRAMES, i)
             ret,frame = vCap.read()
             if ret:
-                frame_ = frame[0:900, 500:1900] # cropping for 1213 setups
+                frame_ = _crop_image(frame)
                 # apply mask:
                 fgmask = fgbg.apply(frame_)
                 fgmask0 = cv2.morphologyEx(fgmask, cv2.MORPH_OPEN, kernel)
-                mask_new = cv2.bitwise_and(positive_mask[i], fgmask0) # remove all noises
-                frame_count -= 1
                 # cv2.imwrite(f"{intermediate_folder}/neg_de_frame_{frame_count}.png",fgmask0)
-                if frame_count == len(indices_)-2:
-                    cv2.imwrite(f"{intermediate_folder}/de_frame_{len(indices_)-1}.png",fgmask0)
+                avg_neg = np.average(fgmask0)
+                avg_pos = np.average(positive_mask[i])
+                if avg_pos < 1 or avg_neg < 1: # if one of the mask is empty, we or gate masks to retain features
+                    mask_new = cv2.bitwise_or(positive_mask[i], fgmask0) # remove all noises
                     cv2.imwrite(f"{intermediate_folder}/de_frame_{frame_count}.png",mask_new)
-                elif frame_count == 1:
-                    cv2.imwrite(f"{intermediate_folder}/de_frame_{frame_count}.png",fgmask0)
                 else:
+                    mask_new = cv2.bitwise_and(positive_mask[i], fgmask0) # remove all noises
                     cv2.imwrite(f"{intermediate_folder}/de_frame_{frame_count}.png",mask_new)
+                # (fix) decrement count after all:
+                frame_count -= 1
                 # create cumulated masks:
                 if mask_ is not None:
                     mask_ = cv2.bitwise_or(mask_, fgmask0)
@@ -174,19 +186,21 @@ class VideoSuperMan:
         output_file_name_ = f"{inter_folder}/super_{filename}{tag}.png"
         print(f"Super Imposing {frame_count} frames..")
         img_base_ = None
+        mask_base_ = None
         if frame_count > 2:
             items = range(t_start, frame_count, step_size) if if_fwd else range(frame_count-step_size, t_start-step_size, -step_size)
             print(items)
             for i in items:
                 print(">>> Overlapping frame:", i)
                 img_new_ = cv2.imread(f"{inter_folder}/frame_{i}.png", cv2.IMREAD_UNCHANGED)
-                mask_new_ = cv2.imread(f"{inter_folder}/de_frame_{i}.png", cv2.IMREAD_UNCHANGED)
-                _, mask_new_ = cv2.threshold(mask_new_, 5, 255, cv2.THRESH_BINARY)
-                avg_ = np.average(mask_new_)
+                mask_new_ = cv2.imread(f"{inter_folder}/de_frame_{i-1}.png", cv2.IMREAD_UNCHANGED)
                 
                 if img_new_ is None or mask_new_ is None:
                     print(f"X- Skipping {i} due to missing images!")
                     continue # skip
+
+                _, mask_new_ = cv2.threshold(mask_new_, 5, 255, cv2.THRESH_BINARY)
+                avg_ = np.average(mask_new_)
 
                 print(img_new_.shape)
                 print(mask_new_.shape)
@@ -195,22 +209,36 @@ class VideoSuperMan:
                 if avg_ < THRESHOLD_EMPTY_MASK:
                     print("X-  skipping due to invalid maskings (close to none)")
                     continue # skip
-                if img_base_ is not None and avg_:
-                    # - apply mask:
-                    fg = cv2.bitwise_and(img_new_, img_new_, mask=mask_new_)
-                    fg_orig = cv2.bitwise_and(img_base_, img_base_, mask=mask_new_)
-                    fg = cv2.addWeighted(fg_orig, fg_alpha[0], fg, fg_alpha[1], 0) # lets blend instead of overriding
-                    plt.figure(); plt.imshow(fg);
-                    mask_inv_ = cv2.bitwise_not(mask_new_)
-                    bk = cv2.bitwise_and(img_base_, img_base_, mask=mask_inv_)
-                    plt.figure(); plt.imshow(bk);
-                    # combine foreground+background
-                    img_base_ = cv2.bitwise_or(fg, bk)
-                else:
+                if img_base_ is None:
                     img_base_ = img_new_
-        
-            plt.figure()
-            plt.imshow(img_base_)
+                    mask_base_ = mask_new_
+                    continue # skip merging
+                
+                # merging process:
+                pixel_changes_percent = np.count_nonzero(mask_new_ - mask_base_) / np.prod(np.shape(mask_new_))
+                print(pixel_changes_percent)
+                if pixel_changes_percent > 0.1: # only if the masks are drastically different >10%, otherwise it is a steady frame
+                    jointed_mask = cv2.bitwise_or(mask_base_, mask_new_)
+                    jointed_mask_inv_ = cv2.bitwise_not(jointed_mask)
+                    mask_base_inv_ = cv2.bitwise_not(mask_base_)
+                    mask_new_inv_ = cv2.bitwise_not(mask_new_)
+                    # create staged foreground:
+                    fg_new = cv2.bitwise_and(img_new_, img_new_, mask=mask_new_)
+                    fg_base = cv2.bitwise_and(img_base_, img_base_, mask=mask_new_inv_)
+                    fg = cv2.bitwise_or(fg_base, fg_new)
+                    fg_new = cv2.bitwise_and(img_new_, img_new_, mask=mask_base_inv_)
+                    fg_base = cv2.bitwise_and(img_base_, img_base_, mask=mask_base_)
+                    fg2 = cv2.bitwise_or(fg_base, fg_new)
+                    # blending forward and reversed images:
+                    fg = cv2.addWeighted(fg2, fg_alpha[0], fg, fg_alpha[1], 0)
+                    # combine foreground+background:
+                    fg = cv2.bitwise_and(fg, fg, mask=jointed_mask)
+                    bk = cv2.bitwise_and(img_base_, img_base_, mask=jointed_mask_inv_)
+                    img_base_ = cv2.bitwise_or(fg, bk)
+                    # visualization in notebook:
+                    # plt.figure(); plt.imshow(fg);
+                    # plt.figure(); plt.imshow(img_base_);
+
             # Next we stack our equalized channels back into a single image
             cv2.imwrite(output_file_name_, img_base_)
         
@@ -226,57 +254,66 @@ def main_superImposed():
     )
     
     LIST_VIDEO_FILES = [
-        "Demo_1213_H_FWD",
-        "Demo_1213_E_FWD",
-        "Demo_1213_U_FWD",
-        "Demo_1213_D_FWD",
+        # "Demo_1213_H_FWD",
+        # "Demo_1213_H_RVR",
+        # "Demo_1213_H_SPI",
+        # "Demo_1213_H_CIR",
+        # "Demo_1213_H_SQR",
+        # "Demo_1213_H_TRI",
+        # "Demo_1213_H_BEE",
+        # #
+        # "Demo_1213_E_FWD",
+        # "Demo_1213_E_RVR",
+        # "Demo_1213_E_SPI",
+        # "Demo_1213_E_CIR",
+        # "Demo_1213_E_SQR",
+        # "Demo_1213_E_TRI",
+        # "Demo_1213_E_BEE",
+        # #
+        # "Demo_1213_D_FWD",
+        # "Demo_1213_D_RVR",
+        # "Demo_1213_D_SPI",
+        # "Demo_1213_D_CIR",
+        # "Demo_1213_D_SQR",
+        # "Demo_1213_D_TRI",
+        # "Demo_1213_D_BEE",
+        # #
+        # "Demo_1213_U_FWD",
+        # "Demo_1213_U_RVR",
+        # "Demo_1213_U_SPI",
+        # "Demo_1213_U_CIR",
+        # "Demo_1213_U_SQR",
+        # "Demo_1213_U_TRI",
+        # "Demo_1213_U_BEE",
+        # #
         "Demo_1213_LR_FWD",
-        "Demo_1213_UD_FWD",
-        "Demo_1213_H_RVR",
-        "Demo_1213_E_RVR",
-        "Demo_1213_U_RVR",
-        "Demo_1213_D_RVR",
         "Demo_1213_LR_RVR",
-        "Demo_1213_UD_RVR",
-        "Demo_1213_H_SPI",
-        "Demo_1213_E_SPI",
-        "Demo_1213_U_SPI",
-        "Demo_1213_D_SPI",
         "Demo_1213_LR_SPI",
-        "Demo_1213_UD_SPI",
-        "Demo_1213_H_CIR",
-        "Demo_1213_E_CIR",
-        "Demo_1213_U_CIR",
-        "Demo_1213_D_CIR",
         "Demo_1213_LR_CIR",
-        "Demo_1213_UD_CIR",
-        "Demo_1213_H_SQR",
-        "Demo_1213_E_SQR",
-        "Demo_1213_U_SQR",
-        "Demo_1213_D_SQR",
         "Demo_1213_LR_SQR",
-        "Demo_1213_UD_SQR",
-        "Demo_1213_UD_SQR_Person",
-        "Demo_1213_H_TRI",
-        "Demo_1213_E_TRI",
-        "Demo_1213_U_TRI",
-        "Demo_1213_D_TRI",
         "Demo_1213_LR_TRI",
-        "Demo_1213_UD_TRI",
-        "Demo_1213_H_BEE",
-        "Demo_1213_E_BEE",
-        "Demo_1213_U_BEE",
-        "Demo_1213_D_BEE",
         "Demo_1213_LR_BEE",
-        "Demo_1213_UD_BEE",
+        # #
+        # "Demo_1213_UD_FWD",
+        # "Demo_1213_UD_RVR",
+        # "Demo_1213_UD_SPI",
+        # "Demo_1213_UD_CIR",
+        # "Demo_1213_UD_SQR",
+        # "Demo_1213_UD_TRI",
+        # "Demo_1213_UD_BEE",
     ]
+    SAMPLING_ONLY = False #True #False
+    SKIP_SAMPLING = not SAMPLING_ONLY
+    
     # LIST_VIDEO_FILES = [
-    #     "Demo_1213_H_FWD",
-    #     # "Demo_1213_E_FWD",
-    #     # "Demo_1213_U_FWD",
-    #     # "Demo_1213_D_FWD",
+    #     # "Demo_1213_H_FWD",
+    #     # "Demo_1213_E_RVR",
+    #     "Demo_1213_U_BEE",
+    #     # "Demo_1213_D_RVR",
     #     # "Demo_1213_LR_FWD",
     # ]
+    # SAMPLING_ONLY = False
+    # SKIP_SAMPLING = False
     # king_ = VideoSuperMan(
     #     video_dir="/Users/jaku/JX-Platform/Github_Research/dual-vins-data/demo_record/video_1127",
     #     output_dir="/Users/jaku/JX-Platform/Github_Research/dual-vins-data/demo_record/video_1127/output",
@@ -293,12 +330,12 @@ def main_superImposed():
     #     "Demo_1127_Clips_UD_SQR",
     #     "Demo_1127_Clips_UD_TRI",
     # ]
-    SKIP_SAMPLING = False
     for file in LIST_VIDEO_FILES:
         print(" === Processing:", file, " === ")
         path = king_.super_impose(
             filename=file, file_type=".mp4", 
             if_skip_sampling=SKIP_SAMPLING, 
+            if_sampling_only=SAMPLING_ONLY,
             step_size=1,
         )
         print(">>> Generated @", path)
