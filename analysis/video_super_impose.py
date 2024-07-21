@@ -237,53 +237,53 @@ def main_superImposed():
     )
     
     LIST_VIDEO_FILES = [
-        # "Demo_1213_H_FWD",
-        # "Demo_1213_H_RVR",
-        # "Demo_1213_H_SPI",
-        # "Demo_1213_H_CIR",
-        # "Demo_1213_H_SQR",
-        # "Demo_1213_H_TRI",
-        # "Demo_1213_H_BEE",
-        # # #
-        # "Demo_1213_E_FWD",
-        # "Demo_1213_E_RVR",
-        # "Demo_1213_E_SPI",
-        # "Demo_1213_E_CIR",
-        # "Demo_1213_E_SQR",
-        # "Demo_1213_E_TRI",
-        # "Demo_1213_E_BEE",
-        # # #
-        # "Demo_1213_D_FWD",
-        # "Demo_1213_D_RVR",
-        # "Demo_1213_D_SPI",
-        # "Demo_1213_D_CIR",
-        # "Demo_1213_D_SQR",
-        # "Demo_1213_D_TRI",
-        # "Demo_1213_D_BEE",
+        "Demo_1213_H_FWD",
+        "Demo_1213_H_RVR",
+        "Demo_1213_H_SPI",
+        "Demo_1213_H_CIR",
+        "Demo_1213_H_SQR",
+        "Demo_1213_H_TRI",
+        "Demo_1213_H_BEE",
+        # #
+        "Demo_1213_E_FWD",
+        "Demo_1213_E_RVR",
+        "Demo_1213_E_SPI",
+        "Demo_1213_E_CIR",
+        "Demo_1213_E_SQR",
+        "Demo_1213_E_TRI",
+        "Demo_1213_E_BEE",
+        # #
+        "Demo_1213_D_FWD",
+        "Demo_1213_D_RVR",
+        "Demo_1213_D_SPI",
+        "Demo_1213_D_CIR",
+        "Demo_1213_D_SQR",
+        "Demo_1213_D_TRI",
+        "Demo_1213_D_BEE",
         #
         "Demo_1213_U_FWD",
-        # "Demo_1213_U_RVR",
-        # "Demo_1213_U_SPI",
-        # "Demo_1213_U_CIR",
-        # "Demo_1213_U_SQR",
-        # "Demo_1213_U_TRI",
-        # "Demo_1213_U_BEE",
-        # # #
-        # "Demo_1213_LR_FWD",
-        # "Demo_1213_LR_RVR",
-        # "Demo_1213_LR_SPI",
-        # "Demo_1213_LR_CIR",
-        # "Demo_1213_LR_SQR",
-        # "Demo_1213_LR_TRI",
-        # "Demo_1213_LR_BEE",
-        # # #
-        # "Demo_1213_UD_FWD",
-        # "Demo_1213_UD_RVR",
-        # "Demo_1213_UD_SPI",
-        # "Demo_1213_UD_CIR",
-        # "Demo_1213_UD_SQR",
-        # "Demo_1213_UD_TRI",
-        # "Demo_1213_UD_BEE",
+        "Demo_1213_U_RVR",
+        "Demo_1213_U_SPI",
+        "Demo_1213_U_CIR",
+        "Demo_1213_U_SQR",
+        "Demo_1213_U_TRI",
+        "Demo_1213_U_BEE",
+        # #
+        "Demo_1213_LR_FWD",
+        "Demo_1213_LR_RVR",
+        "Demo_1213_LR_SPI",
+        "Demo_1213_LR_CIR",
+        "Demo_1213_LR_SQR",
+        "Demo_1213_LR_TRI",
+        "Demo_1213_LR_BEE",
+        # #
+        "Demo_1213_UD_FWD",
+        "Demo_1213_UD_RVR",
+        "Demo_1213_UD_SPI",
+        "Demo_1213_UD_CIR",
+        "Demo_1213_UD_SQR",
+        "Demo_1213_UD_TRI",
+        "Demo_1213_UD_BEE",
     ]
     # SAMPLING_ONLY = False #True #False
     # SKIP_SAMPLING = not SAMPLING_ONLY
@@ -296,7 +296,7 @@ def main_superImposed():
     #     # "Demo_1213_LR_FWD",
     # ]
     SAMPLING_ONLY = False
-    SKIP_SAMPLING = True
+    SKIP_SAMPLING = False
     # king_ = VideoSuperMan(
     #     video_dir="/Users/jaku/JX-Platform/Github_Research/dual-vins-data/demo_record/video_1127",
     #     output_dir="/Users/jaku/JX-Platform/Github_Research/dual-vins-data/demo_record/video_1127/output",
