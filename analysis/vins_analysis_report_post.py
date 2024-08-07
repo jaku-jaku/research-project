@@ -48,12 +48,13 @@ ERROR_KEYS  = ["est_pe", "est_qe", "loop_pe", "loop_qe"]
 
 ## user:
 FEATURE_PLOT_ERROR_PER_TEST_SET = False
-FEATURE_GENERATE_SUMMARY        = False
+FEATURE_GENERATE_SUMMARY        = True
+FEATURE_SIDE_BY_SIDE_SUMMARY_PLOT = True # True to keep box plots side by side
 BAR_PLOT_SIZE_ERROR_SUMMARY     = (10,1.5)
 BAR_PLOT_SIZE_ERROR_TEST_SET    = (12,4)
 TRAJ_FIG_SIZE                   = (3,3) #(4,4)
 FEATURE_ZERO_ORIENTATION_WRT_INIT = False # NOT needed for ATE, for sanity check only
-FEATURE_PLOT_3D_TRAJECTORY_COMPARE_GT      = True
+FEATURE_PLOT_3D_TRAJECTORY_COMPARE_GT      = False
 FEATURE_TRAJ_PLOT_LEGEND                   = "FWD-only" #"inside" # choose from: ["outside", "inside", None]
 # %% -------------------------------- REPORT -------------------------------- %% #
 # 0. init report generator:
@@ -70,11 +71,10 @@ AM = AnalysisManager(
 RG.bind_output_dir(output_dir=AM._output_dir)
 
 # %% 1. Table Result Expected:
-# TARGET_EE_MOTIONS = ["LR-EE", "LR-Base", "UD-EE", "UD-Base"]
-TARGET_EE_MOTIONS = [
-    "H-EE", "H-Base", "E-EE", "E-Base", 
-    "U-EE", "U-Base", "D-EE", "D-Base", 
-    "LR-EE", "LR-Base", "UD-EE", "UD-Base"]
+# TARGET_ALL_MOTIONS = ["LR-EE", "LR-Base", "UD-EE", "UD-Base"]
+TARGET_E_MOTIONS = ["H-EE", "E-EE", "U-EE", "D-EE", "LR-EE", "UD-EE"]
+TARGET_B_MOTIONS = ["H-Base", "E-Base", "U-Base", "D-Base", "LR-Base", "UD-Base"]
+TARGET_ALL_MOTIONS = TARGET_E_MOTIONS + TARGET_B_MOTIONS
 TARGET_BASE_MOTIONS = ["FWD", "RVR", "SPI", "TRI", "SQR", "CIR", "BEE"]
 TABULAR_RESULT = {}
 TABULAR_PLOT_DATA = {}
@@ -84,7 +84,7 @@ for key in ERROR_KEYS:
     for label in RUN_LABELS:
         TABULAR_RESULT[key][label] = {}
         TABULAR_PLOT_DATA[key][label] = {}
-        for ee_motion in TARGET_EE_MOTIONS:
+        for ee_motion in TARGET_ALL_MOTIONS:
             TABULAR_RESULT[key][label][ee_motion] = {}
             TABULAR_PLOT_DATA[key][label][ee_motion] = {}
             for base_motion in TARGET_BASE_MOTIONS:
@@ -461,31 +461,70 @@ if FEATURE_GENERATE_SUMMARY:
 if FEATURE_GENERATE_SUMMARY:
     # plot error bar:
     for key_ in ERROR_KEYS:
-        for test_ in TARGET_EE_MOTIONS:
+        for test_ in TARGET_ALL_MOTIONS:
             print(f"Plotting {test_} @ {key_}")
-            fig, axes = plt.subplots(nrows=1, ncols=2, 
-                figsize=BAR_PLOT_SIZE_ERROR_SUMMARY, facecolor='white', 
-                sharey=True, gridspec_kw={'wspace': 0})
             # iterate over labels:        
-            for i_, label_ in enumerate(RUN_LABELS):
-                err_ = TABULAR_PLOT_DATA[key_][label_][test_]
-                pd_ = pd.DataFrame.from_dict(err_, orient='index').transpose()
-                # plot if not empty:
-                if len(pd_):
-                    sns.boxplot(data=pd_, palette="Set3", ax=axes[i_])
-                    axes[i_].set_title(f"{label_}")
-                    # pe_pd.boxplot()
-            if 'pe' in key_:
-                btm_, top_ = axes[0].get_ylim()
-                axes[0].set_ybound(max(btm_, 0), min(top_, 4))
-                axes[0].set_ylabel("$\|\Delta P_{R^3}\|_2 \,[m]$")
+            if FEATURE_SIDE_BY_SIDE_SUMMARY_PLOT:
+                fig, ax = plt.subplots(1,1,
+                    figsize=BAR_PLOT_SIZE_ERROR_SUMMARY, facecolor='white', 
+                    sharey=True, gridspec_kw={'wspace': 0})
+                
+                data_ = {}
+                for i_, label_ in enumerate(RUN_LABELS):
+                    err_ = TABULAR_PLOT_DATA[key_][label_][test_]
+                    if len(err_) > 0:
+                        temp_ = {"id":[], "val":[]}
+                        for id_, val_ in err_.items():
+                            temp_["id"]  += [id_] * len(val_)
+                            temp_["val"].extend(val_)
+                        data_[label_] = pd.DataFrame(temp_)
+                        data_[label_]["Label"] = label_
+                if len(data_) > 0:
+                    sns.boxplot(
+                        data=pd.concat(data_.values()), 
+                        hue="Label", x="id", y="val", 
+                        log_scale=10, palette="Set3", ax=ax
+                    )
+                    # sns.violinplot(
+                    #     data=pd.concat(data_.values()), 
+                    #     hue="Label", x="id", y="val", 
+                    #     split=True, gap=.1, inner="quart", log_scale=10,
+                    #     palette="Set3", ax=ax
+                    # )
+                    sns.move_legend(ax, "upper left", bbox_to_anchor=(1, 1))
+                    if 'pe' in key_:
+                        btm_, top_ = ax.get_ylim()
+                        ax.set_ybound(max(btm_, 0), min(top_, 10))
+                        ax.set_ylabel("$\|\Delta P_{R^3}\|_2 \,[m]$")
+                    else:
+                        ax.set_ybound(max(btm_, 0), min(top_, 1))
+                        ax.set_ylabel("$\|\Delta R_{SO(3)} \|_F$")
+                else:
+                    print("ERROR: Nothing to plot")
             else:
-                axes[0].set_ybound(max(btm_, 0), min(top_, 1))
-                axes[0].set_ylabel("$\|\Delta R_{SO(3)} \|_F$")
+                fig, axes = plt.subplots(nrows=1, ncols=2, 
+                    figsize=BAR_PLOT_SIZE_ERROR_SUMMARY, facecolor='white', 
+                    sharey=True, gridspec_kw={'wspace': 0})
+                for i_, label_ in enumerate(RUN_LABELS):
+                    err_ = TABULAR_PLOT_DATA[key_][label_][test_]
+                    pd_ = pd.DataFrame.from_dict(err_, orient='index').transpose()
+                    # plot if not empty:
+                    if len(pd_):
+                        sns.boxplot(data=pd_, palette="Set3", ax=axes[i_])
+                        axes[i_].set_title(f"{label_}")
+                        # pe_pd.boxplot()
+                if 'pe' in key_:
+                    btm_, top_ = axes[0].get_ylim()
+                    axes[0].set_ybound(max(btm_, 0), min(top_, 4))
+                    axes[0].set_ylabel("$\|\Delta P_{R^3}\|_2 \,[m]$")
+                else:
+                    axes[0].set_ybound(max(btm_, 0), min(top_, 1))
+                    axes[0].set_ylabel("$\|\Delta R_{SO(3)} \|_F$")
                 
                 
             # output:
-            file_name = AM.save_fig(fig, f"overall_{key_}_{test_}_boxplot")
+            post = "_log" if FEATURE_SIDE_BY_SIDE_SUMMARY_PLOT else ""
+            file_name = AM.save_fig(fig, f"overall_{key_}_{test_}_boxplot{post}")
 
 # %% -------------------------------- REPORT -------------------------------- %% #
 
