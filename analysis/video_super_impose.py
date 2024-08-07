@@ -168,6 +168,7 @@ class VideoSuperMan:
         if_fwd = True,
         fg_alpha=[0.4,0.6],
         tag="",
+        MINIMUM_VAR_THRESHOLD=0.1,
     ):
         output_file_name_ = f"{output_dir}/super_{filename}{tag}.png"
         print(f"Super Imposing {len(indices_)} frames..")
@@ -205,7 +206,7 @@ class VideoSuperMan:
                 # merging process:
                 pixel_changes_percent = np.count_nonzero(mask_new_ - mask_base_) / np.prod(np.shape(mask_new_))
                 print(pixel_changes_percent)
-                if pixel_changes_percent > 0.1: # only if the masks are drastically different >10%, otherwise it is a steady frame
+                if pixel_changes_percent > MINIMUM_VAR_THRESHOLD: # only if the masks are drastically different >10%, otherwise it is a steady frame
                     jointed_mask = cv2.bitwise_or(mask_base_, mask_new_)
                     # mixed front stage:
                     fg_new_staged = cv2.bitwise_and(img_new_, img_new_, mask=mask_new_)
@@ -221,7 +222,8 @@ class VideoSuperMan:
                     plt.figure(); plt.imshow(fg_staged,vmin=0,vmax=255);
                     plt.figure(); plt.imshow(bg_image,vmin=0,vmax=255);
                     plt.figure(); plt.imshow(img_base_,vmin=0,vmax=255);
-
+                else:
+                    print("X- not enough pixel excitation, skipping this frame ...")
             # Next we stack our equalized channels back into a single image
             cv2.imwrite(output_file_name_, img_base_)
         
@@ -237,53 +239,53 @@ def main_superImposed():
     )
     
     LIST_VIDEO_FILES = [
-        "Demo_1213_H_FWD",
-        "Demo_1213_H_RVR",
-        "Demo_1213_H_SPI",
-        "Demo_1213_H_CIR",
-        "Demo_1213_H_SQR",
-        "Demo_1213_H_TRI",
-        "Demo_1213_H_BEE",
-        # #
-        "Demo_1213_E_FWD",
-        "Demo_1213_E_RVR",
-        "Demo_1213_E_SPI",
-        "Demo_1213_E_CIR",
-        "Demo_1213_E_SQR",
-        "Demo_1213_E_TRI",
-        "Demo_1213_E_BEE",
-        # #
-        "Demo_1213_D_FWD",
-        "Demo_1213_D_RVR",
-        "Demo_1213_D_SPI",
-        "Demo_1213_D_CIR",
-        "Demo_1213_D_SQR",
-        "Demo_1213_D_TRI",
+        # "Demo_1213_H_FWD",
+        # "Demo_1213_H_RVR",
+        # "Demo_1213_H_SPI",
+        # "Demo_1213_H_CIR",
+        # "Demo_1213_H_SQR",
+        # "Demo_1213_H_TRI",
+        # "Demo_1213_H_BEE",
+        # # #
+        # "Demo_1213_E_FWD",
+        # "Demo_1213_E_RVR",
+        # "Demo_1213_E_SPI",
+        # "Demo_1213_E_CIR",
+        # "Demo_1213_E_SQR",
+        # "Demo_1213_E_TRI",
+        # "Demo_1213_E_BEE",
+        # # #
+        # "Demo_1213_D_FWD",
+        # "Demo_1213_D_RVR",
+        # "Demo_1213_D_SPI",
+        # "Demo_1213_D_CIR",
+        # "Demo_1213_D_SQR",
+        # "Demo_1213_D_TRI",
         "Demo_1213_D_BEE",
-        #
-        "Demo_1213_U_FWD",
-        "Demo_1213_U_RVR",
-        "Demo_1213_U_SPI",
-        "Demo_1213_U_CIR",
-        "Demo_1213_U_SQR",
-        "Demo_1213_U_TRI",
-        "Demo_1213_U_BEE",
         # #
-        "Demo_1213_LR_FWD",
-        "Demo_1213_LR_RVR",
-        "Demo_1213_LR_SPI",
-        "Demo_1213_LR_CIR",
-        "Demo_1213_LR_SQR",
-        "Demo_1213_LR_TRI",
-        "Demo_1213_LR_BEE",
-        # #
-        "Demo_1213_UD_FWD",
-        "Demo_1213_UD_RVR",
-        "Demo_1213_UD_SPI",
-        "Demo_1213_UD_CIR",
-        "Demo_1213_UD_SQR",
-        "Demo_1213_UD_TRI",
-        "Demo_1213_UD_BEE",
+        # "Demo_1213_U_FWD",
+        # "Demo_1213_U_RVR",
+        # "Demo_1213_U_SPI",
+        # "Demo_1213_U_CIR",
+        # "Demo_1213_U_SQR",
+        # "Demo_1213_U_TRI",
+        # "Demo_1213_U_BEE",
+        # # #
+        # "Demo_1213_LR_FWD",
+        # "Demo_1213_LR_RVR",
+        # "Demo_1213_LR_SPI",
+        # "Demo_1213_LR_CIR",
+        # "Demo_1213_LR_SQR",
+        # "Demo_1213_LR_TRI",
+        # "Demo_1213_LR_BEE",
+        # # #
+        # "Demo_1213_UD_FWD",
+        # "Demo_1213_UD_RVR",
+        # "Demo_1213_UD_SPI",
+        # "Demo_1213_UD_CIR",
+        # "Demo_1213_UD_SQR",
+        # "Demo_1213_UD_TRI",
+        # "Demo_1213_UD_BEE",
     ]
     # SAMPLING_ONLY = False #True #False
     # SKIP_SAMPLING = not SAMPLING_ONLY
